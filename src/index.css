@@ -27,6 +27,12 @@
     color-scheme: dark;
   }
 
+  /* Zweite Sicherung gegen seitliches Überstehen (siehe AppShell); clip statt hidden, damit kein Scroll-Container entsteht. */
+  html,
+  body {
+    overflow-x: clip;
+  }
+
   body {
     @apply min-h-dvh bg-zinc-100 font-sans text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100;
   }

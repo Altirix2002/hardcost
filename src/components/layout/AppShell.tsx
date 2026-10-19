@@ -4,10 +4,14 @@ interface AppShellProps {
   children: ReactNode;
 }
 
-/** Seitenrahmen mit weichen Farbflächen hinter den Glas-Karten. */
+/**
+ * Seitenrahmen mit weichen Farbflächen hinter den Glas-Karten.
+ * `overflow-x-clip`: Gleitet ein Tab seitlich herein, darf er die Seite nicht verbreitern –
+ * mobiles Chrome würde sonst kurz herauszoomen und das fixierte Dock springen lassen.
+ */
 export function AppShell({ children }: AppShellProps) {
   return (
-    <div className="relative min-h-dvh">
+    <div className="relative min-h-dvh overflow-x-clip">
       <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute -top-32 -left-24 h-96 w-96 rounded-full bg-sky-400/30 blur-3xl dark:bg-sky-500/15" />
         <div className="absolute top-1/3 -right-32 h-[28rem] w-[28rem] rounded-full bg-violet-400/25 blur-3xl dark:bg-violet-500/15" />

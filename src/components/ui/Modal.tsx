@@ -56,15 +56,15 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-zinc-950/30 backdrop-blur-sm"
+            className="absolute inset-0 bg-zinc-950/40 sm:bg-zinc-950/30 sm:backdrop-blur-sm"
           />
           <motion.div
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
-            initial={{ y: 48, opacity: 0, scale: 0.98 }}
-            animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={{ y: 48, opacity: 0, scale: 0.98 }}
+            initial={{ y: 48, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 48, opacity: 0 }}
             transition={sheetSpringWithFade}
             className="relative flex max-h-[92dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-3xl border border-white/20 bg-white/80 shadow-2xl backdrop-blur-xl sm:rounded-3xl dark:border-white/10 dark:bg-zinc-900/80"
           >

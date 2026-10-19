@@ -14,7 +14,7 @@ export function GlassCard({ interactive = false, className, children, ...rest }:
       whileTap={interactive ? { scale: 0.985 } : undefined}
       transition={spring}
       className={cn(
-        'rounded-3xl border border-white/20 bg-white/70 shadow-lg shadow-zinc-900/5 backdrop-blur-md',
+        'rounded-3xl border border-white/20 bg-white/70 shadow-lg shadow-zinc-900/5 sm:backdrop-blur-md',
         'dark:border-white/10 dark:bg-zinc-900/70 dark:shadow-black/30',
         interactive && 'cursor-pointer transition-shadow duration-300 hover:shadow-xl',
         className,

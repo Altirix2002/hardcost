@@ -18,7 +18,7 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
     'bg-zinc-900 text-white shadow-lg shadow-zinc-900/20 hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:shadow-black/40 dark:hover:bg-zinc-100',
   secondary:
-    'border border-white/20 bg-white/60 text-zinc-900 backdrop-blur-md hover:bg-white/80 dark:border-white/10 dark:bg-zinc-800/60 dark:text-zinc-100 dark:hover:bg-zinc-800/80',
+    'border border-white/20 bg-white/60 text-zinc-900 sm:backdrop-blur-md hover:bg-white/80 dark:border-white/10 dark:bg-zinc-800/60 dark:text-zinc-100 dark:hover:bg-zinc-800/80',
   ghost: 'text-zinc-600 hover:bg-zinc-900/5 dark:text-zinc-300 dark:hover:bg-white/10',
   danger: 'bg-rose-500 text-white shadow-lg shadow-rose-500/25 hover:bg-rose-600',
 };

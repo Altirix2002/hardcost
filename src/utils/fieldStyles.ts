@@ -1,6 +1,6 @@
 /** Gemeinsame Glas-Optik für Eingabefelder (ohne Rahmenfarbe, Höhe und Padding). */
 export const FIELD_SURFACE =
-  'w-full rounded-2xl border bg-white/60 text-base backdrop-blur-md transition focus:ring-4 focus:outline-none ' +
+  'w-full rounded-2xl border bg-white/60 text-base transition sm:backdrop-blur-md focus:ring-4 focus:outline-none ' +
   'placeholder:text-zinc-400 dark:bg-zinc-800/60 dark:placeholder:text-zinc-500';
 
 // Rahmenfarben sind exklusiv: entweder normal oder Fehler, nie beide (sonst entscheidet die CSS-Reihenfolge).

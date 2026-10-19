@@ -12,7 +12,7 @@ import { useApplyTheme } from './hooks/useApplyTheme';
 import { isAppTab, tabPanelId, useNavigationStore } from './store/useNavigationStore';
 import { useSettingsStore } from './store/useSettingsStore';
 import type { Category, Subscription } from './types';
-import { spring } from './utils/motion';
+import { springWithFade } from './utils/motion';
 import { getPaymentMethodSuggestions } from './utils/options';
 
 const NO_CATEGORIES: Category[] = [];
@@ -36,13 +36,13 @@ const PRELOAD_DELAY_MS = 1500;
 
 /**
  * Richtungsabhängiger Tab-Wechsel: neuer Inhalt gleitet aus der Klickrichtung herein.
- * Am Ende muss `filter` wieder ganz weg (nicht nur blur(0px)) – jeder Filter auf einem Vorfahren
- * schneidet den Glas-Karten darin den `backdrop-filter` auf den Hintergrund ab.
+ * Bewusst nur Transform und Deckkraft (GPU-freundlich) – ein animierter Blur-Filter über die
+ * ganze Seite ruckelt auf dem Handy und schneidet den Glas-Karten den Hintergrund-Blur ab.
  */
 const TAB_VARIANTS: Variants = {
-  enter: (direction: number) => ({ opacity: 0, x: direction * 40, filter: 'blur(6px)' }),
-  center: { opacity: 1, x: 0, filter: 'blur(0px)', transitionEnd: { filter: 'none' } },
-  exit: (direction: number) => ({ opacity: 0, x: direction * -40, filter: 'blur(6px)' }),
+  enter: (direction: number) => ({ opacity: 0, x: direction * 32 }),
+  center: { opacity: 1, x: 0 },
+  exit: (direction: number) => ({ opacity: 0, x: direction * -32 }),
 };
 
 /** Erst nach dem Ausblenden des alten Tabs nach oben springen – unsichtbar statt ruckelnd. */
@@ -166,7 +166,7 @@ export default function App() {
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{ ...spring, opacity: { duration: 0.2 }, filter: { duration: 0.2 } }}
+              transition={springWithFade}
               className="flex flex-col gap-6"
             >
               {activeTab === 'overview' ? (

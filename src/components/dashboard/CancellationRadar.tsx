@@ -26,7 +26,7 @@ export function CancellationRadar({ alerts, categoriesById, onSelect }: Cancella
           transition={sheetSpringWithFade}
           className="overflow-hidden"
         >
-          <div className="rounded-3xl border border-amber-500/30 bg-amber-50/70 p-4 shadow-lg shadow-amber-900/5 backdrop-blur-md dark:border-amber-400/20 dark:bg-amber-950/40 dark:shadow-black/30">
+          <div className="rounded-3xl border border-amber-500/30 bg-amber-50/70 p-4 shadow-lg shadow-amber-900/5 sm:backdrop-blur-md dark:border-amber-400/20 dark:bg-amber-950/40 dark:shadow-black/30">
             <div className="flex items-center gap-3 px-1">
               <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">
                 <span aria-hidden className="absolute inset-0 rounded-full bg-amber-500/25 motion-safe:animate-ping" />

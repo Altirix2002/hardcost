@@ -2,10 +2,11 @@ import { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Plus } from 'lucide-react';
 import type { Category, CategoryColor } from '../../../types';
+import { sortCategories } from '../../../utils/categories';
 import { getCategoryColorClasses } from '../../../utils/categoryStyles';
 import { cn } from '../../../utils/cn';
 import { INSET_PANEL } from '../../../utils/fieldStyles';
-import { sheetSpring, spring } from '../../../utils/motion';
+import { sheetSpringWithFade, spring } from '../../../utils/motion';
 import { Button } from '../../ui/Button';
 import { ColorSwatchPicker } from '../../ui/ColorSwatchPicker';
 import { FieldMessage } from '../../ui/FieldMessage';
@@ -29,14 +30,7 @@ export function CategoryPicker({ categories, value, onChange, onCreate, error }:
   const [color, setColor] = useState<CategoryColor>('sky');
   const [saving, setSaving] = useState(false);
 
-  // Standardkategorien zuerst, eigene danach – jeweils alphabetisch.
-  const sorted = useMemo(
-    () =>
-      [...categories].sort(
-        (a, b) => Number(a.isCustom) - Number(b.isCustom) || a.name.localeCompare(b.name, 'de-CH'),
-      ),
-    [categories],
-  );
+  const sorted = useMemo(() => sortCategories(categories), [categories]);
 
   const handleCreate = async () => {
     if (!name.trim() || saving) return;
@@ -97,7 +91,7 @@ export function CategoryPicker({ categories, value, onChange, onCreate, error }:
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={sheetSpring}
+            transition={sheetSpringWithFade}
             className="overflow-hidden"
           >
             <div className={cn(INSET_PANEL, 'flex flex-col gap-4')}>

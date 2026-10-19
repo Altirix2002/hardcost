@@ -10,6 +10,7 @@ import { Modal } from '../ui/Modal';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { Select } from '../ui/Select';
 import { BackupSection } from './BackupSection';
+import { CategoryManager } from './CategoryManager';
 
 interface SettingsModalProps {
   open: boolean;
@@ -87,6 +88,13 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
               Aktualisieren
             </Button>
           </div>
+        </FormSection>
+
+        <FormSection
+          title="Kategorien"
+          description="Antippen zum Umbenennen oder Umfärben. Beim Löschen wandern die Abos zu «Sonstiges»."
+        >
+          <CategoryManager />
         </FormSection>
 
         <FormSection
