@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Activity, Monitor, Moon, Settings, Sun, WifiOff } from 'lucide-react';
+import { Monitor, Moon, Settings, Sun, WifiOff } from 'lucide-react';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import type { AppTab, ThemePreference } from '../../types';
 import { IconButton } from '../ui/IconButton';
@@ -14,6 +14,9 @@ interface HeaderProps {
   onOpenSettings: () => void;
 }
 
+/** App-Logo aus den PWA-Icons (liegt im Precache und funktioniert damit auch offline). */
+const APP_ICON_URL = `${import.meta.env.BASE_URL}pwa-192x192.png`;
+
 const THEME_OPTIONS = [
   { value: 'light' as const, label: 'Hell', icon: Sun },
   { value: 'system' as const, label: 'System', icon: Monitor },
@@ -26,9 +29,13 @@ export function Header({ theme, onThemeChange, activeTab, onTabChange, onOpenSet
   return (
     <header className="grid grid-cols-[1fr_auto] items-center gap-4 sm:grid-cols-[1fr_auto_1fr]">
       <div className="flex min-w-0 items-center gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[30%] bg-linear-to-br from-sky-400 to-violet-500 text-white shadow-lg shadow-violet-500/25">
-          <Activity className="h-5 w-5" aria-hidden />
-        </div>
+        <img
+          src={APP_ICON_URL}
+          alt=""
+          width={40}
+          height={40}
+          className="h-10 w-10 shrink-0 rounded-[22%] shadow-lg shadow-violet-500/30"
+        />
         <div className="min-w-0">
           <h1 className="text-xl leading-tight font-semibold tracking-tight">SubPulse</h1>
           <AnimatePresence mode="wait" initial={false}>

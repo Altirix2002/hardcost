@@ -26,9 +26,18 @@ interface DashboardProps {
   rates: ExchangeRates | null;
   onCreate: () => void;
   onSelect: (subscription: Subscription) => void;
+  onShowUpcoming: () => void;
 }
 
-export function Dashboard({ subscriptions, categories, baseCurrency, rates, onCreate, onSelect }: DashboardProps) {
+export function Dashboard({
+  subscriptions,
+  categories,
+  baseCurrency,
+  rates,
+  onCreate,
+  onSelect,
+  onShowUpcoming,
+}: DashboardProps) {
   const sortKey = useDashboardStore((s) => s.sortKey);
   const statusFilter = useDashboardStore((s) => s.statusFilter);
   const setSortKey = useDashboardStore((s) => s.setSortKey);
@@ -61,7 +70,12 @@ export function Dashboard({ subscriptions, categories, baseCurrency, rates, onCr
         monthSpend={overview.monthSpend}
         monthName={overview.monthName}
       />
-      <UpcomingStats summary={overview.summary} nextPayment={overview.nextPayment} baseCurrency={baseCurrency} />
+      <UpcomingStats
+        summary={overview.summary}
+        nextPayment={overview.nextPayment}
+        baseCurrency={baseCurrency}
+        onShowAll={onShowUpcoming}
+      />
       <CancellationRadar alerts={overview.alerts} categoriesById={categoriesById} onSelect={onSelect} />
 
       <section className="flex flex-col gap-3">

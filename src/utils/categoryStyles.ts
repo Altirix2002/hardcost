@@ -1,37 +1,123 @@
-import type { CategoryColor } from '../types';
+import type { CategoryColor, CategoryHue, CategoryTone } from '../types';
 
 interface CategoryColorClasses {
+  /** Vollfläche, z.B. Farbpunkte, Balken, Initialen-Hintergrund. */
   solid: string;
+  /** Gut lesbare Schriftfarbe auf `solid`. */
+  onSolid: string;
+  /** Getönte Fläche mit passender Schrift, z.B. Badges und gewählte Chips. */
   soft: string;
 }
 
-// Vollständige Klassennamen, damit Tailwind sie beim Build erkennt.
-export const CATEGORY_COLOR_CLASSES: Record<CategoryColor, CategoryColorClasses> = {
-  rose: { solid: 'bg-rose-500', soft: 'bg-rose-500/15 text-rose-700 dark:text-rose-300' },
-  orange: { solid: 'bg-orange-500', soft: 'bg-orange-500/15 text-orange-700 dark:text-orange-300' },
-  amber: { solid: 'bg-amber-500', soft: 'bg-amber-500/15 text-amber-700 dark:text-amber-300' },
-  lime: { solid: 'bg-lime-500', soft: 'bg-lime-500/15 text-lime-700 dark:text-lime-300' },
-  emerald: { solid: 'bg-emerald-500', soft: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' },
-  teal: { solid: 'bg-teal-500', soft: 'bg-teal-500/15 text-teal-700 dark:text-teal-300' },
-  sky: { solid: 'bg-sky-500', soft: 'bg-sky-500/15 text-sky-700 dark:text-sky-300' },
-  indigo: { solid: 'bg-indigo-500', soft: 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300' },
-  violet: { solid: 'bg-violet-500', soft: 'bg-violet-500/15 text-violet-700 dark:text-violet-300' },
-  fuchsia: { solid: 'bg-fuchsia-500', soft: 'bg-fuchsia-500/15 text-fuchsia-700 dark:text-fuchsia-300' },
-  slate: { solid: 'bg-slate-500', soft: 'bg-slate-500/15 text-slate-700 dark:text-slate-300' },
-};
+export const CATEGORY_HUES: CategoryHue[] = [
+  'red',
+  'orange',
+  'amber',
+  'yellow',
+  'lime',
+  'green',
+  'emerald',
+  'teal',
+  'cyan',
+  'sky',
+  'blue',
+  'indigo',
+  'violet',
+  'purple',
+  'fuchsia',
+  'pink',
+  'rose',
+  'slate',
+  'stone',
+];
 
-export const CATEGORY_COLORS = Object.keys(CATEGORY_COLOR_CLASSES) as CategoryColor[];
+export const CATEGORY_TONES: CategoryTone[] = ['light', 'base', 'dark'];
 
-export const CATEGORY_COLOR_LABELS: Record<CategoryColor, string> = {
-  rose: 'Rosa',
+export const CATEGORY_HUE_LABELS: Record<CategoryHue, string> = {
+  red: 'Rot',
   orange: 'Orange',
   amber: 'Bernstein',
+  yellow: 'Gelb',
   lime: 'Limette',
+  green: 'Grün',
   emerald: 'Smaragd',
   teal: 'Petrol',
+  cyan: 'Cyan',
   sky: 'Himmelblau',
+  blue: 'Blau',
   indigo: 'Indigo',
   violet: 'Violett',
+  purple: 'Lila',
   fuchsia: 'Fuchsia',
+  pink: 'Pink',
+  rose: 'Rosa',
   slate: 'Schiefer',
+  stone: 'Stein',
 };
+
+export const CATEGORY_TONE_LABELS: Record<CategoryTone, string> = {
+  light: 'Hell',
+  base: 'Normal',
+  dark: 'Dunkel',
+};
+
+/** Helle Farbtöne, auf denen weisse Schrift schlecht lesbar ist. */
+const BRIGHT_HUES = new Set<CategoryHue>(['amber', 'yellow', 'lime']);
+
+// Die Klassen werden aus Farbton und Stufe zusammengesetzt. Damit Tailwind sie trotzdem erzeugt,
+// sind alle Kombinationen in index.css per `@source inline(...)` freigegeben – bei Änderungen dort
+// mitpflegen.
+const TONE_CLASSES: Record<CategoryTone, (hue: CategoryHue) => CategoryColorClasses> = {
+  light: (hue) => ({
+    solid: `bg-${hue}-400`,
+    onSolid: 'text-zinc-900/80',
+    soft: `bg-${hue}-400/20 text-${hue}-700 dark:text-${hue}-200`,
+  }),
+  base: (hue) => ({
+    solid: `bg-${hue}-500`,
+    onSolid: BRIGHT_HUES.has(hue) ? 'text-zinc-900/80' : 'text-white',
+    soft: `bg-${hue}-500/15 text-${hue}-700 dark:text-${hue}-300`,
+  }),
+  dark: (hue) => ({
+    solid: `bg-${hue}-700`,
+    onSolid: 'text-white',
+    soft: `bg-${hue}-700/20 text-${hue}-800 dark:text-${hue}-300`,
+  }),
+};
+
+export function toCategoryColor(hue: CategoryHue, tone: CategoryTone): CategoryColor {
+  return tone === 'base' ? hue : `${hue}-${tone}`;
+}
+
+export function parseCategoryColor(color: CategoryColor): { hue: CategoryHue; tone: CategoryTone } {
+  const [hue, tone] = color.split('-') as [CategoryHue, CategoryTone | undefined];
+  return { hue, tone: tone ?? 'base' };
+}
+
+export const CATEGORY_COLORS: CategoryColor[] = CATEGORY_HUES.flatMap((hue) =>
+  CATEGORY_TONES.map((tone) => toCategoryColor(hue, tone)),
+);
+
+export function isCategoryColor(value: unknown): value is CategoryColor {
+  return CATEGORY_COLORS.some((color) => color === value);
+}
+
+const CLASS_CACHE = new Map<CategoryColor, CategoryColorClasses>(
+  CATEGORY_COLORS.map((color) => {
+    const { hue, tone } = parseCategoryColor(color);
+    return [color, TONE_CLASSES[tone](hue)];
+  }),
+);
+
+const FALLBACK_CLASSES = TONE_CLASSES.base('slate');
+
+/** Fällt bei unbekannten Werten (z.B. aus alten Backups) auf Schiefergrau zurück. */
+export function getCategoryColorClasses(color: CategoryColor): CategoryColorClasses {
+  return CLASS_CACHE.get(color) ?? FALLBACK_CLASSES;
+}
+
+export function getCategoryColorLabel(color: CategoryColor): string {
+  const { hue, tone } = parseCategoryColor(color);
+  const label = CATEGORY_HUE_LABELS[hue] ?? 'Farbe';
+  return tone === 'base' ? label : `${label} (${CATEGORY_TONE_LABELS[tone]})`;
+}

@@ -1,5 +1,5 @@
-import type { BackupFile, Category, CategoryColor, PriceInterval, Subscription, UserSettings } from '../types';
-import { CATEGORY_COLORS } from './categoryStyles';
+import type { BackupFile, Category, PriceInterval, Subscription, UserSettings } from '../types';
+import { isCategoryColor } from './categoryStyles';
 import { isSupportedCurrency } from './options';
 import { isValidISODate } from './subscriptionDraft';
 
@@ -11,10 +11,6 @@ const isOptionalString = (value: unknown): value is string | undefined => value 
 const isFiniteNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
 const isDate = (value: unknown): value is string => isString(value) && isValidISODate(value);
 const isCurrencyCode = (value: unknown): value is string => isString(value) && /^[A-Z]{3}$/.test(value);
-
-function isCategoryColor(value: unknown): value is CategoryColor {
-  return CATEGORY_COLORS.some((color) => color === value);
-}
 
 function isPriceInterval(value: unknown): value is PriceInterval {
   return (

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Plus } from 'lucide-react';
 import type { Category, CategoryColor } from '../../../types';
-import { CATEGORY_COLOR_CLASSES } from '../../../utils/categoryStyles';
+import { getCategoryColorClasses } from '../../../utils/categoryStyles';
 import { cn } from '../../../utils/cn';
 import { INSET_PANEL } from '../../../utils/fieldStyles';
 import { sheetSpring, spring } from '../../../utils/motion';
@@ -56,7 +56,7 @@ export function CategoryPicker({ categories, value, onChange, onCreate, error }:
       <div role="radiogroup" aria-label="Kategorie" className="flex flex-wrap gap-2">
         {sorted.map((category) => {
           const selected = category.id === value;
-          const classes = CATEGORY_COLOR_CLASSES[category.color];
+          const classes = getCategoryColorClasses(category.color);
           return (
             <motion.button
               key={category.id}

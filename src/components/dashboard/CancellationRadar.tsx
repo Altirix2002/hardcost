@@ -3,7 +3,7 @@ import { ChevronRight, Radar } from 'lucide-react';
 import type { CancellationAlert, Category, Subscription } from '../../types';
 import { CANCELLATION_ALERT_DAYS } from '../../utils/calculations';
 import { formatDate, formatRelativeDays } from '../../utils/format';
-import { sheetSpring, spring } from '../../utils/motion';
+import { sheetSpringWithFade, spring } from '../../utils/motion';
 import { SubscriptionLogo } from '../subscriptions/SubscriptionLogo';
 
 interface CancellationRadarProps {
@@ -23,7 +23,7 @@ export function CancellationRadar({ alerts, categoriesById, onSelect }: Cancella
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
           exit={{ opacity: 0, height: 0 }}
-          transition={sheetSpring}
+          transition={sheetSpringWithFade}
           className="overflow-hidden"
         >
           <div className="rounded-3xl border border-amber-500/30 bg-amber-50/70 p-4 shadow-lg shadow-amber-900/5 backdrop-blur-md dark:border-amber-400/20 dark:bg-amber-950/40 dark:shadow-black/30">

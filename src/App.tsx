@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import { Plus } from 'lucide-react';
@@ -13,27 +13,40 @@ import { isAppTab, tabPanelId, useNavigationStore } from './store/useNavigationS
 import { useSettingsStore } from './store/useSettingsStore';
 import type { Category, Subscription } from './types';
 import { spring } from './utils/motion';
+import { getPaymentMethodSuggestions } from './utils/options';
 
 const NO_CATEGORIES: Category[] = [];
+const NO_SUBSCRIPTIONS: Subscription[] = [];
 
 // Code-Splitting: Modals und Statistiken landen in eigenen Chunks und werden erst bei Bedarf
 // (bzw. kurz nach dem Start im Hintergrund) geladen – die Übersicht startet so schneller.
 const loadFormModal = () => import('./components/subscriptions/form/SubscriptionFormModal');
 const loadSettingsModal = () => import('./components/settings/SettingsModal');
 const loadStatistics = () => import('./components/statistics/StatisticsView');
+const loadUpcomingModal = () => import('./components/dashboard/UpcomingPaymentsModal');
 
 const SubscriptionFormModal = lazy(() => loadFormModal().then((m) => ({ default: m.SubscriptionFormModal })));
 const SettingsModal = lazy(() => loadSettingsModal().then((m) => ({ default: m.SettingsModal })));
 const StatisticsView = lazy(() => loadStatistics().then((m) => ({ default: m.StatisticsView })));
+const UpcomingPaymentsModal = lazy(() =>
+  loadUpcomingModal().then((m) => ({ default: m.UpcomingPaymentsModal })),
+);
 
 const PRELOAD_DELAY_MS = 1500;
 
-/** Richtungsabhängiger Tab-Wechsel: neuer Inhalt gleitet aus der Klickrichtung herein. */
+/**
+ * Richtungsabhängiger Tab-Wechsel: neuer Inhalt gleitet aus der Klickrichtung herein.
+ * Am Ende muss `filter` wieder ganz weg (nicht nur blur(0px)) – jeder Filter auf einem Vorfahren
+ * schneidet den Glas-Karten darin den `backdrop-filter` auf den Hintergrund ab.
+ */
 const TAB_VARIANTS: Variants = {
   enter: (direction: number) => ({ opacity: 0, x: direction * 40, filter: 'blur(6px)' }),
-  center: { opacity: 1, x: 0, filter: 'blur(0px)' },
+  center: { opacity: 1, x: 0, filter: 'blur(0px)', transitionEnd: { filter: 'none' } },
   exit: (direction: number) => ({ opacity: 0, x: direction * -40, filter: 'blur(6px)' }),
 };
+
+/** Erst nach dem Ausblenden des alten Tabs nach oben springen – unsichtbar statt ruckelnd. */
+const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'instant' });
 
 export default function App() {
   const settings = useSettingsStore((s) => s.settings);
@@ -54,7 +67,14 @@ export default function App() {
   // Modals erst nach dem ersten Öffnen mounten (und damit laden), danach für Exit-Animationen behalten.
   const [formMounted, setFormMounted] = useState(false);
   const [settingsMounted, setSettingsMounted] = useState(false);
-  const modalOpen = formOpen || settingsOpen;
+  const [upcomingOpen, setUpcomingOpen] = useState(false);
+  const [upcomingMounted, setUpcomingMounted] = useState(false);
+  const modalOpen = formOpen || settingsOpen || upcomingOpen;
+
+  const paymentMethods = useMemo(
+    () => getPaymentMethodSuggestions(subscriptions ?? NO_SUBSCRIPTIONS),
+    [subscriptions],
+  );
 
   useEffect(() => {
     void hydrate();
@@ -66,6 +86,7 @@ export default function App() {
       void loadFormModal();
       void loadSettingsModal();
       void loadStatistics();
+      void loadUpcomingModal();
     }, PRELOAD_DELAY_MS);
     return () => window.clearTimeout(timer);
   }, []);
@@ -106,12 +127,18 @@ export default function App() {
     setSettingsMounted(true);
     setSettingsOpen(true);
   };
-  const changeTab = (tab: typeof activeTab) => {
-    setActiveTab(tab);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const openUpcoming = () => {
+    setUpcomingMounted(true);
+    setUpcomingOpen(true);
+  };
+  /** Aus der Abbuchungsliste direkt ins Abo: Liste schliessen, Formular öffnen. */
+  const editFromUpcoming = (subscription: Subscription) => {
+    setUpcomingOpen(false);
+    openEdit(subscription);
   };
   const closeForm = useCallback(() => setFormOpen(false), []);
   const closeSettings = useCallback(() => setSettingsOpen(false), []);
+  const closeUpcoming = useCallback(() => setUpcomingOpen(false), []);
 
   return (
     <AppShell>
@@ -119,51 +146,58 @@ export default function App() {
         theme={settings.theme}
         onThemeChange={(theme) => void setTheme(theme)}
         activeTab={activeTab}
-        onTabChange={changeTab}
+        onTabChange={setActiveTab}
         onOpenSettings={openSettings}
       />
 
-      {subscriptions !== undefined && (
-        <AnimatePresence mode="wait" initial={false} custom={direction}>
-          <motion.main
-            key={activeTab}
-            id={tabPanelId(activeTab)}
-            role="tabpanel"
-            custom={direction}
-            variants={TAB_VARIANTS}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ ...spring, opacity: { duration: 0.2 }, filter: { duration: 0.2 } }}
-            className="flex flex-col gap-6"
-          >
-            {activeTab === 'overview' ? (
-              <Dashboard
-                subscriptions={subscriptions}
-                categories={categories}
-                baseCurrency={settings.baseCurrency}
-                rates={rates}
-                onCreate={openCreate}
-                onSelect={openEdit}
-              />
-            ) : (
-              <Suspense fallback={null}>
-                <StatisticsView
+      {/*
+        Mindesthöhe auf dem Handy: Würde die Seite beim Wechsel kurz kürzer als der Bildschirm,
+        blendet Chrome seine Adressleiste schlagartig ein und das fixierte Dock springt.
+      */}
+      <div className="max-sm:min-h-lvh">
+        {subscriptions !== undefined && (
+          <AnimatePresence mode="wait" initial={false} custom={direction} onExitComplete={scrollToTop}>
+            <motion.main
+              key={activeTab}
+              id={tabPanelId(activeTab)}
+              role="tabpanel"
+              custom={direction}
+              variants={TAB_VARIANTS}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ ...spring, opacity: { duration: 0.2 }, filter: { duration: 0.2 } }}
+              className="flex flex-col gap-6"
+            >
+              {activeTab === 'overview' ? (
+                <Dashboard
                   subscriptions={subscriptions}
                   categories={categories}
                   baseCurrency={settings.baseCurrency}
                   rates={rates}
                   onCreate={openCreate}
+                  onSelect={openEdit}
+                  onShowUpcoming={openUpcoming}
                 />
-              </Suspense>
-            )}
-          </motion.main>
-        </AnimatePresence>
-      )}
+              ) : (
+                <Suspense fallback={null}>
+                  <StatisticsView
+                    subscriptions={subscriptions}
+                    categories={categories}
+                    baseCurrency={settings.baseCurrency}
+                    rates={rates}
+                    onCreate={openCreate}
+                  />
+                </Suspense>
+              )}
+            </motion.main>
+          </AnimatePresence>
+        )}
+      </div>
 
       <AnimatePresence>
         {!modalOpen && <FloatingActionButton key="fab" icon={Plus} label="Abo hinzufügen" onClick={openCreate} />}
-        {!modalOpen && <MobileDock key="dock" activeTab={activeTab} onTabChange={changeTab} onAdd={openCreate} />}
+        {!modalOpen && <MobileDock key="dock" activeTab={activeTab} onTabChange={setActiveTab} onAdd={openCreate} />}
       </AnimatePresence>
 
       <Suspense fallback={null}>
@@ -173,10 +207,22 @@ export default function App() {
             subscription={editing}
             categories={categories}
             baseCurrency={settings.baseCurrency}
+            paymentMethods={paymentMethods}
             onClose={closeForm}
           />
         )}
         {settingsMounted && <SettingsModal open={settingsOpen} onClose={closeSettings} />}
+        {upcomingMounted && (
+          <UpcomingPaymentsModal
+            open={upcomingOpen}
+            onClose={closeUpcoming}
+            subscriptions={subscriptions ?? NO_SUBSCRIPTIONS}
+            categories={categories}
+            baseCurrency={settings.baseCurrency}
+            rates={rates}
+            onSelect={editFromUpcoming}
+          />
+        )}
       </Suspense>
     </AppShell>
   );

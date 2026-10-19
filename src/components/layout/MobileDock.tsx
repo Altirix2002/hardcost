@@ -10,13 +10,17 @@ interface MobileDockProps {
   onAdd: () => void;
 }
 
-/** Unten fixiertes Dock fürs Handy: Tab-Leiste plus runder Hinzufügen-Button. */
+/**
+ * Unten fixiertes Dock fürs Handy: Tab-Leiste plus runder Hinzufügen-Button.
+ * Bewusst nur verschoben, nicht ausgeblendet – Deckkraft unter 100 % würde den Glas-Blur
+ * der Tab-Leiste abschalten, bis die Animation ganz ausgeschwungen ist.
+ */
 export function MobileDock({ activeTab, onTabChange, onAdd }: MobileDockProps) {
   return (
     <motion.div
-      initial={{ y: 96, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      exit={{ y: 96, opacity: 0 }}
+      initial={{ y: 128 }}
+      animate={{ y: 0 }}
+      exit={{ y: 128 }}
       transition={spring}
       className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex items-center justify-center gap-3 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:hidden"
     >

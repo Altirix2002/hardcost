@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import type { CategoryColor, LogoShape } from '../../types';
-import { CATEGORY_COLOR_CLASSES } from '../../utils/categoryStyles';
+import { getCategoryColorClasses } from '../../utils/categoryStyles';
 import { cn } from '../../utils/cn';
+import { LOGO_SHAPE_CLASSES } from '../../utils/logoStyles';
 
 interface SubscriptionLogoProps {
   name: string;
@@ -11,12 +12,6 @@ interface SubscriptionLogoProps {
   color?: CategoryColor;
   size?: 'sm' | 'md' | 'lg';
 }
-
-// Prozentwerte statt rounded-full, damit der Wechsel rund ⇄ Squircle weich morpht.
-const SHAPE_CLASSES: Record<LogoShape, string> = {
-  circle: 'rounded-[50%]',
-  squircle: 'rounded-[30%]',
-};
 
 const SIZE_CLASSES = {
   sm: 'h-9 w-9 text-xs',
@@ -32,9 +27,10 @@ function getInitials(name: string): string {
 
 export function SubscriptionLogo({ name, logoUrl, shape, color = 'slate', size = 'md' }: SubscriptionLogoProps) {
   const [failed, setFailed] = useState(false);
+  const colorClasses = getCategoryColorClasses(color);
   const base = cn(
     'shrink-0 overflow-hidden ring-1 ring-black/5 transition-[border-radius] duration-500 ease-out dark:ring-white/10',
-    SHAPE_CLASSES[shape],
+    LOGO_SHAPE_CLASSES[shape],
     SIZE_CLASSES[size],
   );
 
@@ -53,7 +49,7 @@ export function SubscriptionLogo({ name, logoUrl, shape, color = 'slate', size =
   return (
     <div
       aria-hidden
-      className={cn(base, 'flex items-center justify-center font-semibold text-white', CATEGORY_COLOR_CLASSES[color].solid)}
+      className={cn(base, 'flex items-center justify-center font-semibold', colorClasses.solid, colorClasses.onSolid)}
     >
       {getInitials(name)}
     </div>

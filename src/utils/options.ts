@@ -1,4 +1,4 @@
-import type { BillingCycle, SelectOption } from '../types';
+import type { BillingCycle, SelectOption, Subscription } from '../types';
 import { BILLING_CYCLE_LABELS } from './format';
 
 /** Von der Frankfurter API unterstützte Währungen, häufige zuerst. */
@@ -38,3 +38,25 @@ export const PAYMENT_METHOD_SUGGESTIONS = [
   'Rechnung',
   'Lastschrift (LSV)',
 ] as const;
+
+/**
+ * Vorschläge für die Zahlungsart: selbst eingetragene (aus gespeicherten Abos, häufigste zuerst)
+ * vor den Standardvorschlägen. So steht eine neue Zahlungsart beim nächsten Abo direkt zur Wahl.
+ */
+export function getPaymentMethodSuggestions(subscriptions: Subscription[]): string[] {
+  const key = (method: string) => method.trim().toLocaleLowerCase('de-CH');
+  const defaults = new Set<string>(PAYMENT_METHOD_SUGGESTIONS.map(key));
+  const custom = new Map<string, { label: string; count: number }>();
+
+  for (const { paymentMethod } of subscriptions) {
+    const label = paymentMethod.trim();
+    if (!label || defaults.has(key(label))) continue;
+    const entry = custom.get(key(label));
+    custom.set(key(label), { label: entry?.label ?? label, count: (entry?.count ?? 0) + 1 });
+  }
+
+  const own = [...custom.values()]
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, 'de-CH'))
+    .map((entry) => entry.label);
+  return [...own, ...PAYMENT_METHOD_SUGGESTIONS];
+}

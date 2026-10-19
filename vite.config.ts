@@ -89,6 +89,16 @@ export default defineConfig({
               expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 7 },
             },
           },
+          {
+            // Katalog der Logo-Suche (Simple Icons, versionsfixiert) – ändert sich nicht, also langfristig cachen.
+            urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/npm\/simple-icons@.*\.json$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'logo-catalog',
+              expiration: { maxEntries: 2, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
         ],
       },
     }),

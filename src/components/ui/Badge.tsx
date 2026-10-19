@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import type { CategoryColor } from '../../types';
-import { CATEGORY_COLOR_CLASSES } from '../../utils/categoryStyles';
+import { getCategoryColorClasses } from '../../utils/categoryStyles';
 import { cn } from '../../utils/cn';
 
 interface BadgeProps {
@@ -15,7 +15,7 @@ export function Badge({ color, icon: Icon, children }: BadgeProps) {
     <span
       className={cn(
         'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
-        CATEGORY_COLOR_CLASSES[color].soft,
+        getCategoryColorClasses(color).soft,
       )}
     >
       {Icon && <Icon className="h-3 w-3" aria-hidden />}

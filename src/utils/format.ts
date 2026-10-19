@@ -28,6 +28,11 @@ export function formatDate(date: Date, withYear = false): string {
   }).format(date);
 }
 
+/** Mit Wochentag, z.B. "Mi., 21. Okt." */
+export function formatWeekdayDate(date: Date): string {
+  return new Intl.DateTimeFormat(LOCALE, { weekday: 'short', day: 'numeric', month: 'short' }).format(date);
+}
+
 export function formatMonthName(date: Date): string {
   return new Intl.DateTimeFormat(LOCALE, { month: 'long' }).format(date);
 }

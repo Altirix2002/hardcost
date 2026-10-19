@@ -3,11 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, Check, Trash2 } from 'lucide-react';
 import { createCategory, deleteSubscription, saveSubscription } from '../../../db/repository';
 import type { Category, DraftValidation, Subscription, SubscriptionDraft } from '../../../types';
-import {
-  BILLING_CYCLE_OPTIONS,
-  CURRENCY_OPTIONS,
-  PAYMENT_METHOD_SUGGESTIONS,
-} from '../../../utils/options';
+import { BILLING_CYCLE_OPTIONS, CURRENCY_OPTIONS } from '../../../utils/options';
 import {
   addPriceChange,
   createEmptyDraft,
@@ -28,6 +24,7 @@ import { TextField } from '../../ui/TextField';
 import { Toggle } from '../../ui/Toggle';
 import { CategoryPicker } from './CategoryPicker';
 import { LogoPicker } from './LogoPicker';
+import { PaymentMethodPicker } from './PaymentMethodPicker';
 import { PriceIntervalEditor } from './PriceIntervalEditor';
 
 interface SubscriptionFormModalProps {
@@ -36,6 +33,8 @@ interface SubscriptionFormModalProps {
   subscription: Subscription | null;
   categories: Category[];
   baseCurrency: string;
+  /** Vorschläge für die Zahlungsart, inkl. selbst eingetragener. */
+  paymentMethods: string[];
   onClose: () => void;
 }
 
@@ -46,10 +45,10 @@ export function SubscriptionFormModal({
   subscription,
   categories,
   baseCurrency,
+  paymentMethods,
   onClose,
 }: SubscriptionFormModalProps) {
   const formId = useId();
-  const paymentListId = useId();
   const isEditing = subscription !== null;
 
   const buildDraft = () =>
@@ -59,6 +58,7 @@ export function SubscriptionFormModal({
   const [showErrors, setShowErrors] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Bei jedem Öffnen frisch starten; das Modal bleibt für die Exit-Animation gemountet.
   const [wasOpen, setWasOpen] = useState(open);
@@ -68,6 +68,8 @@ export function SubscriptionFormModal({
       setDraft(buildDraft());
       setShowErrors(false);
       setConfirmDelete(false);
+      setSaving(false);
+      setSaveError(null);
     }
   }
 
@@ -80,17 +82,26 @@ export function SubscriptionFormModal({
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+    if (saving) return;
     if (!validation.isValid) {
       setShowErrors(true);
       return;
     }
+    // Offene Handy-Tastatur zuerst schliessen: Fährt sie während der Schliess-Animation ein,
+    // konnte das Sheet mit ausgegrautem Button stehen bleiben.
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     setSaving(true);
+    setSaveError(null);
     try {
       await saveSubscription(draftToSubscription(draft));
-      onClose();
-    } finally {
+    } catch {
       setSaving(false);
+      setSaveError('Speichern fehlgeschlagen – bitte nochmals versuchen.');
+      return;
     }
+    // Erst zurücksetzen, dann schliessen: Das Sheet friert beim Ausblenden seinen letzten Zustand ein.
+    setSaving(false);
+    onClose();
   };
 
   const handleDelete = async () => {
@@ -114,6 +125,18 @@ export function SubscriptionFormModal({
           >
             <AlertCircle className="h-4 w-4 shrink-0" aria-hidden />
             Bitte prüfe die markierten Felder.
+          </motion.p>
+        )}
+        {saveError && (
+          <motion.p
+            role="alert"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="flex items-center gap-2 overflow-hidden px-1 text-sm text-rose-600 dark:text-rose-400"
+          >
+            <AlertCircle className="h-4 w-4 shrink-0" aria-hidden />
+            {saveError}
           </motion.p>
         )}
       </AnimatePresence>
@@ -205,19 +228,11 @@ export function SubscriptionFormModal({
               error={errors.fields.cancellationNoticeDays}
             />
           </div>
-          <TextField
-            label="Zahlungsart"
-            placeholder="z.B. Twint"
-            list={paymentListId}
-            autoComplete="off"
+          <PaymentMethodPicker
             value={draft.paymentMethod}
-            onChange={(event) => update('paymentMethod', event.target.value)}
+            suggestions={paymentMethods}
+            onChange={(paymentMethod) => update('paymentMethod', paymentMethod)}
           />
-          <datalist id={paymentListId}>
-            {PAYMENT_METHOD_SUGGESTIONS.map((method) => (
-              <option key={method} value={method} />
-            ))}
-          </datalist>
         </FormSection>
 
         <FormSection

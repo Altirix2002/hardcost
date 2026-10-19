@@ -8,9 +8,10 @@ interface UpcomingStatsProps {
   summary: CostSummary;
   nextPayment?: UpcomingPayment;
   baseCurrency: string;
+  onShowAll: () => void;
 }
 
-export function UpcomingStats({ summary, nextPayment, baseCurrency }: UpcomingStatsProps) {
+export function UpcomingStats({ summary, nextPayment, baseCurrency, onShowAll }: UpcomingStatsProps) {
   const today = new Date();
   return (
     <div className="grid grid-cols-2 gap-3">
@@ -24,6 +25,7 @@ export function UpcomingStats({ summary, nextPayment, baseCurrency }: UpcomingSt
         label="Nächste Abbuchung"
         value={nextPayment ? formatCurrency(nextPayment.amount, baseCurrency) : '–'}
         icon={CalendarClock}
+        onClick={onShowAll}
         hint={
           nextPayment
             ? `${nextPayment.subscription.name} · ${formatDate(nextPayment.date)} (${formatRelativeDays(daysBetween(today, nextPayment.date))})`

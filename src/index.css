@@ -3,6 +3,15 @@
 /* Dark Mode per Klasse auf <html>, gesteuert über useApplyTheme (light / dark / system). */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * Kategoriefarben (siehe utils/categoryStyles.ts): Die Klassen entstehen dort dynamisch aus
+ * Farbton und Stufe, deshalb hier alle Kombinationen explizit freigeben.
+ */
+@source inline("bg-{red,orange,amber,yellow,lime,green,emerald,teal,cyan,sky,blue,indigo,violet,purple,fuchsia,pink,rose,slate,stone}-{400,500,700}");
+@source inline("bg-{red,orange,amber,yellow,lime,green,emerald,teal,cyan,sky,blue,indigo,violet,purple,fuchsia,pink,rose,slate,stone}-{400/20,500/15,700/20}");
+@source inline("text-{red,orange,amber,yellow,lime,green,emerald,teal,cyan,sky,blue,indigo,violet,purple,fuchsia,pink,rose,slate,stone}-{700,800}");
+@source inline("dark:text-{red,orange,amber,yellow,lime,green,emerald,teal,cyan,sky,blue,indigo,violet,purple,fuchsia,pink,rose,slate,stone}-{200,300}");
+
 @theme {
   --font-sans:
     -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', ui-sans-serif, system-ui, sans-serif;

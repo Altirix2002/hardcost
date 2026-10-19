@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import type { Category, ExchangeRates, Subscription } from '../../types';
-import { spring } from '../../utils/motion';
+import { springWithFade } from '../../utils/motion';
 import { SubscriptionCard } from './SubscriptionCard';
 
 interface SubscriptionListProps {
@@ -20,9 +20,9 @@ export function SubscriptionList({ subscriptions, categoriesById, baseCurrency, 
             key={subscription.id}
             layout
             initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0, transition: { ...spring, delay: index * 0.04 } }}
+            animate={{ opacity: 1, y: 0, transition: { ...springWithFade, delay: index * 0.04 } }}
             exit={{ opacity: 0, scale: 0.96 }}
-            transition={spring}
+            transition={springWithFade}
             className="h-full"
           >
             <SubscriptionCard

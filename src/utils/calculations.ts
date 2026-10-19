@@ -11,6 +11,8 @@ import type {
   PriceInterval,
   Subscription,
   SubscriptionCost,
+  UpcomingCharge,
+  UpcomingChargeMonth,
   UpcomingPayment,
 } from '../types';
 import { addDays, addMonthsClamped, daysBetween, parseISODate, startOfDay, toISODate } from './dates';
@@ -264,6 +266,50 @@ export function getUpcomingPayments(
     })
     .sort((a, b) => a.date.getTime() - b.date.getTime())
     .slice(0, limit);
+}
+
+/**
+ * Alle Abbuchungen aktiver Abos in den nächsten `days` Tagen (heute eingeschlossen),
+ * chronologisch – wöchentliche Abos erscheinen also mehrfach.
+ */
+export function getUpcomingCharges(
+  subs: Subscription[],
+  baseCurrency: string,
+  rates: ExchangeRates | null,
+  reference: Date = new Date(),
+  days = 30,
+): UpcomingCharge[] {
+  const start = startOfDay(reference);
+  const end = addDays(start, days);
+  return subs
+    .filter((sub) => sub.isActive)
+    .flatMap((subscription) =>
+      getChargesInRange(subscription, start, end).map((charge) => ({
+        subscription,
+        date: parseISODate(charge.date),
+        amount: convertCurrency(charge.amount, charge.currency, baseCurrency, rates),
+        originalAmount: charge.amount,
+        currency: charge.currency,
+      })),
+    )
+    .sort((a, b) => a.date.getTime() - b.date.getTime() || a.subscription.name.localeCompare(b.subscription.name, 'de-CH'));
+}
+
+/** Fasst chronologisch sortierte Abbuchungen nach Kalendermonat zusammen. */
+export function groupChargesByMonth(charges: UpcomingCharge[]): UpcomingChargeMonth[] {
+  const months: UpcomingChargeMonth[] = [];
+  for (const charge of charges) {
+    const year = charge.date.getFullYear();
+    const month = charge.date.getMonth();
+    let group = months.at(-1);
+    if (!group || group.year !== year || group.month !== month) {
+      group = { year, month, total: 0, charges: [] };
+      months.push(group);
+    }
+    group.total += charge.amount;
+    group.charges.push(charge);
+  }
+  return months;
 }
 
 /**

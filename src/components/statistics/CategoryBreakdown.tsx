@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import type { CategoryShare } from '../../types';
-import { CATEGORY_COLOR_CLASSES } from '../../utils/categoryStyles';
+import { getCategoryColorClasses } from '../../utils/categoryStyles';
 import { cn } from '../../utils/cn';
 import { formatCurrency, formatPercent } from '../../utils/format';
 import { spring } from '../../utils/motion';
@@ -22,7 +22,7 @@ export function CategoryBreakdown({ shares, currency }: CategoryBreakdownProps) 
             initial={{ width: 0 }}
             animate={{ width: `${entry.share * 100}%` }}
             transition={{ ...spring, delay: index * 0.05 }}
-            className={cn('h-full min-w-1', CATEGORY_COLOR_CLASSES[entry.category.color].solid)}
+            className={cn('h-full min-w-1', getCategoryColorClasses(entry.category.color).solid)}
           />
         ))}
       </div>
@@ -34,7 +34,7 @@ export function CategoryBreakdown({ shares, currency }: CategoryBreakdownProps) 
               <span className="flex min-w-0 items-center gap-2">
                 <span
                   aria-hidden
-                  className={cn('h-2.5 w-2.5 shrink-0 rounded-full', CATEGORY_COLOR_CLASSES[entry.category.color].solid)}
+                  className={cn('h-2.5 w-2.5 shrink-0 rounded-full', getCategoryColorClasses(entry.category.color).solid)}
                 />
                 <span className="truncate font-medium">{entry.category.name}</span>
                 <span className="shrink-0 text-xs text-zinc-500 dark:text-zinc-400">
@@ -53,7 +53,7 @@ export function CategoryBreakdown({ shares, currency }: CategoryBreakdownProps) 
                 initial={{ width: 0 }}
                 animate={{ width: `${entry.share * 100}%` }}
                 transition={{ ...spring, delay: 0.1 + index * 0.05 }}
-                className={cn('h-full rounded-full', CATEGORY_COLOR_CLASSES[entry.category.color].solid)}
+                className={cn('h-full rounded-full', getCategoryColorClasses(entry.category.color).solid)}
               />
             </div>
           </li>

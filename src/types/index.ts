@@ -6,22 +6,36 @@ export type LogoShape = 'circle' | 'squircle';
 
 export type ThemePreference = 'light' | 'dark' | 'system';
 
-/**
- * Tailwind-Farbtokens für Kategorien. Bewusst als Token statt Hex-Code,
- * damit Farben ohne Inline-Styles über Utility-Classes gerendert werden.
- */
-export type CategoryColor =
-  | 'rose'
+/** Tailwind-Farbtöne, in Regenbogen-Reihenfolge. */
+export type CategoryHue =
+  | 'red'
   | 'orange'
   | 'amber'
+  | 'yellow'
   | 'lime'
+  | 'green'
   | 'emerald'
   | 'teal'
+  | 'cyan'
   | 'sky'
+  | 'blue'
   | 'indigo'
   | 'violet'
+  | 'purple'
   | 'fuchsia'
-  | 'slate';
+  | 'pink'
+  | 'rose'
+  | 'slate'
+  | 'stone';
+
+export type CategoryTone = 'light' | 'base' | 'dark';
+
+/**
+ * Tailwind-Farbtokens für Kategorien, z.B. "sky" (normal), "sky-light" oder "sky-dark".
+ * Bewusst als Token statt Hex-Code, damit Farben ohne Inline-Styles über Utility-Classes
+ * gerendert werden. Ältere Daten mit reinem Farbton bleiben so gültig.
+ */
+export type CategoryColor = CategoryHue | `${CategoryHue}-light` | `${CategoryHue}-dark`;
 
 export interface PriceInterval {
   id: string;
@@ -168,6 +182,22 @@ export interface UpcomingPayment {
   amount: number; // in Basiswährung
 }
 
+/** Eine künftige Abbuchung mit Originalbetrag (für Fremdwährungen). */
+export interface UpcomingCharge extends UpcomingPayment {
+  originalAmount: number;
+  currency: string;
+}
+
+export interface UpcomingChargeMonth {
+  year: number;
+  month: number; // 0–11
+  total: number; // in Basiswährung
+  charges: UpcomingCharge[];
+}
+
+/** Zeitraum der Abbuchungsvorschau. */
+export type UpcomingRange = 'month' | 'quarter' | 'year';
+
 /** Tatsächliche Ausgaben eines Kalendermonats. */
 export interface MonthlySpendPoint {
   year: number;
@@ -195,6 +225,38 @@ export type SubscriptionSortKey = 'due' | 'cost' | 'name';
 export type SubscriptionStatusFilter = 'all' | 'active' | 'inactive';
 
 export type AppTab = 'overview' | 'statistics';
+
+// ─── Logos ──────────────────────────────────────────────────────────────────
+
+/** Treffer aus dem Simple-Icons-Katalog (einfarbige Marken-Icons). */
+export interface BrandIcon {
+  slug: string;
+  title: string;
+  hex: string; // Markenfarbe ohne #, z.B. "E50914"
+}
+
+/** Website-Treffer der Firmensuche; das Icon kommt vom Favicon-Dienst. */
+export interface WebsiteMatch {
+  name: string;
+  domain: string;
+}
+
+/** Bild, das im Logo-Editor zugeschnitten wird. */
+export interface LogoSource {
+  src: string; // Data-, Blob- oder (CORS-fähige) Web-URL
+  /** Einfarbiges Marken-Icon: wird auf farbigem Hintergrund weiss eingefärbt. */
+  monochrome?: boolean;
+  /** Markenfarbe als Hex (#RRGGBB) – wird als Hintergrund angeboten. */
+  brandColor?: string;
+}
+
+/** Zuschnitt im Logo-Editor; Versatz relativ zur Kantenlänge (0 = zentriert). */
+export interface LogoCrop {
+  zoom: number; // 1 = Bild passt vollständig hinein
+  offsetX: number;
+  offsetY: number;
+  background: string; // Hex-Farbe, z.B. "#ffffff"
+}
 
 // ─── Datensicherung ─────────────────────────────────────────────────────────
 
