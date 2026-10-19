@@ -3,7 +3,35 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
+/**
+ * Basis-Pfad der App. GitHub Pages hostet Projektseiten unter /<repo>/ – der
+ * Deploy-Workflow setzt BASE_PATH darauf. Lokal (dev/preview) bleibt es "/".
+ * Bewusst ein absoluter Pfad statt "./": Manifest-Scope, start_url und der
+ * Service Worker brauchen einen festen Pfad, damit Installation und Offline-Modus greifen.
+ */
+const base = process.env.BASE_PATH ?? '/';
+
+/** Grosse Bibliotheken in eigene Chunks – bleiben bei App-Updates im Browser-Cache. */
+const VENDOR_CHUNKS: Record<string, string[]> = {
+  react: ['react', 'react-dom', 'scheduler'],
+  motion: ['framer-motion', 'motion-dom', 'motion-utils'],
+  dexie: ['dexie', 'dexie-react-hooks'],
+};
+
+function vendorChunk(id: string): string | undefined {
+  if (!id.includes('node_modules')) return undefined;
+  return Object.keys(VENDOR_CHUNKS).find((chunk) =>
+    VENDOR_CHUNKS[chunk]?.some((pkg) => id.includes(`/node_modules/${pkg}/`)),
+  );
+}
+
 export default defineConfig({
+  base,
+  build: {
+    rollupOptions: {
+      output: { manualChunks: vendorChunk },
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),
@@ -12,14 +40,14 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg', 'apple-touch-icon-180x180.png'],
       manifest: {
-        id: '/',
+        id: base,
         name: 'SubPulse – Abo- & Kosten-Kontrolle',
         short_name: 'SubPulse',
         description: 'Alle Abonnements und Fixkosten im Blick – lokal, privat und offline nutzbar.',
         lang: 'de-CH',
         dir: 'ltr',
-        start_url: '/',
-        scope: '/',
+        start_url: base,
+        scope: base,
         display: 'standalone',
         orientation: 'any',
         theme_color: '#f4f4f5',
@@ -36,13 +64,13 @@ export default defineConfig({
           {
             name: 'Abo hinzufügen',
             short_name: 'Neues Abo',
-            url: '/?action=new',
+            url: `${base}?action=new`,
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }],
           },
           {
             name: 'Statistiken',
             short_name: 'Statistiken',
-            url: '/?tab=statistics',
+            url: `${base}?tab=statistics`,
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }],
           },
         ],
