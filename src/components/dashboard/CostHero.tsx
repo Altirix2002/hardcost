@@ -38,7 +38,7 @@ function HeroCard({ label, icon: Icon, value, currency, hint, glowClassName }: H
           key={currency}
           value={value}
           currency={currency}
-          className="mt-3 block text-4xl font-semibold tracking-tight tabular-nums sm:text-5xl"
+          className="mt-3 block text-4xl font-semibold tracking-tight sm:text-5xl"
         />
         <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">{hint}</p>
       </div>

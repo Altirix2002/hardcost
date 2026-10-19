@@ -21,4 +21,14 @@
   body {
     @apply min-h-dvh bg-zinc-100 font-sans text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100;
   }
+
+  /* Kurzzeitig beim Theme-Wechsel aktiv (useApplyTheme): alle Farben gleiten weich über. */
+  .theme-transition,
+  .theme-transition *,
+  .theme-transition *::before,
+  .theme-transition *::after {
+    transition-property: color, background-color, border-color, fill, stroke, box-shadow, outline-color !important;
+    transition-duration: 400ms !important;
+    transition-timing-function: ease-out !important;
+  }
 }

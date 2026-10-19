@@ -168,8 +168,42 @@ export interface UpcomingPayment {
   amount: number; // in Basiswährung
 }
 
-// ─── Dashboard ──────────────────────────────────────────────────────────────
+/** Tatsächliche Ausgaben eines Kalendermonats. */
+export interface MonthlySpendPoint {
+  year: number;
+  month: number; // 0–11
+  total: number; // in Basiswährung
+}
+
+/** Anteil einer Kategorie an den monatlichen Fixkosten. */
+export interface CategoryShare {
+  category: Category;
+  monthly: number; // in Basiswährung
+  share: number; // 0–1
+  count: number;
+}
+
+export interface SubscriptionCost {
+  subscription: Subscription;
+  monthly: number; // in Basiswährung
+}
+
+// ─── Dashboard & Navigation ─────────────────────────────────────────────────
 
 export type SubscriptionSortKey = 'due' | 'cost' | 'name';
 
 export type SubscriptionStatusFilter = 'all' | 'active' | 'inactive';
+
+export type AppTab = 'overview' | 'statistics';
+
+// ─── Datensicherung ─────────────────────────────────────────────────────────
+
+/** Format der JSON-Backups (Export/Import). */
+export interface BackupFile {
+  app: 'subpulse';
+  version: 1;
+  exportedAt: string; // ISO-Zeitstempel
+  settings: UserSettings;
+  categories: Category[];
+  subscriptions: Subscription[];
+}

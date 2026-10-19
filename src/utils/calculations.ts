@@ -2,11 +2,15 @@ import type {
   BillingCycle,
   CancellationAlert,
   CancellationWindow,
+  Category,
+  CategoryShare,
   Charge,
   CostSummary,
   ExchangeRates,
+  MonthlySpendPoint,
   PriceInterval,
   Subscription,
+  SubscriptionCost,
   UpcomingPayment,
 } from '../types';
 import { addDays, addMonthsClamped, daysBetween, parseISODate, startOfDay, toISODate } from './dates';
@@ -264,6 +268,7 @@ export function getUpcomingPayments(
 
 /**
  * Tatsächliche Ausgaben in einem Kalendermonat (month: 0–11).
+ * Inaktive Abos zählen nur bis heute – künftige Abbuchungen finden nicht mehr statt.
  * Hinweis: Fremdwährungen werden mit den aktuellen Kursen umgerechnet.
  */
 export function getSpendForMonth(
@@ -272,10 +277,74 @@ export function getSpendForMonth(
   month: number,
   baseCurrency: string,
   rates: ExchangeRates | null,
+  reference: Date = new Date(),
 ): number {
   const start = new Date(year, month, 1);
   const end = new Date(year, month + 1, 0);
+  const today = startOfDay(reference);
   return subs
-    .flatMap((sub) => getChargesInRange(sub, start, end))
+    .flatMap((sub) => getChargesInRange(sub, start, !sub.isActive && today < end ? today : end))
     .reduce((sum, charge) => sum + convertCurrency(charge.amount, charge.currency, baseCurrency, rates), 0);
+}
+
+/** Ausgaben der letzten `months` Kalendermonate inkl. des laufenden, älteste zuerst. */
+export function getMonthlySpendHistory(
+  subs: Subscription[],
+  baseCurrency: string,
+  rates: ExchangeRates | null,
+  reference: Date = new Date(),
+  months = 12,
+): MonthlySpendPoint[] {
+  return Array.from({ length: months }, (_, index) => {
+    const date = new Date(reference.getFullYear(), reference.getMonth() - (months - 1 - index), 1);
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    return { year, month, total: getSpendForMonth(subs, year, month, baseCurrency, rates, reference) };
+  });
+}
+
+/** Monatliche Fixkosten aktiver Abos je Kategorie, grösster Anteil zuerst. */
+export function getCategoryBreakdown(
+  subs: Subscription[],
+  categories: Category[],
+  baseCurrency: string,
+  rates: ExchangeRates | null,
+  reference: Date = new Date(),
+): CategoryShare[] {
+  const byId = new Map(categories.map((c) => [c.id, c]));
+  const totals = new Map<string, { monthly: number; count: number }>();
+
+  for (const sub of subs) {
+    const monthly = getMonthlyCost(sub, baseCurrency, rates, reference);
+    if (monthly <= 0) continue;
+    const entry = totals.get(sub.categoryId) ?? { monthly: 0, count: 0 };
+    totals.set(sub.categoryId, { monthly: entry.monthly + monthly, count: entry.count + 1 });
+  }
+
+  const sum = [...totals.values()].reduce((acc, t) => acc + t.monthly, 0);
+  return [...totals.entries()]
+    .map(([categoryId, { monthly, count }]) => ({
+      category: byId.get(categoryId) ?? UNKNOWN_CATEGORY,
+      monthly,
+      count,
+      share: sum > 0 ? monthly / sum : 0,
+    }))
+    .sort((a, b) => b.monthly - a.monthly);
+}
+
+const UNKNOWN_CATEGORY: Category = { id: 'unknown', name: 'Ohne Kategorie', color: 'slate', isCustom: false };
+
+/** Aktives Abo mit dem höchsten Monatsäquivalent. */
+export function getMostExpensiveSubscription(
+  subs: Subscription[],
+  baseCurrency: string,
+  rates: ExchangeRates | null,
+  reference: Date = new Date(),
+): SubscriptionCost | null {
+  let top: SubscriptionCost | null = null;
+  for (const subscription of subs) {
+    const monthly = getMonthlyCost(subscription, baseCurrency, rates, reference);
+    if (monthly > 0 && (!top || monthly > top.monthly)) top = { subscription, monthly };
+  }
+  return top;
 }

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Randlose Variante für Android (maskable) und iOS: das System rundet selbst ab.
+       Der Puls liegt komplett in der sicheren Zone (mittlere 80 %). -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#38bdf8" />
+      <stop offset="1" stop-color="#8b5cf6" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)" />
+  <path d="M136 268h56l32-76 52 152 38-102 20 26h42" fill="none" stroke="#fff" stroke-width="30" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

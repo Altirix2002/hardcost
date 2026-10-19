@@ -15,8 +15,8 @@ export function StatCard({ label, value, icon: Icon, hint }: StatCardProps) {
         <Icon className="h-4 w-4" aria-hidden />
         {label}
       </div>
-      <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums">{value}</p>
-      {hint && <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{hint}</p>}
+      <p className="mt-2 truncate text-2xl font-semibold tracking-tight">{value}</p>
+      {hint && <p className="mt-1 line-clamp-2 text-xs text-zinc-500 dark:text-zinc-400">{hint}</p>}
     </GlassCard>
   );
 }

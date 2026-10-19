@@ -32,6 +32,24 @@ export function formatMonthName(date: Date): string {
   return new Intl.DateTimeFormat(LOCALE, { month: 'long' }).format(date);
 }
 
+/** Kurzer Monatsname für Achsen, z.B. "Okt." */
+export function formatShortMonth(year: number, month: number): string {
+  return new Intl.DateTimeFormat(LOCALE, { month: 'short' }).format(new Date(year, month, 1));
+}
+
+export function formatMonthYear(year: number, month: number): string {
+  return new Intl.DateTimeFormat(LOCALE, { month: 'long', year: 'numeric' }).format(new Date(year, month, 1));
+}
+
+/** Kompakte Achsenbeschriftung ohne Währungszeichen, z.B. "120" oder "1.2K". */
+export function formatCompactNumber(value: number): string {
+  return new Intl.NumberFormat(LOCALE, { notation: 'compact', maximumFractionDigits: 1 }).format(value);
+}
+
+export function formatPercent(share: number): string {
+  return new Intl.NumberFormat(LOCALE, { style: 'percent', maximumFractionDigits: 0 }).format(share);
+}
+
 export function formatRelativeDays(days: number): string {
   if (days === 0) return 'heute';
   if (days === 1) return 'morgen';
