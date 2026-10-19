@@ -12,8 +12,9 @@ interface SubscriptionLogoProps {
   size?: 'md' | 'lg';
 }
 
+// Prozentwerte statt rounded-full, damit der Wechsel rund ⇄ Squircle weich morpht.
 const SHAPE_CLASSES: Record<LogoShape, string> = {
-  circle: 'rounded-full',
+  circle: 'rounded-[50%]',
   squircle: 'rounded-[30%]',
 };
 
@@ -30,7 +31,11 @@ function getInitials(name: string): string {
 
 export function SubscriptionLogo({ name, logoUrl, shape, color = 'slate', size = 'md' }: SubscriptionLogoProps) {
   const [failed, setFailed] = useState(false);
-  const base = cn('shrink-0 overflow-hidden ring-1 ring-black/5 dark:ring-white/10', SHAPE_CLASSES[shape], SIZE_CLASSES[size]);
+  const base = cn(
+    'shrink-0 overflow-hidden ring-1 ring-black/5 transition-[border-radius] duration-500 ease-out dark:ring-white/10',
+    SHAPE_CLASSES[shape],
+    SIZE_CLASSES[size],
+  );
 
   if (logoUrl && !failed) {
     return (

@@ -19,3 +19,19 @@ export const CATEGORY_COLOR_CLASSES: Record<CategoryColor, CategoryColorClasses>
   fuchsia: { solid: 'bg-fuchsia-500', soft: 'bg-fuchsia-500/15 text-fuchsia-700 dark:text-fuchsia-300' },
   slate: { solid: 'bg-slate-500', soft: 'bg-slate-500/15 text-slate-700 dark:text-slate-300' },
 };
+
+export const CATEGORY_COLORS = Object.keys(CATEGORY_COLOR_CLASSES) as CategoryColor[];
+
+export const CATEGORY_COLOR_LABELS: Record<CategoryColor, string> = {
+  rose: 'Rosa',
+  orange: 'Orange',
+  amber: 'Bernstein',
+  lime: 'Limette',
+  emerald: 'Smaragd',
+  teal: 'Petrol',
+  sky: 'Himmelblau',
+  indigo: 'Indigo',
+  violet: 'Violett',
+  fuchsia: 'Fuchsia',
+  slate: 'Schiefer',
+};

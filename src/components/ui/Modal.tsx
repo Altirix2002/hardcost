@@ -1,6 +1,7 @@
 import { useEffect, useId, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
+import { cn } from '../../utils/cn';
 import { sheetSpring } from '../../utils/motion';
 import { IconButton } from './IconButton';
 
@@ -9,10 +10,12 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: ReactNode;
+  /** Bleibt sichtbar, während der Inhalt scrollt (z.B. Speichern-Buttons). */
+  footer?: ReactNode;
 }
 
 /** Bottom-Sheet auf Mobile, zentriertes Glas-Panel ab `sm`. */
-export function Modal({ open, onClose, title, children }: ModalProps) {
+export function Modal({ open, onClose, title, children, footer }: ModalProps) {
   const titleId = useId();
 
   useEffect(() => {
@@ -49,15 +52,28 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 48, opacity: 0, scale: 0.98 }}
             transition={sheetSpring}
-            className="relative max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl border border-white/20 bg-white/80 p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl backdrop-blur-xl sm:rounded-3xl dark:border-white/10 dark:bg-zinc-900/80"
+            className="relative flex max-h-[92dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-3xl border border-white/20 bg-white/80 shadow-2xl backdrop-blur-xl sm:rounded-3xl dark:border-white/10 dark:bg-zinc-900/80"
           >
-            <div className="mb-5 flex items-center justify-between gap-4">
+            <div aria-hidden className="mx-auto mt-2 h-1.5 w-10 shrink-0 rounded-full bg-zinc-900/15 sm:hidden dark:bg-white/20" />
+            <div className="flex shrink-0 items-center justify-between gap-4 px-6 pt-4 pb-4 sm:pt-6">
               <h2 id={titleId} className="text-xl font-semibold tracking-tight">
                 {title}
               </h2>
               <IconButton icon={X} label="Schliessen" onClick={onClose} className="-mr-2" />
             </div>
-            {children}
+            <div
+              className={cn(
+                'min-h-0 flex-1 overflow-y-auto overscroll-contain px-6',
+                footer ? 'pb-6' : 'pb-[max(1.5rem,env(safe-area-inset-bottom))]',
+              )}
+            >
+              {children}
+            </div>
+            {footer && (
+              <div className="shrink-0 border-t border-zinc-900/5 px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] dark:border-white/10">
+                {footer}
+              </div>
+            )}
           </motion.div>
         </div>
       )}
