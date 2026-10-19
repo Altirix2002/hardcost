@@ -28,6 +28,10 @@ export function formatDate(date: Date, withYear = false): string {
   }).format(date);
 }
 
+export function formatMonthName(date: Date): string {
+  return new Intl.DateTimeFormat(LOCALE, { month: 'long' }).format(date);
+}
+
 export function formatRelativeDays(days: number): string {
   if (days === 0) return 'heute';
   if (days === 1) return 'morgen';

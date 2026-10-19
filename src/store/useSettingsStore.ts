@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { db } from '../db/database';
 import { DEFAULT_SETTINGS } from '../db/seed';
-import { fetchLatestRates } from '../services/currency';
+import { fetchLatestRates, isRatesFresh } from '../services/currency';
 import type { ExchangeRates, ThemePreference, UserSettings } from '../types';
 
 interface SettingsState {
@@ -11,7 +11,8 @@ interface SettingsState {
   hydrate: () => Promise<void>;
   setTheme: (theme: ThemePreference) => Promise<void>;
   setBaseCurrency: (currency: string) => Promise<void>;
-  refreshRates: () => Promise<void>;
+  /** Lädt Kurse neu, sofern der Cache veraltet ist (oder `force`). */
+  refreshRates: (options?: { force?: boolean }) => Promise<void>;
 }
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
@@ -43,8 +44,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     await get().refreshRates();
   },
 
-  refreshRates: async () => {
-    const { baseCurrency } = get().settings;
+  refreshRates: async (options) => {
+    const { settings, rates: cached } = get();
+    if (!options?.force && cached?.base === settings.baseCurrency && isRatesFresh(cached)) return;
+
+    const { baseCurrency } = settings;
     try {
       const rates = await fetchLatestRates(baseCurrency);
       await db.exchangeRates.put(rates);

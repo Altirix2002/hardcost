@@ -9,7 +9,7 @@ interface SubscriptionLogoProps {
   shape: LogoShape;
   /** Hintergrundfarbe für das Initialen-Fallback. */
   color?: CategoryColor;
-  size?: 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg';
 }
 
 // Prozentwerte statt rounded-full, damit der Wechsel rund ⇄ Squircle weich morpht.
@@ -19,6 +19,7 @@ const SHAPE_CLASSES: Record<LogoShape, string> = {
 };
 
 const SIZE_CLASSES = {
+  sm: 'h-9 w-9 text-xs',
   md: 'h-12 w-12 text-base',
   lg: 'h-16 w-16 text-xl',
 } as const;

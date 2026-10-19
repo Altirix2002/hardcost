@@ -81,6 +81,7 @@ export interface ExchangeRates {
   base: string;
   date: string; // YYYY-MM-DD
   rates: Record<string, number>; // 1 base = x Zielwährung
+  fetchedAt?: number; // Zeitpunkt des Abrufs (ms); fehlt bei älteren Cache-Einträgen
 }
 
 // ─── Formular-Entwürfe ──────────────────────────────────────────────────────
@@ -138,3 +139,37 @@ export interface Charge {
   amount: number;
   currency: string;
 }
+
+/** Laufende Kosten aller aktiven Abos in der Basiswährung. */
+export interface CostSummary {
+  monthly: number;
+  yearly: number;
+  activeCount: number;
+  inactiveCount: number;
+  /** Währungen aktiver Abos, für die (noch) kein Kurs vorliegt. */
+  unconvertedCurrencies: string[];
+}
+
+/** Nächste noch einhaltbare Kündigungsfrist eines Abos. */
+export interface CancellationWindow {
+  deadline: Date; // letzter Tag zum Kündigen
+  renewalDate: Date; // Abbuchung, die damit verhindert wird
+  daysLeft: number;
+}
+
+export interface CancellationAlert {
+  subscription: Subscription;
+  window: CancellationWindow;
+}
+
+export interface UpcomingPayment {
+  subscription: Subscription;
+  date: Date;
+  amount: number; // in Basiswährung
+}
+
+// ─── Dashboard ──────────────────────────────────────────────────────────────
+
+export type SubscriptionSortKey = 'due' | 'cost' | 'name';
+
+export type SubscriptionStatusFilter = 'all' | 'active' | 'inactive';

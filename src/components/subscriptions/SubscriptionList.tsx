@@ -13,7 +13,7 @@ interface SubscriptionListProps {
 
 export function SubscriptionList({ subscriptions, categoriesById, baseCurrency, rates, onSelect }: SubscriptionListProps) {
   return (
-    <ul className="flex flex-col gap-3">
+    <ul className="grid gap-3 sm:grid-cols-2">
       <AnimatePresence initial={false}>
         {subscriptions.map((subscription, index) => (
           <motion.li
@@ -23,6 +23,7 @@ export function SubscriptionList({ subscriptions, categoriesById, baseCurrency, 
             animate={{ opacity: 1, y: 0, transition: { ...spring, delay: index * 0.04 } }}
             exit={{ opacity: 0, scale: 0.96 }}
             transition={spring}
+            className="h-full"
           >
             <SubscriptionCard
               subscription={subscription}

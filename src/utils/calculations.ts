@@ -1,5 +1,18 @@
-import type { BillingCycle, Charge, ExchangeRates, PriceInterval, Subscription } from '../types';
+import type {
+  BillingCycle,
+  CancellationAlert,
+  CancellationWindow,
+  Charge,
+  CostSummary,
+  ExchangeRates,
+  PriceInterval,
+  Subscription,
+  UpcomingPayment,
+} from '../types';
 import { addDays, addMonthsClamped, daysBetween, parseISODate, startOfDay, toISODate } from './dates';
+
+/** Ab so vielen Tagen vor Fristende warnt das Kündigungsradar. */
+export const CANCELLATION_ALERT_DAYS = 14;
 
 /** Faktor, um einen Betrag pro Zyklus in ein Monatsäquivalent umzurechnen. */
 const MONTHLY_FACTOR: Record<BillingCycle, number> = {
@@ -50,6 +63,49 @@ export function getNextBillingDate(sub: Subscription, reference: Date = new Date
 /** Letzter Tag, an dem vor der nächsten Abbuchung noch gekündigt werden kann. */
 export function getCancellationDeadline(sub: Subscription, reference: Date = new Date()): Date {
   return addDays(getNextBillingDate(sub, reference), -sub.cancellationNoticeDays);
+}
+
+/**
+ * Nächste Kündigungsfrist, die sich noch einhalten lässt. Ist die Frist vor der
+ * nächsten Abbuchung schon verstrichen, zählt die Frist vor der übernächsten.
+ * Liefert null für inaktive oder bereits beendete Abos.
+ */
+export function getCancellationWindow(sub: Subscription, reference: Date = new Date()): CancellationWindow | null {
+  if (!sub.isActive || !getCurrentInterval(sub, reference)) return null;
+
+  const today = startOfDay(reference);
+  let renewalDate = getNextBillingDate(sub, today);
+  let deadline = addDays(renewalDate, -sub.cancellationNoticeDays);
+  while (deadline < today) {
+    renewalDate = getNextBillingDate(sub, addDays(renewalDate, 1));
+    deadline = addDays(renewalDate, -sub.cancellationNoticeDays);
+  }
+  return { deadline, renewalDate, daysLeft: daysBetween(today, deadline) };
+}
+
+/** Kündigungsalarm, falls die Frist innerhalb von `windowDays` abläuft (nur Abos mit Kündigungsfrist). */
+export function getCancellationAlert(
+  sub: Subscription,
+  reference: Date = new Date(),
+  windowDays: number = CANCELLATION_ALERT_DAYS,
+): CancellationWindow | null {
+  if (sub.cancellationNoticeDays <= 0) return null;
+  const window = getCancellationWindow(sub, reference);
+  return window && window.daysLeft <= windowDays ? window : null;
+}
+
+/** Alle anstehenden Kündigungsalarme, dringendste zuerst. */
+export function getCancellationAlerts(
+  subs: Subscription[],
+  reference: Date = new Date(),
+  windowDays: number = CANCELLATION_ALERT_DAYS,
+): CancellationAlert[] {
+  return subs
+    .flatMap((subscription) => {
+      const window = getCancellationAlert(subscription, reference, windowDays);
+      return window ? [{ subscription, window }] : [];
+    })
+    .sort((a, b) => a.window.daysLeft - b.window.daysLeft);
 }
 
 // ─── Preisintervalle (historientreu) ────────────────────────────────────────
@@ -109,13 +165,20 @@ export function convertCurrency(
   rates: ExchangeRates | null,
 ): number {
   if (from === to || !rates) return amount;
-  const rateOf = (currency: string): number | undefined =>
-    currency === rates.base ? 1 : rates.rates[currency];
-
-  const fromRate = rateOf(from);
-  const toRate = rateOf(to);
+  const fromRate = rateOf(from, rates);
+  const toRate = rateOf(to, rates);
   if (fromRate === undefined || toRate === undefined) return amount;
   return (amount / fromRate) * toRate;
+}
+
+function rateOf(currency: string, rates: ExchangeRates): number | undefined {
+  return currency === rates.base ? 1 : rates.rates[currency];
+}
+
+/** Ob sich `from` mit den vorhandenen Kursen in `to` umrechnen lässt. */
+export function canConvert(from: string, to: string, rates: ExchangeRates | null): boolean {
+  if (from === to) return true;
+  return rates !== null && rateOf(from, rates) !== undefined && rateOf(to, rates) !== undefined;
 }
 
 export function toMonthlyAmount(amount: number, cycle: BillingCycle): number {
@@ -135,6 +198,15 @@ export function getMonthlyCost(
   return toMonthlyAmount(convertCurrency(interval.amount, interval.currency, baseCurrency, rates), sub.billingCycle);
 }
 
+export function getYearlyCost(
+  sub: Subscription,
+  baseCurrency: string,
+  rates: ExchangeRates | null,
+  reference: Date = new Date(),
+): number {
+  return getMonthlyCost(sub, baseCurrency, rates, reference) * 12;
+}
+
 export function getTotalMonthlyCost(
   subs: Subscription[],
   baseCurrency: string,
@@ -142,6 +214,52 @@ export function getTotalMonthlyCost(
   reference: Date = new Date(),
 ): number {
   return subs.reduce((sum, sub) => sum + getMonthlyCost(sub, baseCurrency, rates, reference), 0);
+}
+
+/** Monats- und Jahreskosten aller aktiven Abos auf Basis des aktuell gültigen Preises. */
+export function getCostSummary(
+  subs: Subscription[],
+  baseCurrency: string,
+  rates: ExchangeRates | null,
+  reference: Date = new Date(),
+): CostSummary {
+  const active = subs.filter((sub) => sub.isActive);
+  const monthly = getTotalMonthlyCost(active, baseCurrency, rates, reference);
+
+  const unconverted = new Set<string>();
+  for (const sub of active) {
+    const interval = getCurrentInterval(sub, reference);
+    if (interval && !canConvert(interval.currency, baseCurrency, rates)) unconverted.add(interval.currency);
+  }
+
+  return {
+    monthly,
+    yearly: monthly * 12,
+    activeCount: active.length,
+    inactiveCount: subs.length - active.length,
+    unconvertedCurrencies: [...unconverted].sort(),
+  };
+}
+
+/** Die nächsten Abbuchungen aktiver Abos – mit dem Preis, der am Abbuchungstag gilt. */
+export function getUpcomingPayments(
+  subs: Subscription[],
+  baseCurrency: string,
+  rates: ExchangeRates | null,
+  reference: Date = new Date(),
+  limit = 3,
+): UpcomingPayment[] {
+  return subs
+    .filter((sub) => sub.isActive)
+    .flatMap((subscription) => {
+      const date = getNextBillingDate(subscription, reference);
+      const interval = getIntervalAt(subscription, date);
+      if (!interval) return [];
+      const amount = convertCurrency(interval.amount, interval.currency, baseCurrency, rates);
+      return [{ subscription, date, amount }];
+    })
+    .sort((a, b) => a.date.getTime() - b.date.getTime())
+    .slice(0, limit);
 }
 
 /**
