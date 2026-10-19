@@ -1,0 +1,90 @@
+import type { Category, Subscription, UserSettings } from '../types';
+
+export const DEFAULT_SETTINGS: UserSettings = {
+  baseCurrency: 'CHF',
+  theme: 'system',
+};
+
+export const DEFAULT_CATEGORIES: Category[] = [
+  { id: 'cat-streaming', name: 'Streaming', color: 'rose', isCustom: false },
+  { id: 'cat-music', name: 'Musik', color: 'violet', isCustom: false },
+  { id: 'cat-software', name: 'Software', color: 'sky', isCustom: false },
+  { id: 'cat-cloud', name: 'Cloud', color: 'teal', isCustom: false },
+  { id: 'cat-gaming', name: 'Gaming', color: 'emerald', isCustom: false },
+  { id: 'cat-news', name: 'News', color: 'amber', isCustom: false },
+  { id: 'cat-fitness', name: 'Fitness', color: 'lime', isCustom: false },
+  { id: 'cat-insurance', name: 'Versicherung', color: 'indigo', isCustom: false },
+  { id: 'cat-other', name: 'Sonstiges', color: 'slate', isCustom: false },
+];
+
+/** Beispiel-Abos, um das UI ohne Formular ausprobieren zu können. */
+export const DEMO_SUBSCRIPTIONS: Subscription[] = [
+  {
+    id: 'demo-netflix',
+    name: 'Netflix',
+    planName: 'Premium 4K',
+    categoryId: 'cat-streaming',
+    paymentMethod: 'Kreditkarte',
+    logoShape: 'squircle',
+    billingCycle: 'monthly',
+    firstBillingDate: '2023-01-12',
+    cancellationNoticeDays: 0,
+    isActive: true,
+    intervals: [
+      { id: 'demo-netflix-1', startDate: '2023-01-12', endDate: '2024-05-31', amount: 25.9, currency: 'CHF' },
+      { id: 'demo-netflix-2', startDate: '2024-06-01', endDate: null, amount: 27.9, currency: 'CHF' },
+    ],
+  },
+  {
+    id: 'demo-spotify',
+    name: 'Spotify',
+    planName: 'Family',
+    categoryId: 'cat-music',
+    paymentMethod: 'Twint',
+    logoShape: 'circle',
+    billingCycle: 'monthly',
+    firstBillingDate: '2022-08-03',
+    cancellationNoticeDays: 0,
+    isActive: true,
+    intervals: [{ id: 'demo-spotify-1', startDate: '2022-08-03', endDate: null, amount: 25.95, currency: 'CHF' }],
+  },
+  {
+    id: 'demo-icloud',
+    name: 'iCloud+',
+    planName: '2 TB',
+    categoryId: 'cat-cloud',
+    paymentMethod: 'Apple Pay',
+    logoShape: 'squircle',
+    billingCycle: 'monthly',
+    firstBillingDate: '2021-11-21',
+    cancellationNoticeDays: 0,
+    isActive: true,
+    intervals: [{ id: 'demo-icloud-1', startDate: '2021-11-21', endDate: null, amount: 9.9, currency: 'CHF' }],
+  },
+  {
+    id: 'demo-1password',
+    name: '1Password',
+    planName: 'Families',
+    categoryId: 'cat-software',
+    paymentMethod: 'Kreditkarte',
+    logoShape: 'squircle',
+    billingCycle: 'yearly',
+    firstBillingDate: '2023-11-02',
+    cancellationNoticeDays: 7,
+    isActive: true,
+    intervals: [{ id: 'demo-1password-1', startDate: '2023-11-02', endDate: null, amount: 59.88, currency: 'USD' }],
+  },
+  {
+    id: 'demo-fitness',
+    name: 'Fitnesspark',
+    planName: 'Jahresabo',
+    categoryId: 'cat-fitness',
+    paymentMethod: 'Rechnung',
+    logoShape: 'circle',
+    billingCycle: 'quarterly',
+    firstBillingDate: '2024-01-01',
+    cancellationNoticeDays: 60,
+    isActive: false,
+    intervals: [{ id: 'demo-fitness-1', startDate: '2024-01-01', endDate: '2025-06-30', amount: 249, currency: 'CHF' }],
+  },
+];
