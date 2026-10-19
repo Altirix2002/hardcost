@@ -40,6 +40,8 @@
 
 4\. \*\*Token-Disziplin:\*\* Vor dem Erstellen neuer UI-Komponenten bestehende Hilfsfunktionen wiederverwenden. Keine unaufgeforderten Gross-Refactorings.
 
+5\. \*\*Abschluss-Routine:\*\* Nach jeder abgeschlossenen Änderung oder Aufgabe immer selbstständig `npm run lint` und `npm run build` ausführen und direkt einen passenden Git-Commit erstellen. Schlägt Lint oder Build fehl, zuerst die Fehler beheben und erst dann committen.
+
 
 
 \## Wichtige Befehle
