@@ -54,3 +54,8 @@
 
 \- Vorschau: `npm run preview`
 
+
+## Offene Punkte & Ideen
+- Alle offenen Punkte, bekannten Einschränkungen und Feature-Vorschläge stehen in `ROADMAP.md`.
+- Fragt der Nutzer nach „den Punkten“ (z.B. „sag mir wieder die Punkte“), `ROADMAP.md` lesen und zusammenfassen.
+- Nach erledigten Aufgaben `ROADMAP.md` aktualisieren (abhaken bzw. unter „Erledigt“ eintragen, neue Punkte ergänzen).
