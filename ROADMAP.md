@@ -5,7 +5,7 @@ Stand: 20.10.2026. Erledigte Punkte abhaken (`[x]`) oder entfernen, neue unten e
 ## Offene Punkte
 
 - [ ] **Logo-Suche hängt an Gratis-Diensten** (Simple Icons, Clearbit Autocomplete, Favicone – siehe `src/services/logoSearch.ts`). Stand 20.10.2026 antworten alle noch. Clearbit Autocomplete gehört zu HubSpot: Das Logo-Feld liefert seit Sept. 2025 nichts mehr (wir nutzen dort nur Name + Domain), der Dienst kann ganz wegfallen. Empfehlung: Wechsel auf **Brandfetch** (Brand Search + Logo, gratis mit Client-ID, ohne Namensnennung, 500k Abrufe/Monat) – braucht ein kostenloses Konto des Nutzers. Ausweich-Lösung ohne Konto: Google-Favicon-Dienst als Fallback.
-- [ ] **Am echten Handy testen:** Die letzten Abos löschen (Radar-Einträge und Leer-Ansicht klappen jetzt weich), Wisch-Knöpfe sofort nach dem Wischen antippen.
+- [ ] **Am echten Handy testen:** Ganze Übersicht beim Löschen/Hinzufügen/Filtern – Kacheln rollen jetzt, Abstände klappen mit.
 
 ## Vorschläge
 
@@ -20,6 +20,9 @@ Stand: 20.10.2026. Erledigte Punkte abhaken (`[x]`) oder entfernen, neue unten e
 4. [ ] **Budget pro Kategorie** zusätzlich zum Gesamtbudget.
 
 ## Erledigt
+
+- [x] Wisch-Knöpfe reagieren sofort (am Handy bestätigt)
+- [x] Kacheln „Aktive Abos“/„Nächste Abbuchung“ rollen statt durch Zwischenwerte zu zählen; Radar und Backup-Hinweis tragen ihren Abstand selbst (kein 24-px-Sprung); sanftere, gestaffelte Ein-/Ausklapp-Animation; komplette Übersicht per Bild-für-Bild-Messung im Production-Build geprüft
 
 - [x] Weiteres Springen beim Löschen behoben: Radar-Einträge, Wechsel zur Leer-Ansicht und „Keine Treffer“ klappen weich; Backup-Erinnerung verschwindet nicht mehr mitten beim Löschen; Kennzahl-Karten ändern ihre Höhe nicht
 - [x] Wisch-Knöpfe reagieren sofort (lösen beim Loslassen des Fingers aus, nicht erst beim Klick, den Chrome nach einem Wischer verschluckt)

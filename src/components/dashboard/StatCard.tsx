@@ -8,7 +8,7 @@ interface StatCardProps {
   /** Text oder z.B. ein AnimatedCurrency-Ticker. */
   value: ReactNode;
   icon: LucideIcon;
-  hint?: string;
+  hint?: ReactNode;
   /** Macht die Karte antippbar (z.B. für eine Detailansicht). */
   onClick?: () => void;
   /** Reserviert Platz für zwei Hinweiszeilen, damit die Karte beim Textwechsel nicht springt. */
@@ -43,9 +43,9 @@ export function StatCard({ label, value, icon: Icon, hint, onClick, reserveHintL
         <span className="min-w-0 flex-1 truncate">{label}</span>
         {interactive && <ChevronRight className="-mr-1 h-4 w-4 shrink-0" aria-hidden />}
       </div>
-      <p className="mt-2 truncate text-2xl font-semibold tracking-tight">{value}</p>
+      <p className="relative mt-2 truncate text-2xl font-semibold tracking-tight">{value}</p>
       {hint && (
-        <p className={cn('mt-1 line-clamp-2 text-xs text-zinc-500 dark:text-zinc-400', reserveHintLines && 'min-h-8')}>
+        <p className={cn('relative mt-1 line-clamp-2 text-xs text-zinc-500 dark:text-zinc-400', reserveHintLines && 'min-h-8')}>
           {hint}
         </p>
       )}

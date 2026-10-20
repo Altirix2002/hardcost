@@ -6,7 +6,7 @@ import { useDashboardStore } from '../../store/useDashboardStore';
 import type { Category, ExchangeRates, Subscription } from '../../types';
 import { getCancellationAlerts, getCostSummary, getSpendForMonth, getUpcomingPayments } from '../../utils/calculations';
 import { formatMonthName } from '../../utils/format';
-import { collapseItemVariants } from '../../utils/motion';
+import { swapVariants } from '../../utils/motion';
 import { filterSubscriptions, searchSubscriptions, sortSubscriptions } from '../../utils/subscriptionList';
 import { SubscriptionList } from '../subscriptions/SubscriptionList';
 import { Button } from '../ui/Button';
@@ -103,7 +103,7 @@ export function Dashboard({
       <section>
         <AnimatePresence initial={false}>
           {subscriptions.length === 0 ? (
-            <motion.div key="empty" variants={collapseItemVariants} initial="hidden" animate="visible" exit="exit">
+            <motion.div key="empty" variants={swapVariants} initial="hidden" animate="visible" exit="exit">
               <EmptyState
                 icon={Sparkles}
                 title="Noch keine Abos erfasst"
@@ -121,21 +121,25 @@ export function Dashboard({
               />
             </motion.div>
           ) : (
-            <motion.div key="list" variants={collapseItemVariants} initial="hidden" animate="visible" exit="exit">
-              <div className="flex flex-col gap-3">
-                <SubscriptionToolbar
-                  count={visible.length}
-                  sortKey={sortKey}
-                  onSortChange={setSortKey}
-                  statusFilter={statusFilter}
-                  onStatusFilterChange={setStatusFilter}
-                />
-                <SubscriptionSearch value={searchQuery} onChange={setSearchQuery} />
+            <motion.div key="list" variants={swapVariants} initial="hidden" animate="visible" exit="exit">
+              {/* Kein gap um die Treffer: Beim Wechsel Treffer ↔ "Keine Treffer" sind kurz beide da –
+                  ein gap käme dabei sprunghaft dazu bzw. fiele weg. */}
+              <div>
+                <div className="flex flex-col gap-3 pb-3">
+                  <SubscriptionToolbar
+                    count={visible.length}
+                    sortKey={sortKey}
+                    onSortChange={setSortKey}
+                    statusFilter={statusFilter}
+                    onStatusFilterChange={setStatusFilter}
+                  />
+                  <SubscriptionSearch value={searchQuery} onChange={setSearchQuery} />
+                </div>
                 <AnimatePresence initial={false}>
                   {visible.length > 0 ? (
                     <motion.div
                       key="results"
-                      variants={collapseItemVariants}
+                      variants={swapVariants}
                       initial="hidden"
                       animate="visible"
                       exit="exit"
@@ -151,7 +155,7 @@ export function Dashboard({
                   ) : (
                     <motion.div
                       key="no-results"
-                      variants={collapseItemVariants}
+                      variants={swapVariants}
                       initial="hidden"
                       animate="visible"
                       exit="exit"

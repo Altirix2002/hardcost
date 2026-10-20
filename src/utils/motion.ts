@@ -23,8 +23,46 @@ export const softSpring: Transition = { type: 'spring', stiffness: 220, damping:
 /** Kurzer Micro-Bounce für Icons, Badges und Toasts. */
 export const bounceSpring: Transition = { type: 'spring', stiffness: 500, damping: 18 };
 
-/** Kritisch gedämpft: klappt weich zusammen, ohne unter 0 zu schwingen. */
-const collapse: Transition = { type: 'spring', stiffness: 320, damping: 38, mass: 0.9 };
+/**
+ * Kritisch gedämpft (schwingt nicht unter 0) und bewusst sanft: Klappen viele Einträge zugleich
+ * auf oder zu (z.B. beim Filtern), addieren sich ihre Höhen – die übrigen Karten sollen gleiten, nicht springen.
+ */
+const collapse: Transition = { type: 'spring', stiffness: 210, damping: 30, mass: 1 };
+
+/** Versatz zwischen gleichzeitig erscheinenden Einträgen. */
+const STAGGER = 0.06;
+
+function makeCollapseVariants(baseDelay: number): Variants {
+  return {
+    hidden: { opacity: 0, height: 0, scale: 0.96, overflow: 'hidden' },
+    visible: (index: number = 0) => {
+      const delay = baseDelay + Math.min(index, 8) * STAGGER;
+      return {
+        opacity: 1,
+        height: 'auto',
+        scale: 1,
+        overflow: 'hidden',
+        transitionEnd: { overflow: 'visible' },
+        transition: {
+          height: { ...collapse, delay },
+          scale: { ...spring, delay },
+          opacity: { duration: 0.25, ease: 'easeOut', delay },
+        },
+      };
+    },
+    exit: {
+      opacity: 0,
+      height: 0,
+      scale: 0.96,
+      overflow: 'hidden',
+      transition: {
+        height: { ...collapse, delay: baseDelay },
+        scale: { ...spring, delay: baseDelay },
+        opacity: { duration: 0.18, ease: 'easeOut', delay: baseDelay },
+      },
+    },
+  };
+}
 
 /**
  * Listeneinträge klappen beim Verschwinden auf Höhe 0 zusammen (und beim Erscheinen auf), statt aus
@@ -34,26 +72,11 @@ const collapse: Transition = { type: 'spring', stiffness: 320, damping: 38, mass
  * Framer beim Zusammenklappen herausrechnen). Überlauf ist nur während der Animation abgeschnitten.
  * `custom` = Index für eine leichte Staffelung beim Erscheinen.
  */
-export const collapseItemVariants: Variants = {
-  hidden: { opacity: 0, height: 0, scale: 0.96, overflow: 'hidden' },
-  visible: (index: number = 0) => ({
-    opacity: 1,
-    height: 'auto',
-    scale: 1,
-    overflow: 'hidden',
-    transitionEnd: { overflow: 'visible' },
-    transition: {
-      height: collapse,
-      scale: spring,
-      opacity: { duration: 0.25, ease: 'easeOut' },
-      delay: Math.min(index, 8) * 0.03,
-    },
-  }),
-  exit: {
-    opacity: 0,
-    height: 0,
-    scale: 0.96,
-    overflow: 'hidden',
-    transition: { height: collapse, scale: spring, opacity: { duration: 0.18, ease: 'easeOut' } },
-  },
-};
+export const collapseItemVariants = makeCollapseVariants(0);
+
+/**
+ * Wie collapseItemVariants, aber leicht verzögert – für grosse Wechsel (Leer-Ansicht ↔ ganze Liste).
+ * Das Einhängen vieler Karten macht das erste Bild langsam; ohne Verzögerung holt die Feder die
+ * verlorene Zeit in einem sichtbaren Sprung auf.
+ */
+export const swapVariants = makeCollapseVariants(0.06);

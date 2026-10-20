@@ -4,7 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { CostSummary, ExchangeRates } from '../../types';
 import { cn } from '../../utils/cn';
 import { parseISODate } from '../../utils/dates';
-import { formatCurrency, formatDate } from '../../utils/format';
+import { formatDate } from '../../utils/format';
 import { AnimatedCurrency } from '../ui/AnimatedCurrency';
 import { GlassCard } from '../ui/GlassCard';
 import { BudgetMeter } from './BudgetMeter';
@@ -27,7 +27,7 @@ interface HeroCardProps {
   icon: LucideIcon;
   value: number;
   currency: string;
-  hint: string;
+  hint: ReactNode;
   glowClassName: string;
   alert: boolean;
   children?: ReactNode;
@@ -80,7 +80,12 @@ export function CostHero({
           icon={Wallet}
           value={summary.monthly}
           currency={baseCurrency}
-          hint={`Abbuchungen im ${monthName}: ${formatCurrency(monthSpend, baseCurrency)}`}
+          // Kleine Beträge zählen im gleichen Takt wie die grosse Zahl, statt sofort zu springen.
+          hint={
+            <>
+              Abbuchungen im {monthName}: <AnimatedCurrency key={baseCurrency} value={monthSpend} currency={baseCurrency} />
+            </>
+          }
           glowClassName="bg-sky-400/30 dark:bg-sky-500/20"
           alert={alert}
         >
@@ -93,7 +98,11 @@ export function CostHero({
           icon={CalendarRange}
           value={summary.yearly}
           currency={baseCurrency}
-          hint={`≈ ${formatCurrency(summary.yearly / 365, baseCurrency)} pro Tag`}
+          hint={
+            <>
+              ≈ <AnimatedCurrency key={baseCurrency} value={summary.yearly / 365} currency={baseCurrency} /> pro Tag
+            </>
+          }
           glowClassName="bg-violet-400/30 dark:bg-violet-500/20"
           alert={alert}
         />

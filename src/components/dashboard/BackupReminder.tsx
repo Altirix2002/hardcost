@@ -61,29 +61,33 @@ export function BackupReminder({ lastBackupAt, subscriptionCount, onBackup }: Ba
           animate={{ opacity: 1, height: 'auto' }}
           exit={{ opacity: 0, height: 0 }}
           transition={sheetSpringWithFade}
-          className="overflow-hidden"
+          // Trägt seinen Abstand selbst (Polster innen, negativer Rand aussen): Beim Ein-/Ausklappen
+          // wächst bzw. schrumpft der 24-px-Abstand mit, statt beim Einfügen/Entfernen zu springen.
+          className="-mb-6 overflow-hidden"
         >
-          <div className="flex flex-col gap-3 rounded-3xl border border-sky-500/30 bg-sky-50/70 p-4 shadow-lg shadow-sky-900/5 inset-shadow-2xs inset-shadow-white/70 sm:flex-row sm:items-center sm:backdrop-blur-md dark:border-sky-400/20 dark:bg-sky-950/40 dark:inset-shadow-white/10">
-            <div className="flex min-w-0 flex-1 items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sky-500/15 text-sky-600 dark:text-sky-400">
-                <HardDriveDownload className="h-5 w-5" aria-hidden />
-              </span>
-              <div className="min-w-0">
-                <p className="font-semibold tracking-tight text-sky-950 dark:text-sky-100">
-                  {daysSince === null ? 'Noch kein Backup' : `Letztes Backup vor ${daysSince} Tagen`}
-                </p>
-                <p className="text-xs text-sky-900/70 dark:text-sky-200/70">
-                  Deine Abos liegen nur in diesem Browser – sichere sie, damit nichts verloren geht.
-                </p>
+          <div className="pb-6">
+            <div className="flex flex-col gap-3 rounded-3xl border border-sky-500/30 bg-sky-50/70 p-4 shadow-lg shadow-sky-900/5 inset-shadow-2xs inset-shadow-white/70 sm:flex-row sm:items-center sm:backdrop-blur-md dark:border-sky-400/20 dark:bg-sky-950/40 dark:inset-shadow-white/10">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sky-500/15 text-sky-600 dark:text-sky-400">
+                  <HardDriveDownload className="h-5 w-5" aria-hidden />
+                </span>
+                <div className="min-w-0">
+                  <p className="font-semibold tracking-tight text-sky-950 dark:text-sky-100">
+                    {daysSince === null ? 'Noch kein Backup' : `Letztes Backup vor ${daysSince} Tagen`}
+                  </p>
+                  <p className="text-xs text-sky-900/70 dark:text-sky-200/70">
+                    Deine Abos liegen nur in diesem Browser – sichere sie, damit nichts verloren geht.
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="flex shrink-0 justify-end gap-2">
-              <Button size="sm" variant="ghost" onClick={snooze}>
-                Später
-              </Button>
-              <Button size="sm" onClick={onBackup}>
-                Jetzt sichern
-              </Button>
+              <div className="flex shrink-0 justify-end gap-2">
+                <Button size="sm" variant="ghost" onClick={snooze}>
+                  Später
+                </Button>
+                <Button size="sm" onClick={onBackup}>
+                  Jetzt sichern
+                </Button>
+              </div>
             </div>
           </div>
         </motion.section>
