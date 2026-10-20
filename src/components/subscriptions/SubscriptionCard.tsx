@@ -1,4 +1,4 @@
-import { AlarmClock, CalendarClock, Lock, Moon, PauseCircle, Users } from 'lucide-react';
+import { AlarmClock, CalendarClock, CalendarX, Gift, Lock, Moon, PauseCircle, Users } from 'lucide-react';
 import type { Category, ExchangeRates, Subscription } from '../../types';
 import {
   getActiveCommitmentEnd,
@@ -6,13 +6,14 @@ import {
   getCurrentInterval,
   getMonthlyCost,
   getNextChargeDate,
-  getPausedMonthlySavings,
+  getRegularMonthlyCost,
 } from '../../utils/calculations';
-import { addDays, daysBetween } from '../../utils/dates';
+import { addDays, daysBetween, parseISODate } from '../../utils/dates';
 import { BILLING_CYCLE_SUFFIX, formatCurrency, formatDate, formatRelativeDays } from '../../utils/format';
 import { cn } from '../../utils/cn';
 import { getResumeDate, isPausedAt } from '../../utils/pauses';
 import { isZombie } from '../../utils/review';
+import { isActiveAt, isInTrialAt, isRunningOut } from '../../utils/status';
 import { Badge } from '../ui/Badge';
 import { GlassCard } from '../ui/GlassCard';
 import { SubscriptionLogo } from './SubscriptionLogo';
@@ -28,20 +29,32 @@ interface SubscriptionCardProps {
 
 export function SubscriptionCard({ subscription, category, baseCurrency, rates, onSelect }: SubscriptionCardProps) {
   const today = new Date();
-  const { isActive, billingCycle, split } = subscription;
+  const { billingCycle, split, endsOn, trialEndsAt } = subscription;
+  const isActive = isActiveAt(subscription, today);
   const isPaused = isActive && isPausedAt(subscription, today);
   const isRunning = isActive && !isPaused;
+  const inTrial = isActive && isInTrialAt(subscription, today);
+  const runningOut = isRunningOut(subscription, today);
   const interval = getCurrentInterval(subscription, today);
-  const monthly = isPaused
-    ? getPausedMonthlySavings(subscription, baseCurrency, rates, today)
-    : getMonthlyCost(subscription, baseCurrency, rates, today);
+  const isFree = interval?.amount === 0;
+  // Pause und Testphase: regulären Preis zeigen (durchgestrichen bzw. als "danach").
+  const monthly =
+    isPaused || inTrial
+      ? getRegularMonthlyCost(subscription, baseCurrency, rates, today)
+      : getMonthlyCost(subscription, baseCurrency, rates, today);
   const nextBilling = getNextChargeDate(subscription, today);
   const resumeDate = isPaused ? getResumeDate(subscription, today) : null;
   const alert = getCancellationAlert(subscription, today);
-  const commitmentEnd = isActive ? getActiveCommitmentEnd(subscription, today) : null;
+  // Bei Testphase ohne Kündigungsfrist sagt "Gratis bis …" bereits alles.
+  const showAlert = alert !== null && !(alert.endsTrial && subscription.cancellationNoticeDays === 0);
+  const commitmentEnd = isActive && !endsOn ? getActiveCommitmentEnd(subscription, today) : null;
   const zombie = isZombie(subscription, today);
   const showOriginalPrice =
-    interval !== undefined && (split !== undefined || interval.currency !== baseCurrency || billingCycle !== 'monthly');
+    interval !== undefined &&
+    !inTrial &&
+    !isFree &&
+    (split !== undefined || interval.currency !== baseCurrency || billingCycle !== 'monthly');
+  const hasBadges = showAlert || commitmentEnd !== null || inTrial || runningOut;
 
   return (
     <GlassCard
@@ -72,7 +85,16 @@ export function SubscriptionCard({ subscription, category, baseCurrency, rates, 
 
       <div className="mt-auto flex items-end justify-between gap-3">
         <div className="min-w-0">
-          {isActive && interval ? (
+          {isActive && interval && (inTrial || isFree) ? (
+            <>
+              <p className="text-xl font-semibold tracking-tight text-emerald-600 dark:text-emerald-400">Gratis</p>
+              {inTrial && !isFree && (
+                <p className="text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
+                  danach {formatCurrency(monthly, baseCurrency)}/Mt.
+                </p>
+              )}
+            </>
+          ) : isActive && interval ? (
             <p
               className={cn(
                 'text-xl font-semibold tracking-tight tabular-nums',
@@ -108,6 +130,14 @@ export function SubscriptionCard({ subscription, category, baseCurrency, rates, 
                 {formatRelativeDays(daysBetween(today, nextBilling))}
               </p>
             </>
+          ) : runningOut ? (
+            <>
+              <p className="inline-flex items-center gap-1 font-medium text-rose-600 dark:text-rose-400">
+                <CalendarX className="h-3.5 w-3.5" aria-hidden />
+                Läuft aus
+              </p>
+              <p>keine Abbuchung mehr</p>
+            </>
           ) : isPaused ? (
             <>
               <p className="inline-flex items-center gap-1 font-medium text-amber-700 dark:text-amber-400">
@@ -117,17 +147,30 @@ export function SubscriptionCard({ subscription, category, baseCurrency, rates, 
               <p>{resumeDate ? `bis ${formatDate(addDays(resumeDate, -1))}` : 'unbefristet'}</p>
             </>
           ) : (
-            <p className="inline-flex items-center gap-1">
-              <PauseCircle className="h-3.5 w-3.5" aria-hidden />
-              Inaktiv
-            </p>
+            <>
+              <p className="inline-flex items-center gap-1">
+                <PauseCircle className="h-3.5 w-3.5" aria-hidden />
+                {endsOn ? 'Beendet' : 'Inaktiv'}
+              </p>
+              {endsOn && <p>seit {formatDate(addDays(parseISODate(endsOn), 1), true)}</p>}
+            </>
           )}
         </div>
       </div>
 
-      {(alert || commitmentEnd) && (
+      {hasBadges && (
         <div className="-mt-1 flex flex-wrap gap-2">
-          {alert && (
+          {inTrial && trialEndsAt && (
+            <Badge color="sky" icon={Gift}>
+              Gratis bis {formatDate(parseISODate(trialEndsAt))}
+            </Badge>
+          )}
+          {runningOut && endsOn && (
+            <Badge color="rose" icon={CalendarX}>
+              Gekündigt · endet {formatDate(parseISODate(endsOn))}
+            </Badge>
+          )}
+          {showAlert && alert && (
             <Badge color="amber" icon={AlarmClock}>
               Kündigen bis {formatDate(alert.deadline)}
             </Badge>

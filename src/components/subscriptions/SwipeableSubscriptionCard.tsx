@@ -8,6 +8,7 @@ import { cn } from '../../utils/cn';
 import { triggerHaptic } from '../../utils/haptics';
 import { spring } from '../../utils/motion';
 import { isPausedAt } from '../../utils/pauses';
+import { isActiveAt } from '../../utils/status';
 import { SubscriptionCard } from './SubscriptionCard';
 
 type SwipeableSubscriptionCardProps = ComponentProps<typeof SubscriptionCard>;
@@ -35,6 +36,8 @@ export function SwipeableSubscriptionCard({ subscription, onSelect, ...cardProps
   const draggedRef = useRef(false);
   const pastThresholdRef = useRef(false);
   const paused = isPausedAt(subscription);
+  // Gekündigte oder beendete Abos lassen sich nicht mehr pausieren.
+  const canPause = isActiveAt(subscription) && subscription.endsOn === undefined;
 
   const x = useMotionValue(0);
   const actionsOpacity = useTransform(x, [-ACTIONS_WIDTH, REVEAL_START], [1, 0]);
@@ -101,7 +104,7 @@ export function SwipeableSubscriptionCard({ subscription, onSelect, ...cardProps
         style={{ opacity: actionsOpacity, scale: actionsScale }}
         className="absolute inset-y-0 right-0 flex origin-right items-center justify-end gap-3 pr-2"
       >
-        {subscription.isActive && (
+        {canPause && (
           <div className="flex flex-col items-center gap-1">
             <button
               type="button"

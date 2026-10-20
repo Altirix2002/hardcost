@@ -83,6 +83,10 @@ export interface Subscription {
   minimumCommitmentUntil?: string; // YYYY-MM-DD
   /** Wann das Abo zuletzt bewusst geprüft bzw. bearbeitet wurde (Zombie-Erkennung). */
   lastReviewedAt?: string; // YYYY-MM-DD
+  /** Gratis-Testphase: letzter kostenloser Tag – Abbuchungen bis dahin entfallen. */
+  trialEndsAt?: string; // YYYY-MM-DD
+  /** Gekündigt: letzter Tag, an dem das Abo noch läuft – danach keine Abbuchungen mehr. */
+  endsOn?: string; // YYYY-MM-DD
 }
 
 export interface Category {
@@ -153,8 +157,12 @@ export interface SubscriptionDraft {
   cancellationNoticeDays: string;
   currency: string; // Standardwährung für neue Preisintervalle
   intervals: PriceIntervalDraft[];
-  isActive: boolean;
   notes: string;
+  isTrial: boolean;
+  trialEndsAt: string;
+  /** Gekündigt; ohne `endsOn` gilt das Abo als bereits beendet (inaktiv). */
+  isCancelled: boolean;
+  endsOn: string;
   isShared: boolean;
   splitType: CostSplitType;
   splitPeople: string; // Anzahl Personen inkl. dir
@@ -175,7 +183,9 @@ export type DraftField =
   | 'splitPeople'
   | 'splitAmount'
   | 'pausedUntil'
-  | 'minimumCommitmentUntil';
+  | 'minimumCommitmentUntil'
+  | 'trialEndsAt'
+  | 'endsOn';
 
 export type IntervalField = 'startDate' | 'endDate' | 'amount' | 'currency';
 
@@ -220,6 +230,8 @@ export interface CancellationWindow {
   daysLeft: number;
   /** Die Frist beendet gleichzeitig die Mindestlaufzeit. */
   endsCommitment: boolean;
+  /** Die Frist ist das Ende einer Gratis-Testphase. */
+  endsTrial: boolean;
 }
 
 export interface CancellationAlert {

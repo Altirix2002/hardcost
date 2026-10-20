@@ -76,6 +76,21 @@ export const DEMO_SUBSCRIPTIONS: Subscription[] = [
     intervals: [{ id: 'demo-1password-1', startDate: '2023-11-02', endDate: null, amount: 59.88, currency: 'USD' }],
   },
   {
+    id: 'demo-disney',
+    name: 'Disney+',
+    planName: 'Standard',
+    categoryId: 'cat-streaming',
+    paymentMethod: 'Kreditkarte',
+    logoShape: 'squircle',
+    billingCycle: 'monthly',
+    // Datumswerte setzt loadDemoSubscriptions relativ zu heute (Testphase endet in ein paar Tagen).
+    firstBillingDate: '2026-01-01',
+    cancellationNoticeDays: 0,
+    isActive: true,
+    trialEndsAt: '2026-01-07',
+    intervals: [{ id: 'demo-disney-1', startDate: '2026-01-01', endDate: null, amount: 12.9, currency: 'CHF' }],
+  },
+  {
     id: 'demo-fitness',
     name: 'Fitnesspark',
     planName: 'Jahresabo',

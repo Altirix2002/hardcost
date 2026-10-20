@@ -1,6 +1,7 @@
 import type { Category, ExchangeRates, Subscription, SubscriptionSortKey, SubscriptionStatusFilter } from '../types';
 import { getMonthlyCost, getNextChargeDate } from './calculations';
 import { isPausedAt, isRunning } from './pauses';
+import { isActiveAt } from './status';
 
 const collator = new Intl.Collator('de-CH', { sensitivity: 'base' });
 
@@ -15,9 +16,9 @@ export function filterSubscriptions(
     case 'active':
       return subs.filter((sub) => isRunning(sub, reference));
     case 'paused':
-      return subs.filter((sub) => sub.isActive && isPausedAt(sub, reference));
+      return subs.filter((sub) => isActiveAt(sub, reference) && isPausedAt(sub, reference));
     case 'inactive':
-      return subs.filter((sub) => !sub.isActive);
+      return subs.filter((sub) => !isActiveAt(sub, reference));
   }
 }
 
@@ -47,7 +48,7 @@ export function searchSubscriptions(
 
 /** Reihenfolge der Status beim Sortieren: laufend, pausiert, inaktiv. */
 function statusRank(sub: Subscription, reference: Date): number {
-  if (!sub.isActive) return 2;
+  if (!isActiveAt(sub, reference)) return 2;
   return isPausedAt(sub, reference) ? 1 : 0;
 }
 

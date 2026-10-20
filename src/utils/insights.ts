@@ -2,7 +2,6 @@ import type { ExchangeRates, PriceHike, SavingsSimulation, Subscription, Wrapped
 import {
   convertCurrency,
   getChargesInRange,
-  getIntervalAt,
   getMonthlyCost,
   getNextBillingDate,
   getOwnAmount,
@@ -44,8 +43,8 @@ export function simulateSavings(
 // ─── SubPulse Wrapped ───────────────────────────────────────────────────────
 
 /**
- * Hätte ein gekündigtes Abo nach seinem letzten Preis weiterlaufen, wären diese Beträge angefallen.
- * Nur messbar, wenn der letzte Preis ein Enddatum hat (sonst ist das Kündigungsdatum unbekannt).
+ * Hätte ein gekündigtes Abo nach seinem letzten Preis weitergelaufen, wären diese Beträge angefallen.
+ * Messbar über das Kündigungs-Enddatum oder – bei älteren Daten – das Enddatum des letzten Preises.
  */
 function getAvoidedByCancellation(
   sub: Subscription,
@@ -54,18 +53,18 @@ function getAvoidedByCancellation(
   baseCurrency: string,
   rates: ExchangeRates | null,
 ): number {
-  if (sub.isActive) return 0;
   const last = [...sub.intervals].sort((a, b) => a.startDate.localeCompare(b.startDate)).at(-1);
-  if (!last?.endDate) return 0;
-  const endedOn = parseISODate(last.endDate);
+  const endedOnIso = sub.endsOn ?? (sub.isActive ? undefined : last?.endDate);
+  if (!last || !endedOnIso) return 0;
+  const endedOn = parseISODate(endedOnIso);
   if (endedOn >= end) return 0;
 
   const own = convertCurrency(getOwnAmount(sub, last.amount), last.currency, baseCurrency, rates);
   let total = 0;
   let date = getNextBillingDate(sub, endedOn >= start ? addDays(endedOn, 1) : start);
   while (date <= end) {
-    // Abbuchungen nach dem Ende hätten den letzten Preis gekostet; vor dem Zeitraum zählt nichts.
-    if (!getIntervalAt(sub, date)) total += own;
+    // Jede Abbuchung nach dem Ende hätte den letzten Preis gekostet.
+    total += own;
     date = getNextBillingDate(sub, addDays(date, 1));
   }
   return total;

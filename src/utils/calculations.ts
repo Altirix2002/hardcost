@@ -22,6 +22,7 @@ import type {
 } from '../types';
 import { addDays, addMonthsClamped, daysBetween, parseISODate, startOfDay, toISODate } from './dates';
 import { getPauseAt, isPausedAt, isRunning } from './pauses';
+import { getTrialEnd, hasEndedAt, isActiveAt, isBillableAt, isInTrialAt } from './status';
 
 /** Ab so vielen Tagen vor Fristende warnt das Kündigungsradar. */
 export const CANCELLATION_ALERT_DAYS = 14;
@@ -73,16 +74,18 @@ export function getNextBillingDate(sub: Subscription, reference: Date = new Date
 }
 
 /**
- * Nächste tatsächliche Abbuchung am oder nach `reference` – Pausen werden übersprungen.
- * Liefert null, solange das Abo unbefristet pausiert ist.
+ * Nächste tatsächliche Abbuchung am oder nach `reference` – Testphase und Pausen werden
+ * übersprungen. Liefert null, solange das Abo unbefristet pausiert ist oder wenn es vor der
+ * nächsten Abbuchung endet (gekündigt).
  */
 export function getNextChargeDate(sub: Subscription, reference: Date = new Date()): Date | null {
-  let date = getNextBillingDate(sub, reference);
+  const trialEnd = getTrialEnd(sub);
+  let date = getNextBillingDate(sub, trialEnd && trialEnd > reference ? trialEnd : reference);
   for (let pause = getPauseAt(sub, date); pause; pause = getPauseAt(sub, date)) {
     if (pause.endDate === null) return null;
     date = getNextBillingDate(sub, addDays(parseISODate(pause.endDate), 1));
   }
-  return date;
+  return hasEndedAt(sub, date) ? null : date;
 }
 
 /** Letzter Tag, an dem vor der nächsten Abbuchung noch gekündigt werden kann. */
@@ -105,11 +108,23 @@ export function getActiveCommitmentEnd(sub: Subscription, reference: Date = new 
  * Liefert null für inaktive, pausierte oder bereits beendete Abos.
  */
 export function getCancellationWindow(sub: Subscription, reference: Date = new Date()): CancellationWindow | null {
-  if (!isRunning(sub, reference) || !getCurrentInterval(sub, reference)) return null;
+  // Bereits gekündigte Abos brauchen keine Frist mehr.
+  if (sub.endsOn !== undefined || !isRunning(sub, reference) || !getCurrentInterval(sub, reference)) return null;
 
   const today = startOfDay(reference);
   const notice = sub.cancellationNoticeDays;
   let from = today;
+
+  // Testphase: Kündigen vor der ersten kostenpflichtigen Abbuchung.
+  if (sub.trialEndsAt && isInTrialAt(sub, today)) {
+    const trialEnd = parseISODate(sub.trialEndsAt);
+    const renewalDate = getNextChargeDate(sub, today) ?? addDays(trialEnd, 1);
+    const deadline = addDays(trialEnd, -notice);
+    if (deadline >= today) {
+      return { deadline, renewalDate, daysLeft: daysBetween(today, deadline), endsCommitment: false, endsTrial: true };
+    }
+    from = renewalDate;
+  }
 
   const commitmentEnd = getActiveCommitmentEnd(sub, today);
   if (commitmentEnd) {
@@ -117,7 +132,7 @@ export function getCancellationWindow(sub: Subscription, reference: Date = new D
     const renewalDate = getNextBillingDate(sub, addDays(commitmentEnd, 1));
     const deadline = addDays(commitmentEnd, -notice);
     if (deadline >= today) {
-      return { deadline, renewalDate, daysLeft: daysBetween(today, deadline), endsCommitment: true };
+      return { deadline, renewalDate, daysLeft: daysBetween(today, deadline), endsCommitment: true, endsTrial: false };
     }
     from = renewalDate;
   }
@@ -128,7 +143,7 @@ export function getCancellationWindow(sub: Subscription, reference: Date = new D
     renewalDate = getNextBillingDate(sub, addDays(renewalDate, 1));
     deadline = addDays(renewalDate, -notice);
   }
-  return { deadline, renewalDate, daysLeft: daysBetween(today, deadline), endsCommitment: false };
+  return { deadline, renewalDate, daysLeft: daysBetween(today, deadline), endsCommitment: false, endsTrial: false };
 }
 
 /**
@@ -140,7 +155,9 @@ export function getCancellationAlert(
   reference: Date = new Date(),
   windowDays: number = CANCELLATION_ALERT_DAYS,
 ): CancellationWindow | null {
-  if (sub.cancellationNoticeDays <= 0 && !getActiveCommitmentEnd(sub, reference)) return null;
+  const hasDeadline =
+    sub.cancellationNoticeDays > 0 || getActiveCommitmentEnd(sub, reference) !== null || isInTrialAt(sub, reference);
+  if (!hasDeadline) return null;
   const window = getCancellationWindow(sub, reference);
   return window && window.daysLeft <= windowDays ? window : null;
 }
@@ -210,7 +227,7 @@ function collectCharges(sub: Subscription, start: Date, end: Date, paused: boole
   let n = from > first ? estimateCycleIndex(first, sub.billingCycle, from) : 0;
   let date = getBillingDate(first, sub.billingCycle, n);
   while (date <= to) {
-    if (date >= from && isPausedAt(sub, date) === paused) {
+    if (date >= from && isBillableAt(sub, date) && isPausedAt(sub, date) === paused) {
       const interval = getIntervalAt(sub, date);
       if (interval) {
         charges.push({
@@ -273,14 +290,26 @@ function getMonthlyPrice(
   return toMonthlyAmount(convertCurrency(own, interval.currency, baseCurrency, rates), sub.billingCycle);
 }
 
-/** Monatsäquivalent des eigenen Anteils in der Basiswährung (0 bei inaktiven oder pausierten Abos). */
+/** Monatsäquivalent des eigenen Anteils in der Basiswährung (0 bei inaktiven, pausierten oder Gratis-Abos). */
 export function getMonthlyCost(
   sub: Subscription,
   baseCurrency: string,
   rates: ExchangeRates | null,
   reference: Date = new Date(),
 ): number {
-  return isRunning(sub, reference) ? getMonthlyPrice(sub, baseCurrency, rates, reference) : 0;
+  return isRunning(sub, reference) && !isInTrialAt(sub, reference)
+    ? getMonthlyPrice(sub, baseCurrency, rates, reference)
+    : 0;
+}
+
+/** Regulärer Preis als Monatsäquivalent, auch wenn gerade nichts anfällt (Testphase, Pause). */
+export function getRegularMonthlyCost(
+  sub: Subscription,
+  baseCurrency: string,
+  rates: ExchangeRates | null,
+  reference: Date = new Date(),
+): number {
+  return isActiveAt(sub, reference) ? getMonthlyPrice(sub, baseCurrency, rates, reference) : 0;
 }
 
 /** Was ein pausiertes Abo regulär kosten würde – zeigt die Ersparnis der Pause. */
@@ -290,7 +319,7 @@ export function getPausedMonthlySavings(
   rates: ExchangeRates | null,
   reference: Date = new Date(),
 ): number {
-  return sub.isActive && isPausedAt(sub, reference) ? getMonthlyPrice(sub, baseCurrency, rates, reference) : 0;
+  return isActiveAt(sub, reference) && isPausedAt(sub, reference) ? getMonthlyPrice(sub, baseCurrency, rates, reference) : 0;
 }
 
 export function getYearlyCost(
@@ -319,7 +348,7 @@ export function getCostSummary(
   reference: Date = new Date(),
 ): CostSummary {
   const active = subs.filter((sub) => isRunning(sub, reference));
-  const pausedCount = subs.filter((sub) => sub.isActive && isPausedAt(sub, reference)).length;
+  const pausedCount = subs.filter((sub) => isActiveAt(sub, reference) && isPausedAt(sub, reference)).length;
   const monthly = getTotalMonthlyCost(active, baseCurrency, rates, reference);
 
   const unconverted = new Set<string>();
@@ -347,7 +376,7 @@ export function getUpcomingPayments(
   limit = 3,
 ): UpcomingPayment[] {
   return subs
-    .filter((sub) => sub.isActive)
+    .filter((sub) => isActiveAt(sub, reference))
     .flatMap((subscription) => {
       const date = getNextChargeDate(subscription, reference);
       const interval = date && getIntervalAt(subscription, date);
@@ -502,7 +531,7 @@ export function getPriceHikes(
 ): PriceHike[] {
   const today = toISODate(reference);
   return subs.flatMap((subscription) => {
-    if (!subscription.isActive || subscription.intervals.length < 2) return [];
+    if (!isActiveAt(subscription, reference) || subscription.intervals.length < 2) return [];
     const sorted = [...subscription.intervals].sort((a, b) => a.startDate.localeCompare(b.startDate));
     const currentIndex = sorted.filter((i) => i.startDate <= today).length - 1;
     const upcoming = currentIndex >= 0 ? sorted[currentIndex + 1] : undefined;
@@ -631,7 +660,7 @@ export function getLifetimeCost(
 
   for (let n = 0, date = since; date <= today; n += 1, date = getBillingDate(since, sub.billingCycle, n)) {
     const interval = getIntervalAt(sub, date);
-    if (!interval) continue;
+    if (!interval || !isBillableAt(sub, date)) continue;
     const amount = convertCurrency(getOwnAmount(sub, interval.amount), interval.currency, baseCurrency, rates);
     if (isPausedAt(sub, date)) {
       result.skippedCharges += 1;

@@ -1,6 +1,7 @@
 import type { PausePeriod, Subscription } from '../types';
 import { addDays, parseISODate, startOfDay, toISODate } from './dates';
 import { createId } from './id';
+import { isActiveAt } from './status';
 
 /** Pause, die am angegebenen Datum gilt. */
 export function getPauseAt(sub: Subscription, date: Date): PausePeriod | undefined {
@@ -13,9 +14,9 @@ export function isPausedAt(sub: Subscription, date: Date = new Date()): boolean 
   return getPauseAt(sub, date) !== undefined;
 }
 
-/** Aktiv und nicht pausiert – nur solche Abos verursachen laufende Kosten. */
+/** Aktiv (bzw. gekündigt, aber noch nicht beendet) und nicht pausiert. */
 export function isRunning(sub: Subscription, date: Date = new Date()): boolean {
-  return sub.isActive && !isPausedAt(sub, date);
+  return isActiveAt(sub, date) && !isPausedAt(sub, date);
 }
 
 /** Erster Tag nach der aktuellen Pause (null = unbefristet bzw. nicht pausiert). */

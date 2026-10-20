@@ -61,8 +61,11 @@ export function createEmptyDraft(currency: string, today: Date = new Date()): Su
     cancellationNoticeDays: '0',
     currency,
     intervals: [{ id: createId(), startDate: start, endDate: '', amount: '', currency }],
-    isActive: true,
     notes: '',
+    isTrial: false,
+    trialEndsAt: '',
+    isCancelled: false,
+    endsOn: '',
     isShared: false,
     splitType: 'equal',
     splitPeople: '2',
@@ -102,8 +105,12 @@ export function subscriptionToDraft(
     cancellationNoticeDays: String(sub.cancellationNoticeDays),
     currency: current?.currency ?? fallbackCurrency,
     intervals,
-    isActive: sub.isActive,
     notes: sub.notes ?? '',
+    isTrial: sub.trialEndsAt !== undefined,
+    trialEndsAt: sub.trialEndsAt ?? '',
+    // Ältere, einfach deaktivierte Abos erscheinen als "gekündigt, bereits beendet".
+    isCancelled: !sub.isActive || sub.endsOn !== undefined,
+    endsOn: sub.endsOn ?? '',
     isShared: sub.split !== undefined,
     splitType: sub.split?.type ?? 'equal',
     splitPeople: sub.split?.type === 'equal' ? String(sub.split.people) : '2',
@@ -144,7 +151,10 @@ export function draftToSubscription(draft: SubscriptionDraft, today: Date = new 
       amount: parseAmount(interval.amount) ?? 0,
       currency: interval.currency,
     })),
-    isActive: draft.isActive,
+    // Gekündigt ohne Enddatum = bereits beendet; mit Enddatum läuft das Abo bis dahin weiter.
+    isActive: !draft.isCancelled || draft.endsOn !== '',
+    endsOn: draft.isCancelled ? optional(draft.endsOn) : undefined,
+    trialEndsAt: draft.isTrial ? optional(draft.trialEndsAt) : undefined,
     notes: optional(draft.notes),
     split: draftToSplit(draft),
     pauses: draft.pauses,
@@ -155,7 +165,7 @@ export function draftToSubscription(draft: SubscriptionDraft, today: Date = new 
 
   // Pause fortschreiben: neue Pause ab heute, Ende anpassen oder laufende Pause beenden.
   const withPause =
-    draft.isActive && draft.isPaused
+    !draft.isCancelled && draft.isPaused
       ? pauseSubscription(subscription, draft.pausedUntil === '' ? null : draft.pausedUntil, today)
       : resumeSubscription(subscription, today);
   return { ...withPause, pauses: withPause.pauses?.length ? withPause.pauses : undefined };
@@ -193,7 +203,9 @@ export function validateDraft(draft: SubscriptionDraft, today: Date = new Date()
       fields.minimumCommitmentUntil = 'Liegt vor der ersten Abbuchung.';
     }
   }
-  if (draft.isActive && draft.isPaused && draft.pausedUntil !== '') {
+  if (draft.isTrial && !isValidISODate(draft.trialEndsAt)) fields.trialEndsAt = 'Bitte das Ende der Testphase wählen.';
+  if (draft.isCancelled && draft.endsOn !== '' && !isValidISODate(draft.endsOn)) fields.endsOn = 'Ungültiges Datum.';
+  if (!draft.isCancelled && draft.isPaused && draft.pausedUntil !== '') {
     if (!isValidISODate(draft.pausedUntil)) fields.pausedUntil = 'Ungültiges Datum.';
     else if (draft.pausedUntil < toISODate(today)) fields.pausedUntil = 'Liegt in der Vergangenheit.';
   }
@@ -209,7 +221,7 @@ export function validateDraft(draft: SubscriptionDraft, today: Date = new Date()
     }
 
     const amount = parseAmount(interval.amount);
-    if (amount === null || amount <= 0) flag(interval.id, 'amount', 'Betrag grösser als 0.');
+    if (amount === null) flag(interval.id, 'amount', 'Betrag ab 0 (0 = gratis).');
     if (!isSupportedCurrency(interval.currency)) flag(interval.id, 'currency', 'Unbekannte Währung.');
 
     const next = sorted[index + 1];
@@ -223,6 +235,24 @@ export function validateDraft(draft: SubscriptionDraft, today: Date = new Date()
 }
 
 // ─── Entwurfs-Operationen ───────────────────────────────────────────────────
+
+/**
+ * Kopie als neues, noch nicht gespeichertes Abo: neue IDs, ohne Pausen, Kündigung und
+ * Prüfdatum – Dokumente bleiben beim Original.
+ */
+export function duplicateDraft(draft: SubscriptionDraft): SubscriptionDraft {
+  return {
+    ...draft,
+    id: createId(),
+    name: `${draft.name.trim()} (Kopie)`,
+    intervals: draft.intervals.map((interval) => ({ ...interval, id: createId() })),
+    isPaused: false,
+    pausedUntil: '',
+    pauses: [],
+    isCancelled: false,
+    endsOn: '',
+  };
+}
 
 /** Ändert das erste Abrechnungsdatum und zieht den Start eines einzelnen, noch synchronen Preises mit. */
 export function setFirstBillingDate(draft: SubscriptionDraft, date: string): SubscriptionDraft {

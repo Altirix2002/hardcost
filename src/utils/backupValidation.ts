@@ -60,7 +60,9 @@ function isSubscription(value: unknown): value is Subscription {
     (value.split === undefined || isCostSplit(value.split)) &&
     (value.pauses === undefined || (Array.isArray(value.pauses) && value.pauses.every(isPausePeriod))) &&
     (value.minimumCommitmentUntil === undefined || isDate(value.minimumCommitmentUntil)) &&
-    (value.lastReviewedAt === undefined || isDate(value.lastReviewedAt))
+    (value.lastReviewedAt === undefined || isDate(value.lastReviewedAt)) &&
+    (value.trialEndsAt === undefined || isDate(value.trialEndsAt)) &&
+    (value.endsOn === undefined || isDate(value.endsOn))
   );
 }
 

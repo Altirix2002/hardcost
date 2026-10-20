@@ -28,7 +28,6 @@ import { Modal } from '../../ui/Modal';
 import { Select } from '../../ui/Select';
 import { TextArea } from '../../ui/TextArea';
 import { TextField } from '../../ui/TextField';
-import { Toggle } from '../../ui/Toggle';
 import { DocumentManager } from '../../documents/DocumentManager';
 import { CategoryPicker } from './CategoryPicker';
 import { LifetimeCostPanel } from './LifetimeCostPanel';
@@ -37,6 +36,7 @@ import { PauseEditor } from './PauseEditor';
 import { PaymentMethodPicker } from './PaymentMethodPicker';
 import { PriceIntervalEditor } from './PriceIntervalEditor';
 import { SplitEditor } from './SplitEditor';
+import { CancellationEditor, TrialEditor } from './StatusEditors';
 
 interface SubscriptionFormModalProps {
   open: boolean;
@@ -56,6 +56,7 @@ const NO_ERRORS: DraftValidation = { isValid: true, fields: {}, intervals: {} };
 
 /** Text der Bestätigung nach dem Speichern, z.B. "Netflix bis 1. Nov. pausiert". */
 function describeSave(sub: Subscription, isEditing: boolean): string {
+  if (sub.endsOn) return `${sub.name} gekündigt – läuft bis ${formatDate(parseISODate(sub.endsOn))}`;
   const pause = getPauseAt(sub, new Date());
   if (pause) return pause.endDate ? `${sub.name} bis ${formatDate(parseISODate(pause.endDate))} pausiert` : `${sub.name} pausiert`;
   return isEditing ? `${sub.name} gespeichert` : `${sub.name} hinzugefügt`;
@@ -293,15 +294,11 @@ export function SubscriptionFormModal({
           />
         </FormSection>
 
-        <FormSection title="Teilen & Pausieren">
+        <FormSection title="Status & Teilen">
+          <TrialEditor draft={draft} errors={errors.fields} onChange={patch} />
           <SplitEditor draft={draft} errors={errors.fields} onChange={patch} />
-          {draft.isActive && <PauseEditor draft={draft} errors={errors.fields} onChange={patch} />}
-          <Toggle
-            label="Aktiv"
-            description="Inaktive (gekündigte) Abos zählen nicht zu den laufenden Kosten."
-            checked={draft.isActive}
-            onChange={(isActive) => update('isActive', isActive)}
-          />
+          {!draft.isCancelled && <PauseEditor draft={draft} errors={errors.fields} onChange={patch} />}
+          <CancellationEditor draft={draft} errors={errors.fields} onChange={patch} />
         </FormSection>
 
         <FormSection

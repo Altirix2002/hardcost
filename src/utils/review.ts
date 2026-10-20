@@ -1,6 +1,7 @@
 import type { Subscription } from '../types';
 import { daysBetween, parseISODate, toISODate } from './dates';
 import { isRunning } from './pauses';
+import { isInTrialAt } from './status';
 
 /** Ab so vielen Tagen ohne Prüfung oder Änderung gilt ein laufendes Abo als mögliche Karteileiche. */
 export const ZOMBIE_AFTER_DAYS = 180;
@@ -20,9 +21,9 @@ export function getLastTouchedDate(sub: Subscription, reference: Date = new Date
   return candidates.reduce((latest, date) => (date > latest ? date : latest), sub.firstBillingDate);
 }
 
-/** Laufendes Abo, das seit über einem halben Jahr niemand angeschaut hat. */
+/** Laufendes Abo, das seit über einem halben Jahr niemand angeschaut hat (nicht gekündigt, nicht in Testphase). */
 export function isZombie(sub: Subscription, reference: Date = new Date()): boolean {
-  if (!isRunning(sub, reference)) return false;
+  if (!isRunning(sub, reference) || sub.endsOn !== undefined || isInTrialAt(sub, reference)) return false;
   return daysBetween(parseISODate(getLastTouchedDate(sub, reference)), reference) > ZOMBIE_AFTER_DAYS;
 }
 

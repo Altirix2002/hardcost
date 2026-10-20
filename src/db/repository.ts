@@ -1,5 +1,5 @@
 import type { Category, CategoryColor, StoredDocument, Subscription } from '../types';
-import { toISODate } from '../utils/dates';
+import { addDays, toISODate } from '../utils/dates';
 import { getDocumentType } from '../utils/documents';
 import { createId } from '../utils/id';
 import { db } from './database';
@@ -38,10 +38,27 @@ export async function restoreSubscription({ subscription, documents }: DeletedSu
 /** Diese Demo bleibt ungeprüft und zeigt so den Zombie-Hinweis. */
 const DEMO_ZOMBIE_ID = 'demo-icloud';
 
+/** Diese Demo steckt in einer Gratis-Testphase, die in wenigen Tagen endet. */
+const DEMO_TRIAL_ID = 'demo-disney';
+
 export async function loadDemoSubscriptions(): Promise<void> {
-  const today = toISODate(new Date());
+  const now = new Date();
+  const today = toISODate(now);
+  const trialStart = toISODate(addDays(now, -25));
   await db.subscriptions.bulkPut(
-    DEMO_SUBSCRIPTIONS.map((sub) => (sub.id === DEMO_ZOMBIE_ID ? sub : { ...sub, lastReviewedAt: today })),
+    DEMO_SUBSCRIPTIONS.map((sub) => {
+      if (sub.id === DEMO_ZOMBIE_ID) return sub;
+      if (sub.id === DEMO_TRIAL_ID) {
+        return {
+          ...sub,
+          firstBillingDate: trialStart,
+          trialEndsAt: toISODate(addDays(now, 4)),
+          intervals: sub.intervals.map((interval) => ({ ...interval, startDate: trialStart })),
+          lastReviewedAt: today,
+        };
+      }
+      return { ...sub, lastReviewedAt: today };
+    }),
   );
 }
 
