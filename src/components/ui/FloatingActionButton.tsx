@@ -6,15 +6,18 @@ interface FloatingActionButtonProps {
   icon: LucideIcon;
   label: string;
   onClick: () => void;
+  /** Gleiche layoutId wie das Fenster, das der Knopf öffnet (Morph-Animation). */
+  layoutId?: string;
 }
 
-export function FloatingActionButton({ icon: Icon, label, onClick }: FloatingActionButtonProps) {
+export function FloatingActionButton({ icon: Icon, label, onClick, layoutId }: FloatingActionButtonProps) {
   return (
     <motion.button
       type="button"
       aria-label={label}
       title={label}
       onClick={onClick}
+      layoutId={layoutId}
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       exit={{ scale: 0, opacity: 0 }}

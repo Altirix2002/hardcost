@@ -51,6 +51,11 @@ export function formatCompactNumber(value: number): string {
   return new Intl.NumberFormat(LOCALE, { notation: 'compact', maximumFractionDigits: 1 }).format(value);
 }
 
+/** Ganze Zahlen, z.B. Anzahl Abos (auch für Zwischenwerte eines Zählers). */
+export function formatInteger(value: number): string {
+  return String(Math.round(value));
+}
+
 export function formatPercent(share: number, fractionDigits = 0): string {
   return new Intl.NumberFormat(LOCALE, { style: 'percent', maximumFractionDigits: fractionDigits }).format(share);
 }

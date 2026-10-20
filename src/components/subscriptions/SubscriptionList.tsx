@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import type { Category, ExchangeRates, Subscription } from '../../types';
 import { springWithFade } from '../../utils/motion';
-import { SubscriptionCard } from './SubscriptionCard';
+import { SwipeableSubscriptionCard } from './SwipeableSubscriptionCard';
 
 interface SubscriptionListProps {
   subscriptions: Subscription[];
@@ -13,8 +13,9 @@ interface SubscriptionListProps {
 
 export function SubscriptionList({ subscriptions, categoriesById, baseCurrency, rates, onSelect }: SubscriptionListProps) {
   return (
-    <ul className="grid gap-3 sm:grid-cols-2">
-      <AnimatePresence initial={false}>
+    // popLayout: Verschwindet eine Karte (Filter, Löschen), gleiten die übrigen sofort nach.
+    <ul className="relative grid gap-3 sm:grid-cols-2">
+      <AnimatePresence initial={false} mode="popLayout">
         {subscriptions.map((subscription, index) => (
           <motion.li
             key={subscription.id}
@@ -25,7 +26,7 @@ export function SubscriptionList({ subscriptions, categoriesById, baseCurrency, 
             transition={springWithFade}
             className="h-full"
           >
-            <SubscriptionCard
+            <SwipeableSubscriptionCard
               subscription={subscription}
               category={categoriesById.get(subscription.categoryId)}
               baseCurrency={baseCurrency}

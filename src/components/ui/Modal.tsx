@@ -12,14 +12,20 @@ interface ModalProps {
   children: ReactNode;
   /** Bleibt sichtbar, während der Inhalt scrollt (z.B. Speichern-Buttons). */
   footer?: ReactNode;
+  /**
+   * Shared-Element-Morph: Das Fenster wächst aus dem Element mit derselben layoutId
+   * (z.B. dem Plus-Knopf) heraus und schrumpft beim Schliessen dorthin zurück.
+   */
+  layoutId?: string;
 }
 
 /** Spätestens dann ist die Schliess-Animation sicher vorbei. */
 const EXIT_FALLBACK_MS = 900;
 
 /** Bottom-Sheet auf Mobile, zentriertes Glas-Panel ab `sm`. */
-export function Modal({ open, onClose, title, children, footer }: ModalProps) {
+export function Modal({ open, onClose, title, children, footer, layoutId }: ModalProps) {
   const titleId = useId();
+  const morph = layoutId !== undefined;
   // Sicherheitsnetz: Bleibt die Exit-Animation hängen (z.B. wenn auf dem Handy gleichzeitig die
   // Tastatur einfährt), würde das Sheet sichtbar, aber tot stehen bleiben. Ein neuer Key für
   // AnimatePresence räumt es dann zuverlässig ab.
@@ -62,32 +68,43 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
-            initial={{ y: 48, opacity: 0 }}
+            layoutId={layoutId}
+            initial={morph ? { opacity: 1 } : { y: 48, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 48, opacity: 0 }}
+            exit={morph ? { opacity: 0, transition: { duration: 0.15 } } : { y: 48, opacity: 0 }}
             transition={sheetSpringWithFade}
             className="relative flex max-h-[92dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-3xl border border-white/20 bg-white/80 shadow-2xl backdrop-blur-xl sm:rounded-3xl dark:border-white/10 dark:bg-zinc-900/80"
           >
-            <div aria-hidden className="mx-auto mt-2 h-1.5 w-10 shrink-0 rounded-full bg-zinc-900/15 sm:hidden dark:bg-white/20" />
-            <div className="flex shrink-0 items-center justify-between gap-4 px-6 pt-4 pb-4 sm:pt-6">
-              <h2 id={titleId} className="text-xl font-semibold tracking-tight">
-                {title}
-              </h2>
-              <IconButton icon={X} label="Schliessen" onClick={onClose} className="-mr-2" />
-            </div>
-            <div
-              className={cn(
-                'min-h-0 flex-1 overflow-y-auto overscroll-contain px-6',
-                footer ? 'pb-6' : 'pb-[max(1.5rem,env(safe-area-inset-bottom))]',
-              )}
+            {/* Beim Morph ist der Inhalt kurz verzerrt – er blendet deshalb erst danach ein. */}
+            <motion.div
+              initial={morph ? { opacity: 0 } : false}
+              animate={{ opacity: 1, transition: { duration: 0.2, delay: morph ? 0.15 : 0 } }}
+              className="flex min-h-0 flex-1 flex-col"
             >
-              {children}
-            </div>
-            {footer && (
-              <div className="shrink-0 border-t border-zinc-900/5 px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] dark:border-white/10">
-                {footer}
+              <div
+                aria-hidden
+                className="mx-auto mt-2 h-1.5 w-10 shrink-0 rounded-full bg-zinc-900/15 sm:hidden dark:bg-white/20"
+              />
+              <div className="flex shrink-0 items-center justify-between gap-4 px-6 pt-4 pb-4 sm:pt-6">
+                <h2 id={titleId} className="text-xl font-semibold tracking-tight">
+                  {title}
+                </h2>
+                <IconButton icon={X} label="Schliessen" onClick={onClose} className="-mr-2" />
               </div>
-            )}
+              <div
+                className={cn(
+                  'min-h-0 flex-1 overflow-y-auto overscroll-contain px-6',
+                  footer ? 'pb-6' : 'pb-[max(1.5rem,env(safe-area-inset-bottom))]',
+                )}
+              >
+                {children}
+              </div>
+              {footer && (
+                <div className="shrink-0 border-t border-zinc-900/5 px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] dark:border-white/10">
+                  {footer}
+                </div>
+              )}
+            </motion.div>
           </motion.div>
         </div>
       )}

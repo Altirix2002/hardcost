@@ -1,9 +1,14 @@
 import { useId, useMemo, useState, type FormEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, Check, Trash2 } from 'lucide-react';
-import { createCategory, deleteSubscription, saveSubscription } from '../../../db/repository';
+import { createCategory, saveSubscription } from '../../../db/repository';
+import { deleteWithUndo } from '../../../services/subscriptionActions';
+import { showToast } from '../../../store/useToastStore';
 import type { Category, DraftValidation, ExchangeRates, Subscription, SubscriptionDraft } from '../../../types';
+import { parseISODate } from '../../../utils/dates';
+import { formatDate } from '../../../utils/format';
 import { BILLING_CYCLE_OPTIONS, CURRENCY_OPTIONS } from '../../../utils/options';
+import { getPauseAt } from '../../../utils/pauses';
 import {
   addPriceChange,
   createEmptyDraft,
@@ -41,9 +46,18 @@ interface SubscriptionFormModalProps {
   /** Vorschläge für die Zahlungsart, inkl. selbst eingetragener. */
   paymentMethods: string[];
   onClose: () => void;
+  /** Morph-Quelle (Plus-Knopf), nur beim Erfassen auf dem Desktop. */
+  layoutId?: string;
 }
 
 const NO_ERRORS: DraftValidation = { isValid: true, fields: {}, intervals: {} };
+
+/** Text der Bestätigung nach dem Speichern, z.B. "Netflix bis 1. Nov. pausiert". */
+function describeSave(sub: Subscription, isEditing: boolean): string {
+  const pause = getPauseAt(sub, new Date());
+  if (pause) return pause.endDate ? `${sub.name} bis ${formatDate(parseISODate(pause.endDate))} pausiert` : `${sub.name} pausiert`;
+  return isEditing ? `${sub.name} gespeichert` : `${sub.name} hinzugefügt`;
+}
 
 export function SubscriptionFormModal({
   open,
@@ -53,6 +67,7 @@ export function SubscriptionFormModal({
   rates,
   paymentMethods,
   onClose,
+  layoutId,
 }: SubscriptionFormModalProps) {
   const formId = useId();
   const isEditing = subscription !== null;
@@ -99,8 +114,9 @@ export function SubscriptionFormModal({
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     setSaving(true);
     setSaveError(null);
+    const saved = draftToSubscription(draft);
     try {
-      await saveSubscription(draftToSubscription(draft));
+      await saveSubscription(saved);
     } catch {
       setSaving(false);
       setSaveError('Speichern fehlgeschlagen – bitte nochmals versuchen.');
@@ -109,6 +125,7 @@ export function SubscriptionFormModal({
     // Erst zurücksetzen, dann schliessen: Das Sheet friert beim Ausblenden seinen letzten Zustand ein.
     setSaving(false);
     onClose();
+    showToast('success', describeSave(saved, isEditing));
   };
 
   const handleDelete = async () => {
@@ -116,8 +133,8 @@ export function SubscriptionFormModal({
       setConfirmDelete(true);
       return;
     }
-    await deleteSubscription(draft.id);
     onClose();
+    if (subscription) await deleteWithUndo(subscription);
   };
 
   const footer = (
@@ -150,7 +167,7 @@ export function SubscriptionFormModal({
       <div className="flex items-center gap-2">
         {isEditing && (
           <Button variant={confirmDelete ? 'danger' : 'ghost'} icon={Trash2} onClick={() => void handleDelete()}>
-            {confirmDelete ? 'Endgültig löschen' : 'Löschen'}
+            {confirmDelete ? 'Wirklich löschen?' : 'Löschen'}
           </Button>
         )}
         <div className="ml-auto flex gap-2">
@@ -166,7 +183,13 @@ export function SubscriptionFormModal({
   );
 
   return (
-    <Modal open={open} onClose={onClose} title={isEditing ? 'Abo bearbeiten' : 'Neues Abo'} footer={footer}>
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={isEditing ? 'Abo bearbeiten' : 'Neues Abo'}
+      footer={footer}
+      layoutId={isEditing ? undefined : layoutId}
+    >
       <form id={formId} noValidate onSubmit={(event) => void handleSubmit(event)} className="flex flex-col gap-8">
         {subscription && <LifetimeCostPanel subscription={subscription} baseCurrency={baseCurrency} rates={rates} />}
 

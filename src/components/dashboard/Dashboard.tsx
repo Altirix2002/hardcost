@@ -82,6 +82,7 @@ export function Dashboard({
         rates={rates}
         monthSpend={overview.monthSpend}
         monthName={overview.monthName}
+        alert={overview.alerts.length > 0}
       />
       <UpcomingStats
         summary={overview.summary}

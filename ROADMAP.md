@@ -12,6 +12,7 @@ Stand: 20.10.2026. Erledigte Punkte abhaken (`[x]`) oder entfernen, neue unten e
 
 - [ ] **Face ID / Fingerabdruck am echten Handy testen** (App-Sperre, Einstellungen → Privatsphäre). Im Desktop-Test nur PIN geprüft.
 - [ ] **Dokumente sind nicht im JSON-Backup** (Dateien wären zu gross). Idee: optionaler ZIP-Export mit Dokumenten.
+- [ ] **Wischgeste am echten Handy testen:** Flüssigkeit, Einrasten, vertikales Scrollen über den Karten.
 - [ ] **PIN vergessen:** Es gibt keine Wiederherstellung – nur Website-Daten im Browser löschen (dann sind auch die Abos weg). Evtl. Hinweis beim Einrichten ergänzen oder Backup vorher empfehlen.
 
 ## Vorschläge
@@ -23,7 +24,7 @@ Stand: 20.10.2026. Erledigte Punkte abhaken (`[x]`) oder entfernen, neue unten e
 4. [x] **Suche in der Abo-Liste** – erledigt in Meilenstein 6.
 
 ### Nützlich
-5. [ ] **Wischgesten** – Karten wischen zum Löschen/Pausieren, zwischen Tabs wischen.
+5. [ ] **Wischgesten** – Karten wischen zum Löschen/Pausieren ist erledigt (Meilenstein 8). Offen: zwischen Tabs wischen.
 6. [ ] **Abo duplizieren**.
 7. [x] **Geteilte Abos** – erledigt in Meilenstein 5 (gleichmässig auf X Personen oder fester Betrag).
 8. [ ] **Kalenderansicht der Abbuchungen** (Monatsraster) als Ergänzung zur Liste.
@@ -31,13 +32,15 @@ Stand: 20.10.2026. Erledigte Punkte abhaken (`[x]`) oder entfernen, neue unten e
 10. [ ] **Kalender-Export (.ics)** – Abbuchungen und Fristen in Google-/Apple-Kalender.
 
 ### Feinschliff
-11. [ ] **Haptisches Feedback** (Vibration) beim Speichern/Löschen auf Android.
+11. [x] **Haptisches Feedback** – erledigt in Meilenstein 8 (nur Android; iOS-Safari unterstützt keine Vibration).
 12. [ ] **Backup-Erinnerung** – „Letztes Backup vor 30 Tagen“.
 13. [ ] **Leere Statistik verbessern** – Hinweis oder 12-Monats-Prognose bei wenigen Abos.
 
 **Empfehlung für die nächste Runde:** 2 + 3 + 10 (ohne Server machbar, spart im Alltag am meisten Geld).
 
 ## Erledigt
+
+- [x] **Meilenstein 8:** Lichtkanten & Licht-Spot auf Glaskarten, Alarm-Glow, Wischgeste (Pausieren/Löschen mit Rückgängig), Plus-Knopf-Morph (Desktop), nachrutschende Karten, Zahlen-Ticker in allen Kennzahlen, Dynamic-Island-Meldungen, Vibration
 
 - [x] **Meilenstein 7:** Lokale Dokumenten-Ablage (PDF/JPG/PNG, Vorschau), App-Sperre mit PIN + Face ID/Fingerabdruck (WebAuthn), Spar-Simulator, „SubPulse Wrapped“-Jahresrückblick
 

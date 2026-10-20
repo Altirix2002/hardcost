@@ -1,7 +1,9 @@
 import { CalendarClock, Layers } from 'lucide-react';
 import type { CostSummary, UpcomingPayment } from '../../types';
 import { daysBetween } from '../../utils/dates';
-import { formatCurrency, formatDate, formatRelativeDays } from '../../utils/format';
+import { formatDate, formatInteger, formatRelativeDays } from '../../utils/format';
+import { AnimatedCurrency } from '../ui/AnimatedCurrency';
+import { AnimatedNumber } from '../ui/AnimatedNumber';
 import { StatCard } from './StatCard';
 
 interface UpcomingStatsProps {
@@ -25,13 +27,15 @@ export function UpcomingStats({ summary, nextPayment, baseCurrency, onShowAll }:
     <div className="grid grid-cols-2 gap-3">
       <StatCard
         label="Aktive Abos"
-        value={String(summary.activeCount)}
+        value={<AnimatedNumber value={summary.activeCount} format={formatInteger} />}
         icon={Layers}
         hint={describeOthers(summary)}
       />
       <StatCard
         label="Nächste Abbuchung"
-        value={nextPayment ? formatCurrency(nextPayment.amount, baseCurrency) : '–'}
+        value={
+          nextPayment ? <AnimatedCurrency key={baseCurrency} value={nextPayment.amount} currency={baseCurrency} /> : '–'
+        }
         icon={CalendarClock}
         onClick={onShowAll}
         hint={

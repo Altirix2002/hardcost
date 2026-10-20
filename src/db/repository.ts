@@ -1,4 +1,4 @@
-import type { Category, CategoryColor, Subscription } from '../types';
+import type { Category, CategoryColor, StoredDocument, Subscription } from '../types';
 import { toISODate } from '../utils/dates';
 import { getDocumentType } from '../utils/documents';
 import { createId } from '../utils/id';
@@ -10,11 +10,28 @@ export async function saveSubscription(subscription: Subscription): Promise<void
   await db.subscriptions.put(subscription);
 }
 
-/** Löscht ein Abo samt seinen Dokumenten. */
-export async function deleteSubscription(id: string): Promise<void> {
-  await db.transaction('rw', db.subscriptions, db.documents, async () => {
+/** Was beim Löschen entfernt wurde – genug, um es per "Rückgängig" wiederherzustellen. */
+export interface DeletedSubscription {
+  subscription: Subscription;
+  documents: StoredDocument[];
+}
+
+/** Löscht ein Abo samt seinen Dokumenten und liefert einen Schnappschuss für "Rückgängig". */
+export async function deleteSubscription(id: string): Promise<DeletedSubscription | null> {
+  return db.transaction('rw', db.subscriptions, db.documents, async () => {
+    const subscription = await db.subscriptions.get(id);
+    if (!subscription) return null;
+    const documents = await db.documents.where('subscriptionId').equals(id).toArray();
     await db.documents.where('subscriptionId').equals(id).delete();
     await db.subscriptions.delete(id);
+    return { subscription, documents };
+  });
+}
+
+export async function restoreSubscription({ subscription, documents }: DeletedSubscription): Promise<void> {
+  await db.transaction('rw', db.subscriptions, db.documents, async () => {
+    await db.subscriptions.put(subscription);
+    await db.documents.bulkPut(documents);
   });
 }
 

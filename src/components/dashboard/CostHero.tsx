@@ -14,6 +14,8 @@ interface CostHeroProps {
   /** Tatsächliche Abbuchungen im laufenden Monat (historientreu). */
   monthSpend: number;
   monthName: string;
+  /** Kündigungsfrist läuft bald ab: Glow wechselt auf Rotorange und pulsiert sanft. */
+  alert?: boolean;
 }
 
 interface HeroCardProps {
@@ -23,12 +25,19 @@ interface HeroCardProps {
   currency: string;
   hint: string;
   glowClassName: string;
+  alert: boolean;
 }
 
-function HeroCard({ label, icon: Icon, value, currency, hint, glowClassName }: HeroCardProps) {
+function HeroCard({ label, icon: Icon, value, currency, hint, glowClassName, alert }: HeroCardProps) {
   return (
     <GlassCard className="relative overflow-hidden p-6">
-      <div aria-hidden className={cn('pointer-events-none absolute -top-20 -right-16 h-52 w-52 rounded-full blur-3xl', glowClassName)} />
+      <div
+        aria-hidden
+        className={cn(
+          'pointer-events-none absolute -top-20 -right-16 h-52 w-52 rounded-full blur-3xl transition-colors duration-700',
+          alert ? 'bg-orange-500/30 motion-safe:animate-pulse dark:bg-rose-500/25' : glowClassName,
+        )}
+      />
       <div className="relative">
         <div className="flex items-center gap-2 text-sm font-medium text-zinc-500 dark:text-zinc-400">
           <Icon className="h-4 w-4" aria-hidden />
@@ -46,7 +55,7 @@ function HeroCard({ label, icon: Icon, value, currency, hint, glowClassName }: H
   );
 }
 
-export function CostHero({ summary, baseCurrency, rates, monthSpend, monthName }: CostHeroProps) {
+export function CostHero({ summary, baseCurrency, rates, monthSpend, monthName, alert = false }: CostHeroProps) {
   const hasUnconverted = summary.unconvertedCurrencies.length > 0;
 
   return (
@@ -59,6 +68,7 @@ export function CostHero({ summary, baseCurrency, rates, monthSpend, monthName }
           currency={baseCurrency}
           hint={`Abbuchungen im ${monthName}: ${formatCurrency(monthSpend, baseCurrency)}`}
           glowClassName="bg-sky-400/30 dark:bg-sky-500/20"
+          alert={alert}
         />
         <HeroCard
           label="Pro Jahr"
@@ -67,6 +77,7 @@ export function CostHero({ summary, baseCurrency, rates, monthSpend, monthName }
           currency={baseCurrency}
           hint={`≈ ${formatCurrency(summary.yearly / 365, baseCurrency)} pro Tag`}
           glowClassName="bg-violet-400/30 dark:bg-violet-500/20"
+          alert={alert}
         />
       </div>
       <p

@@ -1,12 +1,10 @@
 import { useState, type MouseEvent } from 'react';
 import { motion } from 'framer-motion';
 import { Check, Ghost, Moon } from 'lucide-react';
-import { saveSubscription } from '../../db/repository';
+import { confirmStillUsed, togglePause } from '../../services/subscriptionActions';
 import type { Subscription } from '../../types';
 import { cn } from '../../utils/cn';
 import { spring } from '../../utils/motion';
-import { pauseSubscription } from '../../utils/pauses';
-import { markReviewed } from '../../utils/review';
 import { Collapse } from '../ui/Collapse';
 
 interface ZombieHintProps {
@@ -43,7 +41,7 @@ export function ZombieHint({ subscription }: ZombieHintProps) {
         <div className="-mt-2 flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={handle(() => void saveSubscription(markReviewed(subscription)))}
+            onClick={handle(() => void confirmStillUsed(subscription))}
             className={cn(ACTION, 'bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/25 dark:text-emerald-300')}
           >
             <Check className="h-3.5 w-3.5" aria-hidden />
@@ -51,7 +49,7 @@ export function ZombieHint({ subscription }: ZombieHintProps) {
           </button>
           <button
             type="button"
-            onClick={handle(() => void saveSubscription(markReviewed(pauseSubscription(subscription, null))))}
+            onClick={handle(() => void togglePause(subscription))}
             className={cn(ACTION, 'bg-amber-500/15 text-amber-700 hover:bg-amber-500/25 dark:text-amber-300')}
           >
             <Moon className="h-3.5 w-3.5" aria-hidden />

@@ -6,9 +6,11 @@ import { Dashboard } from './components/dashboard/Dashboard';
 import { AppShell } from './components/layout/AppShell';
 import { Header } from './components/layout/Header';
 import { MobileDock } from './components/layout/MobileDock';
+import { DynamicIsland } from './components/ui/DynamicIsland';
 import { FloatingActionButton } from './components/ui/FloatingActionButton';
 import { db } from './db/database';
 import { useApplyTheme } from './hooks/useApplyTheme';
+import { useMediaQuery } from './hooks/useMediaQuery';
 import { isAppTab, tabPanelId, useNavigationStore } from './store/useNavigationStore';
 import { useSettingsStore } from './store/useSettingsStore';
 import type { Category, Subscription } from './types';
@@ -33,6 +35,9 @@ const UpcomingPaymentsModal = lazy(() =>
 );
 
 const PRELOAD_DELAY_MS = 1500;
+
+/** Plus-Knopf und Erfassen-Fenster teilen sich diese layoutId (Morph, nur Desktop). */
+const ADD_TRIGGER_LAYOUT_ID = 'subscription-trigger';
 
 /**
  * Richtungsabhängiger Tab-Wechsel: neuer Inhalt gleitet aus der Klickrichtung herein.
@@ -70,6 +75,9 @@ export default function App() {
   const [upcomingOpen, setUpcomingOpen] = useState(false);
   const [upcomingMounted, setUpcomingMounted] = useState(false);
   const modalOpen = formOpen || settingsOpen || upcomingOpen;
+  // Auf dem Handy fährt das Sheet klassisch von unten herein (iOS-Verhalten); den FAB gibt es dort nicht.
+  const isDesktop = useMediaQuery('(min-width: 640px)');
+  const addLayoutId = isDesktop ? ADD_TRIGGER_LAYOUT_ID : undefined;
 
   const paymentMethods = useMemo(
     () => getPaymentMethodSuggestions(subscriptions ?? NO_SUBSCRIPTIONS),
@@ -196,9 +204,17 @@ export default function App() {
       </div>
 
       <AnimatePresence>
-        {!modalOpen && <FloatingActionButton key="fab" icon={Plus} label="Abo hinzufügen" onClick={openCreate} />}
+        {!modalOpen && <FloatingActionButton
+            key="fab"
+            icon={Plus}
+            label="Abo hinzufügen"
+            onClick={openCreate}
+            layoutId={addLayoutId}
+          />}
         {!modalOpen && <MobileDock key="dock" activeTab={activeTab} onTabChange={setActiveTab} onAdd={openCreate} />}
       </AnimatePresence>
+
+      <DynamicIsland />
 
       <Suspense fallback={null}>
         {formMounted && (
@@ -210,6 +226,7 @@ export default function App() {
             rates={rates}
             paymentMethods={paymentMethods}
             onClose={closeForm}
+            layoutId={addLayoutId}
           />
         )}
         {settingsMounted && <SettingsModal open={settingsOpen} onClose={closeSettings} />}

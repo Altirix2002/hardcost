@@ -26,8 +26,13 @@ export function CancellationRadar({ alerts, categoriesById, onSelect }: Cancella
           transition={sheetSpringWithFade}
           className="overflow-hidden"
         >
-          <div className="rounded-3xl border border-amber-500/30 bg-amber-50/70 p-4 shadow-lg shadow-amber-900/5 sm:backdrop-blur-md dark:border-amber-400/20 dark:bg-amber-950/40 dark:shadow-black/30">
-            <div className="flex items-center gap-3 px-1">
+          <div className="relative overflow-hidden rounded-3xl border border-amber-500/30 bg-amber-50/70 p-4 shadow-lg shadow-amber-900/5 inset-shadow-2xs inset-shadow-white/70 sm:backdrop-blur-md dark:border-amber-400/20 dark:bg-amber-950/40 dark:shadow-black/30 dark:inset-shadow-white/10">
+            {/* Alarm-Glow: rotorange, pulsiert weich (nur Deckkraft – GPU-schonend). */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -top-20 -left-12 h-48 w-48 rounded-full bg-orange-500/25 blur-3xl motion-safe:animate-pulse dark:bg-rose-500/20"
+            />
+            <div className="relative flex items-center gap-3 px-1">
               <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">
                 <span aria-hidden className="absolute inset-0 rounded-full bg-amber-500/25 motion-safe:animate-ping" />
                 <Radar className="relative h-5 w-5" aria-hidden />
@@ -41,7 +46,7 @@ export function CancellationRadar({ alerts, categoriesById, onSelect }: Cancella
               </div>
             </div>
 
-            <ul className="mt-3 flex flex-col gap-2">
+            <ul className="relative mt-3 flex flex-col gap-2">
               {alerts.map(({ subscription, window }) => (
                 <motion.li key={subscription.id} layout transition={spring}>
                   <motion.button

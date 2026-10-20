@@ -16,3 +16,9 @@ const fade: Transition = { duration: 0.2, ease: 'easeOut' };
 export const springWithFade: Transition = { ...spring, opacity: fade };
 
 export const sheetSpringWithFade: Transition = { ...sheetSpring, opacity: fade };
+
+/** Sanftere Feder für weite Layout-Verschiebungen (z.B. nachrutschende Karten). */
+export const softSpring: Transition = { type: 'spring', stiffness: 220, damping: 24, mass: 1 };
+
+/** Kurzer Micro-Bounce für Icons, Badges und Toasts. */
+export const bounceSpring: Transition = { type: 'spring', stiffness: 500, damping: 18 };

@@ -9,11 +9,13 @@ import {
   getPaymentMethodBreakdown,
   getPriceHikes,
 } from '../../utils/calculations';
-import { formatCurrency } from '../../utils/format';
+import { formatInteger } from '../../utils/format';
 import { getWrappedSummary } from '../../utils/insights';
 import { spring } from '../../utils/motion';
 import { isRunning } from '../../utils/pauses';
 import { StatCard } from '../dashboard/StatCard';
+import { AnimatedCurrency } from '../ui/AnimatedCurrency';
+import { AnimatedNumber } from '../ui/AnimatedNumber';
 import { Button } from '../ui/Button';
 import { EmptyState } from '../ui/EmptyState';
 import { GlassCard } from '../ui/GlassCard';
@@ -109,20 +111,20 @@ export function StatisticsView({ subscriptions, categories, baseCurrency, rates,
         <StatCard
           label="Teuerstes Abo"
           icon={Crown}
-          value={stats.top ? formatCurrency(stats.top.monthly, baseCurrency) : '–'}
+          value={stats.top ? <AnimatedCurrency key={baseCurrency} value={stats.top.monthly} currency={baseCurrency} /> : '–'}
           hint={stats.top ? `${stats.top.subscription.name} · pro Monat` : 'Keine aktiven Abos'}
         />
         <StatCard
           label="Ø pro Monat"
           icon={TrendingUp}
-          value={formatCurrency(stats.average, baseCurrency)}
+          value={<AnimatedCurrency key={baseCurrency} value={stats.average} currency={baseCurrency} />}
           hint="Abbuchungen der letzten 12 Monate"
         />
         <div className="col-span-2 sm:col-span-1">
           <StatCard
             label="Aktive Dienste"
             icon={Layers}
-            value={String(stats.activeCount)}
+            value={<AnimatedNumber value={stats.activeCount} format={formatInteger} />}
             hint={`von ${subscriptions.length} erfassten Abos`}
           />
         </div>

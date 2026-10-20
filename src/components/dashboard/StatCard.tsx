@@ -1,10 +1,12 @@
+import type { ReactNode } from 'react';
 import { ChevronRight, type LucideIcon } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { GlassCard } from '../ui/GlassCard';
 
 interface StatCardProps {
   label: string;
-  value: string;
+  /** Text oder z.B. ein AnimatedCurrency-Ticker. */
+  value: ReactNode;
   icon: LucideIcon;
   hint?: string;
   /** Macht die Karte antippbar (z.B. für eine Detailansicht). */

@@ -3,6 +3,7 @@ import { motion, useAnimationControls } from 'framer-motion';
 import { Delete } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { PIN_LENGTH } from '../../utils/appLock';
+import { triggerHaptic } from '../../utils/haptics';
 import { spring } from '../../utils/motion';
 
 interface PinPadProps {
@@ -35,7 +36,7 @@ export function PinPad({ onSubmit, disabled = false, extraKey, tone = 'auto' }: 
     const ok = await onSubmit(value);
     setChecking(false);
     if (ok) return;
-    navigator.vibrate?.(60);
+    triggerHaptic(60);
     await shake.start({ x: [0, -12, 12, -8, 8, -4, 0], transition: { duration: 0.4 } });
     setPin('');
   };

@@ -400,3 +400,19 @@ export interface WrappedSummary {
   savedByPauses: number;
   savedByCancellations: number;
 }
+
+// ─── Statusmeldungen (Dynamic Island) ───────────────────────────────────────
+
+export type ToastKind = 'success' | 'paused' | 'resumed' | 'deleted' | 'info';
+
+export interface ToastAction {
+  label: string;
+  onPress: () => void;
+}
+
+export interface Toast {
+  id: number;
+  kind: ToastKind;
+  message: string;
+  action?: ToastAction;
+}
