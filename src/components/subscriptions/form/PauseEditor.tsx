@@ -1,7 +1,7 @@
 import type { DraftValidation, SubscriptionDraft } from '../../../types';
 import { toISODate } from '../../../utils/dates';
 import { Collapse } from '../../ui/Collapse';
-import { TextField } from '../../ui/TextField';
+import { DateField } from '../../ui/DateField';
 import { Toggle } from '../../ui/Toggle';
 
 type PausePatch = Partial<Pick<SubscriptionDraft, 'isPaused' | 'pausedUntil'>>;
@@ -23,13 +23,14 @@ export function PauseEditor({ draft, errors, onChange }: PauseEditorProps) {
         onChange={(isPaused) => onChange({ isPaused })}
       />
       <Collapse open={draft.isPaused}>
-        <TextField
-          type="date"
+        <DateField
+          clearable
           label="Pausiert bis"
           hint="Optional – danach läuft das Abo automatisch weiter. Leer = bis du es wieder aktivierst."
           min={toISODate(new Date())}
           value={draft.pausedUntil}
-          onChange={(event) => onChange({ pausedUntil: event.target.value })}
+          placeholder="Unbefristet"
+          onChange={(pausedUntil) => onChange({ pausedUntil })}
           error={errors.pausedUntil}
         />
       </Collapse>

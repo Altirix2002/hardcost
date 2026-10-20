@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, Check, Trash2 } from 'lucide-react';
 import { createCategory, saveSubscription } from '../../../db/repository';
 import { deleteWithUndo } from '../../../services/subscriptionActions';
+import { useSettingsStore } from '../../../store/useSettingsStore';
 import { showToast } from '../../../store/useToastStore';
 import type { Category, DraftValidation, ExchangeRates, Subscription, SubscriptionDraft } from '../../../types';
 import { parseISODate } from '../../../utils/dates';
@@ -21,6 +22,7 @@ import {
   validateDraft,
 } from '../../../utils/subscriptionDraft';
 import { Button } from '../../ui/Button';
+import { DateField } from '../../ui/DateField';
 import { FormSection } from '../../ui/FormSection';
 import { Modal } from '../../ui/Modal';
 import { Select } from '../../ui/Select';
@@ -70,6 +72,7 @@ export function SubscriptionFormModal({
   layoutId,
 }: SubscriptionFormModalProps) {
   const formId = useId();
+  const rememberPaymentMethod = useSettingsStore((s) => s.rememberPaymentMethod);
   const isEditing = subscription !== null;
 
   const buildDraft = () =>
@@ -117,6 +120,7 @@ export function SubscriptionFormModal({
     const saved = draftToSubscription(draft);
     try {
       await saveSubscription(saved);
+      await rememberPaymentMethod(saved.paymentMethod);
     } catch {
       setSaving(false);
       setSaveError('Speichern fehlgeschlagen – bitte nochmals versuchen.');
@@ -244,11 +248,10 @@ export function SubscriptionFormModal({
               options={CURRENCY_OPTIONS}
               onChange={(currency) => setDraft((current) => setDraftCurrency(current, currency))}
             />
-            <TextField
-              type="date"
+            <DateField
               label="Erste Abbuchung"
               value={draft.firstBillingDate}
-              onChange={(event) => setDraft((current) => setFirstBillingDate(current, event.target.value))}
+              onChange={(date) => setDraft((current) => setFirstBillingDate(current, date))}
               error={errors.fields.firstBillingDate}
             />
             <TextField
@@ -260,13 +263,14 @@ export function SubscriptionFormModal({
               error={errors.fields.cancellationNoticeDays}
             />
           </div>
-          <TextField
-            type="date"
+          <DateField
+            clearable
+            placeholder="Keine"
             label="Mindestlaufzeit bis"
             hint="Optional – erst zum Ende dieser Bindung regulär kündbar (z.B. bei 12- oder 24-Monats-Verträgen)."
             min={draft.firstBillingDate}
             value={draft.minimumCommitmentUntil}
-            onChange={(event) => update('minimumCommitmentUntil', event.target.value)}
+            onChange={(date) => update('minimumCommitmentUntil', date)}
             error={errors.fields.minimumCommitmentUntil}
           />
           <PaymentMethodPicker

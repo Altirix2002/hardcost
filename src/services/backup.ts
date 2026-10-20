@@ -15,7 +15,14 @@ export async function createBackup(): Promise<BackupFile> {
     app: 'subpulse',
     version: 1,
     exportedAt: new Date().toISOString(),
-    settings: stored ? { baseCurrency: stored.baseCurrency, theme: stored.theme } : DEFAULT_SETTINGS,
+    settings: stored
+      ? {
+          baseCurrency: stored.baseCurrency,
+          theme: stored.theme,
+          paymentMethods: stored.paymentMethods,
+          monthlyBudget: stored.monthlyBudget,
+        }
+      : DEFAULT_SETTINGS,
     categories,
     subscriptions,
   };
@@ -31,12 +38,14 @@ export async function restoreBackup(backup: BackupFile): Promise<void> {
     await Promise.all([db.subscriptions.clear(), db.categories.clear()]);
     await db.categories.bulkPut(backup.categories);
     // Ältere Backups kennen kein Prüfdatum: Stand des Exports gilt als geprüft (Zombie-Erkennung).
-    const exported = new Date(backup.exportedAt);
-    const exportedOn = toISODate(Number.isNaN(exported.getTime()) ? new Date() : exported);
+    const parsedExport = new Date(backup.exportedAt);
+    const exported = Number.isNaN(parsedExport.getTime()) ? new Date() : parsedExport;
+    const exportedOn = toISODate(exported);
     await db.subscriptions.bulkPut(
       backup.subscriptions.map((sub) => ({ ...sub, lastReviewedAt: sub.lastReviewedAt ?? exportedOn })),
     );
-    await db.settings.put({ id: 'user', ...backup.settings });
+    // Ein eingespieltes Backup gilt als Sicherung vom Exportdatum (Backup-Erinnerung).
+    await db.settings.put({ id: 'user', ...backup.settings, lastBackupAt: exported.toISOString() });
     // Dokumente sind nicht Teil des Backups: Nur die von Abos behalten, die es danach noch gibt.
     const ids = backup.subscriptions.map((sub) => sub.id);
     await db.documents.where('subscriptionId').noneOf(ids).delete();

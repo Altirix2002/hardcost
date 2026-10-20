@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Lock, ScanFace } from 'lucide-react';
 import { useLockStore } from '../../store/useLockStore';
@@ -20,6 +20,8 @@ export function LockScreen() {
   const [checkingBiometric, setCheckingBiometric] = useState(false);
 
   const secondsLeft = Math.max(0, Math.ceil((blockedUntil - now) / 1000));
+  const autoPromptedRef = useRef(false);
+  const credentialId = config?.credentialId;
 
   useEffect(() => {
     if (blockedUntil <= Date.now()) return;
@@ -27,18 +29,29 @@ export function LockScreen() {
     return () => window.clearInterval(timer);
   }, [blockedUntil]);
 
-  if (!config) return null;
-  const { credentialId } = config;
-
-  const tryBiometric = async () => {
+  const tryBiometric = async (automatic = false) => {
     if (!credentialId || checkingBiometric) return;
     setCheckingBiometric(true);
     setMessage(null);
     const ok = await promptBiometricAuth(credentialId);
     setCheckingBiometric(false);
     if (ok) unlock();
-    else setMessage('Nicht erkannt – entsperre mit deinem PIN.');
+    else
+      setMessage(
+        automatic ? 'Tippe auf das Gesichts-Symbol oder gib deinen PIN ein.' : 'Nicht erkannt – entsperre mit deinem PIN.',
+      );
   };
+
+  // Face ID / Fingerabdruck sofort anbieten, sobald der Sperrbildschirm erscheint (einmal pro Sperre).
+  // Lehnt ein Browser das ohne Antippen ab, bleibt der Knopf als Weg zurück.
+  useEffect(() => {
+    if (!credentialId || autoPromptedRef.current || document.visibilityState !== 'visible') return;
+    autoPromptedRef.current = true;
+    void tryBiometric(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst nur beim Erscheinen
+  }, [credentialId]);
+
+  if (!config) return null;
 
   const handlePin = async (pin: string) => {
     if (await verifyPin(config, pin)) {

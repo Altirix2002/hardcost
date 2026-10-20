@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type ComponentProps } from 'react';
-import { motion, useAnimationControls, type PanInfo } from 'framer-motion';
+import { useEffect, useRef, type ComponentProps } from 'react';
+import { animate, motion, useMotionValue, useTransform, type PanInfo } from 'framer-motion';
 import { Moon, Play, Trash2 } from 'lucide-react';
 import { deleteWithUndo, togglePause } from '../../services/subscriptionActions';
 import { useDashboardStore } from '../../store/useDashboardStore';
@@ -16,29 +16,37 @@ type SwipeableSubscriptionCardProps = ComponentProps<typeof SubscriptionCard>;
 const ACTIONS_WIDTH = 140;
 const SNAP_THRESHOLD = ACTIONS_WIDTH / 2;
 const FLICK_VELOCITY = 500;
+/** Erst in den letzten Pixeln vor dem Einrasten tauchen die Knöpfe auf. */
+const REVEAL_START = -ACTIONS_WIDTH * 0.8;
 
 const ACTION_BUTTON =
   'flex h-13 w-13 items-center justify-center rounded-full text-white shadow-lg inset-shadow-2xs inset-shadow-white/30 transition-transform focus-visible:ring-2 focus-visible:ring-sky-500/50 focus-visible:outline-none active:scale-90';
 
 /**
  * iOS-Listen-Gefühl: Karte nach links wischen deckt "Pausieren" und "Löschen" auf.
- * Beim Überschreiten der Einrastschwelle gibt es einen kurzen Vibrationsimpuls.
+ * Die Knöpfe hängen direkt an der Kartenposition: Weil die Glas-Karte durchscheinend ist, dürfen
+ * sie erst sichtbar werden, wenn die Karte den Platz ganz freigegeben hat.
  */
 export function SwipeableSubscriptionCard({ subscription, onSelect, ...cardProps }: SwipeableSubscriptionCardProps) {
   const openSwipeId = useDashboardStore((s) => s.openSwipeId);
   const setOpenSwipeId = useDashboardStore((s) => s.setOpenSwipeId);
   const open = openSwipeId === subscription.id;
-  const controls = useAnimationControls();
   const containerRef = useRef<HTMLDivElement>(null);
   const draggedRef = useRef(false);
   const pastThresholdRef = useRef(false);
-  const [dragging, setDragging] = useState(false);
   const paused = isPausedAt(subscription);
+
+  const x = useMotionValue(0);
+  const actionsOpacity = useTransform(x, [-ACTIONS_WIDTH, REVEAL_START], [1, 0]);
+  const actionsScale = useTransform(x, [-ACTIONS_WIDTH, REVEAL_START], [1, 0.6]);
+
+  const settle = (target: number) => animate(x, target, spring);
 
   // Öffnet eine andere Karte (oder wird diese geschlossen), federt die Karte in ihre Lage.
   useEffect(() => {
-    void controls.start({ x: open ? -ACTIONS_WIDTH : 0, transition: spring });
-  }, [open, controls]);
+    const controls = animate(x, open ? -ACTIONS_WIDTH : 0, spring);
+    return () => controls.stop();
+  }, [open, x]);
 
   // Tippen irgendwo ausserhalb schliesst die offene Karte.
   useEffect(() => {
@@ -50,10 +58,8 @@ export function SwipeableSubscriptionCard({ subscription, onSelect, ...cardProps
     return () => document.removeEventListener('pointerdown', onPointerDown);
   }, [open, setOpenSwipeId]);
 
-  const offsetFor = (info: PanInfo) => (open ? -ACTIONS_WIDTH : 0) + info.offset.x;
-
-  const handleDrag = (_: unknown, info: PanInfo) => {
-    const past = offsetFor(info) < -SNAP_THRESHOLD;
+  const handleDrag = () => {
+    const past = x.get() < -SNAP_THRESHOLD;
     if (past !== pastThresholdRef.current) {
       pastThresholdRef.current = past;
       if (past) triggerHaptic(8);
@@ -62,11 +68,11 @@ export function SwipeableSubscriptionCard({ subscription, onSelect, ...cardProps
 
   const handleDragEnd = (_: unknown, info: PanInfo) => {
     const shouldOpen =
-      info.velocity.x < -FLICK_VELOCITY || (info.velocity.x <= FLICK_VELOCITY && offsetFor(info) < -SNAP_THRESHOLD);
-    setOpenSwipeId(shouldOpen ? subscription.id : open ? null : openSwipeId);
+      info.velocity.x < -FLICK_VELOCITY || (info.velocity.x <= FLICK_VELOCITY && x.get() < -SNAP_THRESHOLD);
+    if (shouldOpen) setOpenSwipeId(subscription.id);
+    else if (open) setOpenSwipeId(null);
     // Auch ohne Zustandswechsel zurück in die Ruhelage federn.
-    void controls.start({ x: shouldOpen ? -ACTIONS_WIDTH : 0, transition: spring });
-    setDragging(false);
+    settle(shouldOpen ? -ACTIONS_WIDTH : 0);
     // Der Klick nach dem Loslassen soll nicht das Formular öffnen.
     window.setTimeout(() => {
       draggedRef.current = false;
@@ -88,13 +94,12 @@ export function SwipeableSubscriptionCard({ subscription, onSelect, ...cardProps
   };
 
   return (
-    <div ref={containerRef} className="relative h-full">
+    <div ref={containerRef} data-no-tab-swipe className="relative h-full">
+      {/* Motion-Werte statt Klassen: Deckkraft und Grösse folgen der Karte Pixel für Pixel. */}
       <motion.div
         aria-hidden={!open}
-        initial={false}
-        animate={{ opacity: open || dragging ? 1 : 0 }}
-        transition={{ duration: 0.15 }}
-        className="absolute inset-y-0 right-0 flex items-center justify-end gap-3 pr-2"
+        style={{ opacity: actionsOpacity, scale: actionsScale }}
+        className="absolute inset-y-0 right-0 flex origin-right items-center justify-end gap-3 pr-2"
       >
         {subscription.isActive && (
           <div className="flex flex-col items-center gap-1">
@@ -132,11 +137,10 @@ export function SwipeableSubscriptionCard({ subscription, onSelect, ...cardProps
         dragConstraints={{ left: -ACTIONS_WIDTH, right: 0 }}
         dragElastic={{ left: 0.2, right: 0 }}
         dragMomentum={false}
-        animate={controls}
+        style={{ x }}
         onDragStart={() => {
           draggedRef.current = true;
           pastThresholdRef.current = open;
-          setDragging(true);
         }}
         onDrag={handleDrag}
         onDragEnd={handleDragEnd}

@@ -79,7 +79,10 @@ function isUserSettings(value: unknown): value is UserSettings {
     isRecord(value) &&
     isString(value.baseCurrency) &&
     isSupportedCurrency(value.baseCurrency) &&
-    (value.theme === 'light' || value.theme === 'dark' || value.theme === 'system')
+    (value.theme === 'light' || value.theme === 'dark' || value.theme === 'system') &&
+    (value.paymentMethods === undefined ||
+      (Array.isArray(value.paymentMethods) && value.paymentMethods.every(isString))) &&
+    (value.monthlyBudget === undefined || (isFiniteNumber(value.monthlyBudget) && value.monthlyBudget > 0))
   );
 }
 

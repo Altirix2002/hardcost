@@ -6,6 +6,7 @@ import { CURRENCY_CODE_OPTIONS } from '../../../utils/options';
 import { Badge } from '../../ui/Badge';
 import { IconButton } from '../../ui/IconButton';
 import { Select } from '../../ui/Select';
+import { DateField } from '../../ui/DateField';
 import { TextField } from '../../ui/TextField';
 
 interface PriceIntervalRowProps {
@@ -30,18 +31,18 @@ export function PriceIntervalRow({ interval, errors, canRemove, onChange, onRemo
         {canRemove && <IconButton icon={Trash2} label="Preis entfernen" onClick={onRemove} className="-my-2 -mr-2" />}
       </div>
       <div className="grid grid-cols-2 items-start gap-3">
-        <TextField
-          type="date"
+        <DateField
           label="Startdatum"
           value={interval.startDate}
-          onChange={(event) => onChange({ startDate: event.target.value })}
+          onChange={(startDate) => onChange({ startDate })}
           error={errors?.startDate}
         />
-        <TextField
-          type="date"
+        <DateField
+          clearable
           label="Enddatum"
+          placeholder="Läuft weiter"
           value={interval.endDate}
-          onChange={(event) => onChange({ endDate: event.target.value })}
+          onChange={(endDate) => onChange({ endDate })}
           hint={isCurrent ? 'Leer = läuft weiter' : undefined}
           error={errors?.endDate}
         />

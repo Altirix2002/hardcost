@@ -80,8 +80,8 @@ export default function App() {
   const addLayoutId = isDesktop ? ADD_TRIGGER_LAYOUT_ID : undefined;
 
   const paymentMethods = useMemo(
-    () => getPaymentMethodSuggestions(subscriptions ?? NO_SUBSCRIPTIONS),
-    [subscriptions],
+    () => getPaymentMethodSuggestions(subscriptions ?? NO_SUBSCRIPTIONS, settings.paymentMethods),
+    [subscriptions, settings.paymentMethods],
   );
 
   useEffect(() => {

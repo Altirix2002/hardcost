@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Lock, X } from 'lucide-react';
+import { AlertTriangle, Lock, X } from 'lucide-react';
 import { useLockStore } from '../../store/useLockStore';
 import { createLockConfig } from '../../utils/appLock';
 import { cn } from '../../utils/cn';
@@ -98,6 +98,15 @@ export function AppLockSection() {
               <X className="h-4 w-4" aria-hidden />
             </button>
           </div>
+          {step === 'enter' && (
+            <p className="flex items-start gap-2 rounded-2xl bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-200">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+              <span>
+                Merke dir den PIN gut – es gibt keine Wiederherstellung. Wer ihn vergisst, muss die Website-Daten löschen
+                und verliert damit alle Abos. Am besten vorher unter «Datensicherung» ein Backup machen.
+              </span>
+            </p>
+          )}
           <PinPad
             key={step}
             onSubmit={(pin) => {

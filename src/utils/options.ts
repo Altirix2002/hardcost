@@ -39,24 +39,43 @@ export const PAYMENT_METHOD_SUGGESTIONS = [
   'Lastschrift (LSV)',
 ] as const;
 
-/**
- * Vorschläge für die Zahlungsart: selbst eingetragene (aus gespeicherten Abos, häufigste zuerst)
- * vor den Standardvorschlägen. So steht eine neue Zahlungsart beim nächsten Abo direkt zur Wahl.
- */
-export function getPaymentMethodSuggestions(subscriptions: Subscription[]): string[] {
-  const key = (method: string) => method.trim().toLocaleLowerCase('de-CH');
-  const defaults = new Set<string>(PAYMENT_METHOD_SUGGESTIONS.map(key));
-  const custom = new Map<string, { label: string; count: number }>();
+export function normalizePaymentMethod(method: string): string {
+  return method.trim().toLocaleLowerCase('de-CH');
+}
 
+const DEFAULT_PAYMENT_KEYS = new Set<string>(PAYMENT_METHOD_SUGGESTIONS.map(normalizePaymentMethod));
+
+export function isDefaultPaymentMethod(method: string): boolean {
+  return DEFAULT_PAYMENT_KEYS.has(normalizePaymentMethod(method));
+}
+
+/** Selbst eingetragene Zahlungsarten aus den Abos, häufigste zuerst. */
+export function getCustomPaymentMethods(subscriptions: Subscription[]): string[] {
+  const custom = new Map<string, { label: string; count: number }>();
   for (const { paymentMethod } of subscriptions) {
     const label = paymentMethod.trim();
-    if (!label || defaults.has(key(label))) continue;
-    const entry = custom.get(key(label));
-    custom.set(key(label), { label: entry?.label ?? label, count: (entry?.count ?? 0) + 1 });
+    if (!label || isDefaultPaymentMethod(label)) continue;
+    const key = normalizePaymentMethod(label);
+    const entry = custom.get(key);
+    custom.set(key, { label: entry?.label ?? label, count: (entry?.count ?? 0) + 1 });
   }
-
-  const own = [...custom.values()]
+  return [...custom.values()]
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, 'de-CH'))
     .map((entry) => entry.label);
+}
+
+/**
+ * Vorschläge für die Zahlungsart: eigene (benutzte zuerst, dann gespeicherte) vor den Standardvorschlägen.
+ * Gespeicherte bleiben erhalten, auch wenn das letzte Abo mit dieser Zahlungsart gelöscht wurde.
+ */
+export function getPaymentMethodSuggestions(subscriptions: Subscription[], saved: string[] = []): string[] {
+  const own = [...getCustomPaymentMethods(subscriptions)];
+  const keys = new Set(own.map(normalizePaymentMethod));
+  for (const method of saved) {
+    const key = normalizePaymentMethod(method);
+    if (!method.trim() || keys.has(key) || isDefaultPaymentMethod(method)) continue;
+    keys.add(key);
+    own.push(method.trim());
+  }
   return [...own, ...PAYMENT_METHOD_SUGGESTIONS];
 }

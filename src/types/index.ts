@@ -95,6 +95,12 @@ export interface Category {
 export interface UserSettings {
   baseCurrency: string; // Standard z.B. "CHF" oder "EUR"
   theme: ThemePreference;
+  /** Selbst eingetragene Zahlungsarten – bleiben erhalten, auch wenn kein Abo sie mehr nutzt. */
+  paymentMethods?: string[];
+  /** Monatliches Budget in der Basiswährung; fehlt = kein Budget. */
+  monthlyBudget?: number;
+  /** Zeitpunkt des letzten Backups (ISO); fehlt = noch nie gesichert. */
+  lastBackupAt?: string;
 }
 
 // ─── Persistenz (Dexie) ─────────────────────────────────────────────────────

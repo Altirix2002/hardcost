@@ -12,6 +12,7 @@ import { Select } from '../ui/Select';
 import { AppLockSection } from './AppLockSection';
 import { BackupSection } from './BackupSection';
 import { CategoryManager } from './CategoryManager';
+import { PaymentMethodManager } from './PaymentMethodManager';
 
 interface SettingsModalProps {
   open: boolean;
@@ -96,6 +97,13 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
           description="Antippen zum Umbenennen oder Umfärben. Beim Löschen wandern die Abos zu «Sonstiges»."
         >
           <CategoryManager />
+        </FormSection>
+
+        <FormSection
+          title="Eigene Zahlungsarten"
+          description="Bleiben als Vorschlag erhalten, auch wenn kein Abo sie mehr nutzt. Noch benutzte erscheinen weiterhin."
+        >
+          <PaymentMethodManager />
         </FormSection>
 
         <FormSection
