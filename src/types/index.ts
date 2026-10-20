@@ -321,7 +321,7 @@ export interface PaymentMethodShare {
 
 export type SubscriptionSortKey = 'due' | 'cost' | 'name';
 
-export type SubscriptionStatusFilter = 'all' | 'active' | 'paused' | 'inactive';
+export type SubscriptionStatusFilter = 'all' | 'active' | 'paused' | 'cancelled';
 
 export type AppTab = 'overview' | 'statistics';
 

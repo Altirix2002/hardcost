@@ -100,7 +100,8 @@ export const DEMO_SUBSCRIPTIONS: Subscription[] = [
     billingCycle: 'quarterly',
     firstBillingDate: '2024-01-01',
     cancellationNoticeDays: 60,
-    isActive: false,
+    isActive: true,
+    endsOn: '2025-06-30',
     intervals: [{ id: 'demo-fitness-1', startDate: '2024-01-01', endDate: '2025-06-30', amount: 249, currency: 'CHF' }],
   },
 ];

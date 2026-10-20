@@ -79,7 +79,7 @@ export default function App() {
   // Auf dem Handy fährt das Sheet klassisch von unten herein (iOS-Verhalten); den FAB gibt es dort nicht.
   const isDesktop = useMediaQuery('(min-width: 640px)');
   const addLayoutId = isDesktop ? ADD_TRIGGER_LAYOUT_ID : undefined;
-  const tabSwipe = useTabSwipe();
+  useTabSwipe();
 
   const paymentMethods = useMemo(
     () => getPaymentMethodSuggestions(subscriptions ?? NO_SUBSCRIPTIONS, settings.paymentMethods),
@@ -169,7 +169,7 @@ export default function App() {
         Mindesthöhe auf dem Handy: Würde die Seite beim Wechsel kurz kürzer als der Bildschirm,
         blendet Chrome seine Adressleiste schlagartig ein und das fixierte Dock springt.
       */}
-      <div className="max-sm:min-h-lvh" {...tabSwipe}>
+      <div className="max-sm:min-h-lvh">
         {subscriptions !== undefined && (
           <AnimatePresence mode="wait" initial={false} custom={direction} onExitComplete={scrollToTop}>
             <motion.main

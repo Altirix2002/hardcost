@@ -20,8 +20,9 @@ const SIZE_CLASSES = {
 } as const;
 
 function getInitials(name: string): string {
-  const words = name.trim().split(/\s+/);
-  const initials = words.length > 1 ? `${words[0]?.[0] ?? ''}${words[1]?.[0] ?? ''}` : name.slice(0, 2);
+  // Nur Buchstaben/Ziffern zählen – sonst wird aus "Netflix (Kopie)" das Kürzel "N(".
+  const words = name.match(/[\p{L}\p{N}][\p{L}\p{N}+]*/gu) ?? [name.trim()];
+  const initials = words.length > 1 ? `${words[0]?.[0] ?? ''}${words[1]?.[0] ?? ''}` : (words[0] ?? '').slice(0, 2);
   return initials.toUpperCase();
 }
 

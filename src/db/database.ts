@@ -39,6 +39,21 @@ db.version(3).stores({
   documents: 'id, subscriptionId, createdAt',
 });
 
+// v4: Gekündigt-Status. Früher einfach deaktivierte Abos erhalten das Ende ihres letzten Preises als
+// Vertragsende – die Karte zeigt dann "Gekündigt · beendet am …" statt nur "Inaktiv".
+db.version(4)
+  .stores({})
+  .upgrade(async (tx) => {
+    await tx
+      .table<Subscription, string>('subscriptions')
+      .toCollection()
+      .modify((sub) => {
+        if (sub.isActive || sub.endsOn) return;
+        const ends = sub.intervals.map((i) => i.endDate).filter((date): date is string => date !== null);
+        if (ends.length === sub.intervals.length && ends.length > 0) sub.endsOn = ends.sort().at(-1);
+      });
+  });
+
 // Wird nur beim allerersten Anlegen der Datenbank ausgeführt.
 db.on('populate', async (tx) => {
   await tx.table<Category, string>('categories').bulkAdd(DEFAULT_CATEGORIES);

@@ -1,4 +1,4 @@
-import { AlarmClock, CalendarClock, CalendarX, Gift, Lock, Moon, PauseCircle, Users } from 'lucide-react';
+import { AlarmClock, CalendarClock, CalendarX, Gift, Lock, Moon, Users } from 'lucide-react';
 import type { Category, ExchangeRates, Subscription } from '../../types';
 import {
   getActiveCommitmentEnd,
@@ -149,10 +149,10 @@ export function SubscriptionCard({ subscription, category, baseCurrency, rates, 
           ) : (
             <>
               <p className="inline-flex items-center gap-1">
-                <PauseCircle className="h-3.5 w-3.5" aria-hidden />
-                {endsOn ? 'Beendet' : 'Inaktiv'}
+                <CalendarX className="h-3.5 w-3.5" aria-hidden />
+                Gekündigt
               </p>
-              {endsOn && <p>seit {formatDate(addDays(parseISODate(endsOn), 1), true)}</p>}
+              <p>{endsOn ? `beendet am ${formatDate(parseISODate(endsOn), true)}` : 'beendet'}</p>
             </>
           )}
         </div>

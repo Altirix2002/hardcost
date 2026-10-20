@@ -29,7 +29,10 @@ export function SegmentedControl<T extends string>({
   iconOnly = false,
 }: SegmentedControlProps<T>) {
   return (
-    <div
+    // layoutRoot: Die Markierung gleitet relativ zum Umschalter. Ändert das umgebende Fenster beim
+    // Umschalten seine Höhe (z.B. Liste ↔ Kalender), flog sie sonst quer über den Bildschirm.
+    <motion.div
+      layoutRoot
       role="radiogroup"
       aria-label={ariaLabel}
       className="inline-flex rounded-full border border-white/20 bg-zinc-900/5 p-1 sm:backdrop-blur-md dark:border-white/10 dark:bg-white/10"
@@ -63,6 +66,6 @@ export function SegmentedControl<T extends string>({
           </button>
         );
       })}
-    </div>
+    </motion.div>
   );
 }

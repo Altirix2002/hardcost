@@ -5,7 +5,7 @@ Stand: 20.10.2026. Erledigte Punkte abhaken (`[x]`) oder entfernen, neue unten e
 ## Offene Punkte
 
 - [ ] **Logo-Suche hängt an Gratis-Diensten** (Simple Icons, Clearbit Autocomplete, Favicone – siehe `src/services/logoSearch.ts`). Stand 20.10.2026 antworten alle noch. Clearbit Autocomplete gehört zu HubSpot: Das Logo-Feld liefert seit Sept. 2025 nichts mehr (wir nutzen dort nur Name + Domain), der Dienst kann ganz wegfallen. Empfehlung: Wechsel auf **Brandfetch** (Brand Search + Logo, gratis mit Client-ID, ohne Namensnennung, 500k Abrufe/Monat) – braucht ein kostenloses Konto des Nutzers. Ausweich-Lösung ohne Konto: Google-Favicon-Dienst als Fallback.
-- [ ] **Am echten Handy testen (neu):** Face ID startet automatisch, Wisch-Knöpfe erst beim vollen Wischen, Tab-Wischen, Datumsfelder (eigener Datums-Wähler), Kalenderansicht.
+- [ ] **Am echten Handy testen:** Tab-Wischen (neu umgesetzt: reagiert schon während der Bewegung), Wechsel Liste ↔ Kalender (Markierung springt nicht mehr, Höhe gleitet).
 
 ## Vorschläge
 
@@ -20,6 +20,9 @@ Stand: 20.10.2026. Erledigte Punkte abhaken (`[x]`) oder entfernen, neue unten e
 4. [ ] **Budget pro Kategorie** zusätzlich zum Gesamtbudget.
 
 ## Erledigt
+
+- [x] Am Handy getestet: Face ID automatisch, Wisch-Knöpfe, Datumsfelder, Kalender
+- [x] „Inaktiv“ heisst jetzt „Gekündigt · beendet am …“ (Migration übernimmt das Enddatum alter inaktiver Abos), Filter „Gekündigt“, Logo-Kürzel ohne Satzzeichen
 
 - [x] **Runde nach Handy-Test:** Wisch-Knöpfe erscheinen erst beim vollen Wischen, Face ID startet automatisch, PIN-Warnhinweis, eigenes Datumsfeld (kein Komma mehr), eigene Zahlungsarten bleiben gespeichert, ZIP-Backup inkl. Dokumente, Gratis-Testphasen & Gratis-Abos, Gekündigt-Status („läuft noch bis“), Abo kopieren, zwischen Tabs wischen, Kalenderansicht der Abbuchungen, Monatsbudget, Backup-Erinnerung, 12-Monats-Prognose
 - [x] Am Handy getestet: Tab-Wechsel, Wischgeste, Face ID / Fingerabdruck

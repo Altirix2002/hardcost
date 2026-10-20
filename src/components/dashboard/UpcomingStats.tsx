@@ -16,7 +16,7 @@ interface UpcomingStatsProps {
 function describeOthers({ pausedCount, inactiveCount }: CostSummary): string {
   const parts = [
     pausedCount > 0 ? `${pausedCount} pausiert` : null,
-    inactiveCount > 0 ? `${inactiveCount} inaktiv` : null,
+    inactiveCount > 0 ? `${inactiveCount} beendet` : null,
   ].filter((part) => part !== null);
   return parts.length > 0 ? parts.join(' · ') : 'Alle aktiv';
 }

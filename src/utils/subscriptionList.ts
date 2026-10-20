@@ -17,8 +17,9 @@ export function filterSubscriptions(
       return subs.filter((sub) => isRunning(sub, reference));
     case 'paused':
       return subs.filter((sub) => isActiveAt(sub, reference) && isPausedAt(sub, reference));
-    case 'inactive':
-      return subs.filter((sub) => !isActiveAt(sub, reference));
+    case 'cancelled':
+      // Gekündigt umfasst auslaufende und bereits beendete Abos.
+      return subs.filter((sub) => !sub.isActive || sub.endsOn !== undefined);
   }
 }
 
@@ -46,7 +47,7 @@ export function searchSubscriptions(
   });
 }
 
-/** Reihenfolge der Status beim Sortieren: laufend, pausiert, inaktiv. */
+/** Reihenfolge der Status beim Sortieren: laufend, pausiert, beendet. */
 function statusRank(sub: Subscription, reference: Date): number {
   if (!isActiveAt(sub, reference)) return 2;
   return isPausedAt(sub, reference) ? 1 : 0;
@@ -54,7 +55,7 @@ function statusRank(sub: Subscription, reference: Date): number {
 
 /**
  * Sortiert nach Fälligkeit (nächste Abbuchung), Kosten (Monatsäquivalent in
- * Basiswährung, teuerste zuerst) oder Name. Pausierte und inaktive Abos stehen
+ * Basiswährung, teuerste zuerst) oder Name. Pausierte und beendete Abos stehen
  * bei Fälligkeit und Kosten immer am Ende.
  */
 export function sortSubscriptions(

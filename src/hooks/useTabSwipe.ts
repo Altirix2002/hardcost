@@ -1,43 +1,58 @@
-import { useRef, type TouchEvent } from 'react';
+import { useEffect } from 'react';
 import { TAB_ORDER, useNavigationStore } from '../store/useNavigationStore';
 
-/** Mindeststrecke und maximale Dauer eines Wischers, der den Tab wechselt. */
-const MIN_DISTANCE = 70;
-const MAX_DURATION_MS = 700;
+/** Ab dieser waagrechten Strecke wechselt der Tab – noch während der Finger auf dem Display ist. */
+const TRIGGER_DISTANCE = 60;
+/** Bewegt sich der Finger zuerst so weit senkrecht, ist es Scrollen und keine Tab-Geste. */
+const VERTICAL_CANCEL = 24;
 
 /**
- * Horizontales Wischen über dem Inhalt wechselt zwischen den Tabs (nur Touch).
- * Bereiche mit eigener Geste (Abo-Karten, Chart) tragen `data-no-tab-swipe` und bleiben aussen vor.
+ * Horizontales Wischen wechselt zwischen den Tabs (nur Touch).
+ * Ausgewertet wird schon bei `touchmove`: Übernimmt der Browser die Bewegung (z.B. zum Scrollen),
+ * schickt Chrome statt `touchend` oft nur `touchcancel` – darauf zu warten klappte am Handy nicht.
+ * Bereiche mit eigener Geste (Abo-Karten, Chart) und offene Fenster bleiben aussen vor.
  */
 export function useTabSwipe() {
-  const start = useRef<{ x: number; y: number; time: number } | null>(null);
+  useEffect(() => {
+    let start: { x: number; y: number } | null = null;
 
-  const onTouchStart = (event: TouchEvent) => {
-    const touch = event.touches[0];
-    const target = event.target as Element;
-    if (!touch || event.touches.length > 1 || target.closest('[data-no-tab-swipe], input, textarea, select')) {
-      start.current = null;
-      return;
-    }
-    start.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
-  };
+    const onTouchStart = (event: TouchEvent) => {
+      const touch = event.touches[0];
+      const target = event.target instanceof Element ? event.target : null;
+      const excluded = target?.closest('[data-no-tab-swipe], [role=dialog], input, textarea, select');
+      start = touch && event.touches.length === 1 && !excluded ? { x: touch.clientX, y: touch.clientY } : null;
+    };
 
-  const onTouchEnd = (event: TouchEvent) => {
-    const origin = start.current;
-    start.current = null;
-    const touch = event.changedTouches[0];
-    if (!origin || !touch) return;
+    const onTouchMove = (event: TouchEvent) => {
+      const touch = event.touches[0];
+      if (!start || !touch) return;
+      const dx = touch.clientX - start.x;
+      const dy = touch.clientY - start.y;
+      if (Math.abs(dy) > VERTICAL_CANCEL && Math.abs(dy) > Math.abs(dx)) {
+        start = null;
+        return;
+      }
+      if (Math.abs(dx) < TRIGGER_DISTANCE || Math.abs(dx) < Math.abs(dy) * 1.5) return;
 
-    const dx = touch.clientX - origin.x;
-    const dy = touch.clientY - origin.y;
-    if (Math.abs(dx) < MIN_DISTANCE || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-    if (Date.now() - origin.time > MAX_DURATION_MS) return;
+      start = null; // nur ein Wechsel pro Geste
+      const { activeTab, setActiveTab } = useNavigationStore.getState();
+      const next = TAB_ORDER[TAB_ORDER.indexOf(activeTab) + (dx < 0 ? 1 : -1)];
+      if (next) setActiveTab(next);
+    };
 
-    const { activeTab, setActiveTab } = useNavigationStore.getState();
-    const index = TAB_ORDER.indexOf(activeTab) + (dx < 0 ? 1 : -1);
-    const next = TAB_ORDER[index];
-    if (next) setActiveTab(next);
-  };
+    const reset = () => {
+      start = null;
+    };
 
-  return { onTouchStart, onTouchEnd };
+    document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchmove', onTouchMove, { passive: true });
+    document.addEventListener('touchend', reset, { passive: true });
+    document.addEventListener('touchcancel', reset, { passive: true });
+    return () => {
+      document.removeEventListener('touchstart', onTouchStart);
+      document.removeEventListener('touchmove', onTouchMove);
+      document.removeEventListener('touchend', reset);
+      document.removeEventListener('touchcancel', reset);
+    };
+  }, []);
 }
