@@ -26,12 +26,14 @@ export function UpcomingStats({ summary, nextPayment, baseCurrency, onShowAll }:
   return (
     <div className="grid grid-cols-2 gap-3">
       <StatCard
+        reserveHintLines
         label="Aktive Abos"
         value={<AnimatedNumber value={summary.activeCount} format={formatInteger} />}
         icon={Layers}
         hint={describeOthers(summary)}
       />
       <StatCard
+        reserveHintLines
         label="Nächste Abbuchung"
         value={
           nextPayment ? <AnimatedCurrency key={baseCurrency} value={nextPayment.amount} currency={baseCurrency} /> : '–'

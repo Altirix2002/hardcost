@@ -10,6 +10,7 @@ import { spring } from '../../utils/motion';
 import { isPausedAt } from '../../utils/pauses';
 import { isActiveAt } from '../../utils/status';
 import { SubscriptionCard } from './SubscriptionCard';
+import { SwipeActionButton } from './SwipeActionButton';
 
 type SwipeableSubscriptionCardProps = ComponentProps<typeof SubscriptionCard>;
 
@@ -106,30 +107,28 @@ export function SwipeableSubscriptionCard({ subscription, onSelect, ...cardProps
       >
         {canPause && (
           <div className="flex flex-col items-center gap-1">
-            <button
-              type="button"
+            <SwipeActionButton
               tabIndex={open ? 0 : -1}
-              onClick={() => runAction(togglePause)}
-              aria-label={paused ? `${subscription.name} fortsetzen` : `${subscription.name} pausieren`}
+              onActivate={() => runAction(togglePause)}
+              label={paused ? `${subscription.name} fortsetzen` : `${subscription.name} pausieren`}
               className={cn(ACTION_BUTTON, paused ? 'bg-sky-500' : 'bg-amber-500')}
             >
               {paused ? <Play className="h-5 w-5" aria-hidden /> : <Moon className="h-5 w-5" aria-hidden />}
-            </button>
+            </SwipeActionButton>
             <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
               {paused ? 'Fortsetzen' : 'Pausieren'}
             </span>
           </div>
         )}
         <div className="flex flex-col items-center gap-1">
-          <button
-            type="button"
+          <SwipeActionButton
             tabIndex={open ? 0 : -1}
-            onClick={() => runAction(deleteWithUndo)}
-            aria-label={`${subscription.name} löschen`}
+            onActivate={() => runAction(deleteWithUndo)}
+            label={`${subscription.name} löschen`}
             className={cn(ACTION_BUTTON, 'bg-rose-500')}
           >
             <Trash2 className="h-5 w-5" aria-hidden />
-          </button>
+          </SwipeActionButton>
           <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">Löschen</span>
         </div>
       </motion.div>

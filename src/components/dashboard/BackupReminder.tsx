@@ -32,9 +32,15 @@ export function BackupReminder({ lastBackupAt, subscriptionCount, onBackup }: Ba
   const [snoozedUntil, setSnoozedUntil] = useState(readSnooze);
   const today = new Date();
   const daysSince = lastBackupAt ? daysBetween(new Date(lastBackupAt), today) : null;
+  // Einmal angezeigt, bleibt sie stehen – sonst verschwände sie mitten beim Löschen, sobald es
+  // weniger als drei Abos sind (und die Seite würde zusätzlich springen).
+  const [shown, setShown] = useState(false);
   const due =
-    daysSince === null ? subscriptionCount >= MIN_SUBSCRIPTIONS_WITHOUT_BACKUP : daysSince >= REMIND_AFTER_DAYS;
+    daysSince === null
+      ? subscriptionCount >= MIN_SUBSCRIPTIONS_WITHOUT_BACKUP || shown
+      : daysSince >= REMIND_AFTER_DAYS;
   const visible = due && subscriptionCount > 0 && Date.now() > snoozedUntil;
+  if (visible && !shown) setShown(true);
 
   const snooze = () => {
     const until = Date.now() + SNOOZE_DAYS * 86_400_000;
