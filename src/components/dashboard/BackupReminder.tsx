@@ -63,7 +63,9 @@ export function BackupReminder({ lastBackupAt, subscriptionCount, onBackup }: Ba
           transition={sheetSpringWithFade}
           // Trägt seinen Abstand selbst (Polster innen, negativer Rand aussen): Beim Ein-/Ausklappen
           // wächst bzw. schrumpft der 24-px-Abstand mit, statt beim Einfügen/Entfernen zu springen.
-          className="-mb-6 overflow-hidden"
+          // Kein Scroll-Anker hierin: Wählt Chrome ein Element, das gerade zusammenklappt, als Anker,
+          // springt die Seite (ganz unten gescrollt gemessen: 60 px).
+          className="-mb-6 overflow-hidden [overflow-anchor:none]"
         >
           <div className="pb-6">
             <div className="flex flex-col gap-3 rounded-3xl border border-sky-500/30 bg-sky-50/70 p-4 shadow-lg shadow-sky-900/5 inset-shadow-2xs inset-shadow-white/70 sm:flex-row sm:items-center sm:backdrop-blur-md dark:border-sky-400/20 dark:bg-sky-950/40 dark:inset-shadow-white/10">

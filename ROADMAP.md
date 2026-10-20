@@ -5,7 +5,7 @@ Stand: 20.10.2026. Erledigte Punkte abhaken (`[x]`) oder entfernen, neue unten e
 ## Offene Punkte
 
 - [ ] **Logo-Suche hängt an Gratis-Diensten** (Simple Icons, Clearbit Autocomplete, Favicone – siehe `src/services/logoSearch.ts`). Stand 20.10.2026 antworten alle noch. Clearbit Autocomplete gehört zu HubSpot: Das Logo-Feld liefert seit Sept. 2025 nichts mehr (wir nutzen dort nur Name + Domain), der Dienst kann ganz wegfallen. Empfehlung: Wechsel auf **Brandfetch** (Brand Search + Logo, gratis mit Client-ID, ohne Namensnennung, 500k Abrufe/Monat) – braucht ein kostenloses Konto des Nutzers. Ausweich-Lösung ohne Konto: Google-Favicon-Dienst als Fallback.
-- [ ] **Am echten Handy testen:** Ganze Übersicht beim Löschen/Hinzufügen/Filtern – Kacheln rollen jetzt, Abstände klappen mit.
+- [ ] **Am echten Handy testen:** Kachel-Ansicht (Toolbar → Raster-Symbol): Löschen über Kachel → Löschen, Rückgängig, Filter, Wechsel Liste ↔ Kacheln.
 
 ## Vorschläge
 
@@ -20,6 +20,9 @@ Stand: 20.10.2026. Erledigte Punkte abhaken (`[x]`) oder entfernen, neue unten e
 4. [ ] **Budget pro Kategorie** zusätzlich zum Gesamtbudget.
 
 ## Erledigt
+
+- [x] Übersicht ohne Sprünge (am Handy bestätigt)
+- [x] **Kachel-Ansicht** der Abos (3/4/5 pro Reihe, Status-Symbol, gemerkte Wahl), Überblenden Liste ↔ Kacheln; Scroll-Verankerung in Abo-Liste, Radar und Backup-Hinweis abgeschaltet (verursachte 60-px-Sprünge ganz unten); Sprung-Tests beider Ansichten im Production-Build
 
 - [x] Wisch-Knöpfe reagieren sofort (am Handy bestätigt)
 - [x] Kacheln „Aktive Abos“/„Nächste Abbuchung“ rollen statt durch Zwischenwerte zu zählen; Radar und Backup-Hinweis tragen ihren Abstand selbst (kein 24-px-Sprung); sanftere, gestaffelte Ein-/Ausklapp-Animation; komplette Übersicht per Bild-für-Bild-Messung im Production-Build geprüft

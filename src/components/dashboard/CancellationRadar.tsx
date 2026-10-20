@@ -26,7 +26,9 @@ export function CancellationRadar({ alerts, categoriesById, onSelect }: Cancella
           transition={sheetSpringWithFade}
           // Trägt seinen Abstand selbst (Polster innen, negativer Rand aussen): Beim Ein-/Ausklappen
           // wächst bzw. schrumpft der 24-px-Abstand mit, statt beim Einfügen/Entfernen zu springen.
-          className="-mb-6 overflow-hidden"
+          // Kein Scroll-Anker hierin: Wählt Chrome ein Element, das gerade zusammenklappt, als Anker,
+          // springt die Seite (ganz unten gescrollt gemessen: 60 px).
+          className="-mb-6 overflow-hidden [overflow-anchor:none]"
         >
           <div className="pb-6">
             <div className="relative overflow-hidden rounded-3xl border border-amber-500/30 bg-amber-50/70 p-4 shadow-lg shadow-amber-900/5 inset-shadow-2xs inset-shadow-white/70 sm:backdrop-blur-md dark:border-amber-400/20 dark:bg-amber-950/40 dark:shadow-black/30 dark:inset-shadow-white/10">

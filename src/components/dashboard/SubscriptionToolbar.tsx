@@ -1,5 +1,5 @@
-import { ArrowDownAZ, CalendarClock, Coins } from 'lucide-react';
-import type { SubscriptionSortKey, SubscriptionStatusFilter } from '../../types';
+import { ArrowDownAZ, CalendarClock, Coins, LayoutGrid, Rows3 } from 'lucide-react';
+import type { SubscriptionSortKey, SubscriptionStatusFilter, SubscriptionViewMode } from '../../types';
 import { SegmentedControl } from '../ui/SegmentedControl';
 
 interface SubscriptionToolbarProps {
@@ -8,7 +8,14 @@ interface SubscriptionToolbarProps {
   onSortChange: (sortKey: SubscriptionSortKey) => void;
   statusFilter: SubscriptionStatusFilter;
   onStatusFilterChange: (statusFilter: SubscriptionStatusFilter) => void;
+  viewMode: SubscriptionViewMode;
+  onViewModeChange: (viewMode: SubscriptionViewMode) => void;
 }
+
+const VIEW_OPTIONS = [
+  { value: 'list' as const, label: 'Liste', icon: Rows3 },
+  { value: 'tiles' as const, label: 'Kacheln', icon: LayoutGrid },
+];
 
 const SORT_OPTIONS = [
   { value: 'due' as const, label: 'Fälligkeit', icon: CalendarClock },
@@ -29,6 +36,8 @@ export function SubscriptionToolbar({
   onSortChange,
   statusFilter,
   onStatusFilterChange,
+  viewMode,
+  onViewModeChange,
 }: SubscriptionToolbarProps) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -49,6 +58,14 @@ export function SubscriptionToolbar({
           onChange={onSortChange}
           layoutId="sort-key"
           ariaLabel="Sortieren nach"
+          iconOnly
+        />
+        <SegmentedControl
+          options={VIEW_OPTIONS}
+          value={viewMode}
+          onChange={onViewModeChange}
+          layoutId="view-mode"
+          ariaLabel="Ansicht"
           iconOnly
         />
       </div>

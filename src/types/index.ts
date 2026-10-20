@@ -321,6 +321,9 @@ export interface PaymentMethodShare {
 
 export type SubscriptionSortKey = 'due' | 'cost' | 'name';
 
+/** Darstellung der Abo-Liste: grosse Karten oder kompakte Kacheln (mehr Abos auf einen Blick). */
+export type SubscriptionViewMode = 'list' | 'tiles';
+
 export type SubscriptionStatusFilter = 'all' | 'active' | 'paused' | 'cancelled';
 
 export type AppTab = 'overview' | 'statistics';

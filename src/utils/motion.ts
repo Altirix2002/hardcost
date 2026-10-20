@@ -80,3 +80,13 @@ export const collapseItemVariants = makeCollapseVariants(0);
  * verlorene Zeit in einem sichtbaren Sprung auf.
  */
 export const swapVariants = makeCollapseVariants(0.06);
+
+/**
+ * Überblenden an Ort und Stelle (z.B. Liste ↔ Kacheln): Die alte Ansicht blendet über der neuen aus
+ * (popLayout), statt sie wegzuschieben. Die Höhe gleitet separat (AutoHeight).
+ */
+export const crossfadeVariants: Variants = {
+  hidden: { opacity: 0, scale: 0.98 },
+  visible: { opacity: 1, scale: 1, transition: { ...spring, opacity: { duration: 0.25, ease: 'easeOut', delay: 0.05 } } },
+  exit: { opacity: 0, scale: 0.98, transition: { ...spring, opacity: { duration: 0.15, ease: 'easeOut' } } },
+};
