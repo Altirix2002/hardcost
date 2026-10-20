@@ -5,9 +5,13 @@ import type {
   Category,
   CategoryShare,
   Charge,
+  CostSplit,
   CostSummary,
   ExchangeRates,
   MonthlySpendPoint,
+  PaymentMethodShare,
+  PriceHike,
+  PriceHikeSortKey,
   PriceInterval,
   Subscription,
   SubscriptionCost,
@@ -16,6 +20,7 @@ import type {
   UpcomingPayment,
 } from '../types';
 import { addDays, addMonthsClamped, daysBetween, parseISODate, startOfDay, toISODate } from './dates';
+import { getPauseAt, isPausedAt, isRunning } from './pauses';
 
 /** Ab so vielen Tagen vor Fristende warnt das Kündigungsradar. */
 export const CANCELLATION_ALERT_DAYS = 14;
@@ -66,6 +71,19 @@ export function getNextBillingDate(sub: Subscription, reference: Date = new Date
   return date;
 }
 
+/**
+ * Nächste tatsächliche Abbuchung am oder nach `reference` – Pausen werden übersprungen.
+ * Liefert null, solange das Abo unbefristet pausiert ist.
+ */
+export function getNextChargeDate(sub: Subscription, reference: Date = new Date()): Date | null {
+  let date = getNextBillingDate(sub, reference);
+  for (let pause = getPauseAt(sub, date); pause; pause = getPauseAt(sub, date)) {
+    if (pause.endDate === null) return null;
+    date = getNextBillingDate(sub, addDays(parseISODate(pause.endDate), 1));
+  }
+  return date;
+}
+
 /** Letzter Tag, an dem vor der nächsten Abbuchung noch gekündigt werden kann. */
 export function getCancellationDeadline(sub: Subscription, reference: Date = new Date()): Date {
   return addDays(getNextBillingDate(sub, reference), -sub.cancellationNoticeDays);
@@ -74,10 +92,10 @@ export function getCancellationDeadline(sub: Subscription, reference: Date = new
 /**
  * Nächste Kündigungsfrist, die sich noch einhalten lässt. Ist die Frist vor der
  * nächsten Abbuchung schon verstrichen, zählt die Frist vor der übernächsten.
- * Liefert null für inaktive oder bereits beendete Abos.
+ * Liefert null für inaktive, pausierte oder bereits beendete Abos.
  */
 export function getCancellationWindow(sub: Subscription, reference: Date = new Date()): CancellationWindow | null {
-  if (!sub.isActive || !getCurrentInterval(sub, reference)) return null;
+  if (!isRunning(sub, reference) || !getCurrentInterval(sub, reference)) return null;
 
   const today = startOfDay(reference);
   let renewalDate = getNextBillingDate(sub, today);
@@ -127,10 +145,25 @@ export function getCurrentInterval(sub: Subscription, reference: Date = new Date
   return getIntervalAt(sub, reference) ?? sub.intervals.find((i) => i.endDate === null);
 }
 
+// ─── Kosten-Splitting ───────────────────────────────────────────────────────
+
+/** Eigener Anteil an einem Betrag gemäss Aufteilung (ohne Splitting: der volle Betrag). */
+export function applySplit(split: CostSplit | undefined, amount: number): number {
+  if (!split) return amount;
+  if (split.type === 'equal') return split.people > 1 ? amount / split.people : amount;
+  return Math.min(split.amount, amount);
+}
+
+/** Eigener Anteil an einem Betrag pro Abrechnung. */
+export function getOwnAmount(sub: Subscription, amount: number): number {
+  return applySplit(sub.split, amount);
+}
+
 /**
- * Alle tatsächlichen Abbuchungen im Zeitraum [start, end].
+ * Alle tatsächlichen Abbuchungen im Zeitraum [start, end] – mit dem eigenen Anteil.
  * Jede Abbuchung nutzt den Preis, der an ihrem Datum gültig war –
  * spätere Preisänderungen verändern die Vergangenheit also nicht.
+ * Abbuchungen während einer Pause entfallen.
  */
 export function getChargesInRange(sub: Subscription, start: Date, end: Date): Charge[] {
   const first = parseISODate(sub.firstBillingDate);
@@ -141,13 +174,13 @@ export function getChargesInRange(sub: Subscription, start: Date, end: Date): Ch
   let n = from > first ? estimateCycleIndex(first, sub.billingCycle, from) : 0;
   let date = getBillingDate(first, sub.billingCycle, n);
   while (date <= to) {
-    if (date >= from) {
+    if (date >= from && !isPausedAt(sub, date)) {
       const interval = getIntervalAt(sub, date);
       if (interval) {
         charges.push({
           subscriptionId: sub.id,
           date: toISODate(date),
-          amount: interval.amount,
+          amount: getOwnAmount(sub, interval.amount),
           currency: interval.currency,
         });
       }
@@ -191,17 +224,37 @@ export function toMonthlyAmount(amount: number, cycle: BillingCycle): number {
   return amount * MONTHLY_FACTOR[cycle];
 }
 
-/** Monatsäquivalent eines Abos in der Basiswährung (0 bei inaktiven Abos). */
+/** Monatsäquivalent des eigenen Anteils am aktuellen Preis in der Basiswährung, ohne Status-Prüfung. */
+function getMonthlyPrice(
+  sub: Subscription,
+  baseCurrency: string,
+  rates: ExchangeRates | null,
+  reference: Date,
+): number {
+  const interval = getCurrentInterval(sub, reference);
+  if (!interval) return 0;
+  const own = getOwnAmount(sub, interval.amount);
+  return toMonthlyAmount(convertCurrency(own, interval.currency, baseCurrency, rates), sub.billingCycle);
+}
+
+/** Monatsäquivalent des eigenen Anteils in der Basiswährung (0 bei inaktiven oder pausierten Abos). */
 export function getMonthlyCost(
   sub: Subscription,
   baseCurrency: string,
   rates: ExchangeRates | null,
   reference: Date = new Date(),
 ): number {
-  if (!sub.isActive) return 0;
-  const interval = getCurrentInterval(sub, reference);
-  if (!interval) return 0;
-  return toMonthlyAmount(convertCurrency(interval.amount, interval.currency, baseCurrency, rates), sub.billingCycle);
+  return isRunning(sub, reference) ? getMonthlyPrice(sub, baseCurrency, rates, reference) : 0;
+}
+
+/** Was ein pausiertes Abo regulär kosten würde – zeigt die Ersparnis der Pause. */
+export function getPausedMonthlySavings(
+  sub: Subscription,
+  baseCurrency: string,
+  rates: ExchangeRates | null,
+  reference: Date = new Date(),
+): number {
+  return sub.isActive && isPausedAt(sub, reference) ? getMonthlyPrice(sub, baseCurrency, rates, reference) : 0;
 }
 
 export function getYearlyCost(
@@ -229,7 +282,8 @@ export function getCostSummary(
   rates: ExchangeRates | null,
   reference: Date = new Date(),
 ): CostSummary {
-  const active = subs.filter((sub) => sub.isActive);
+  const active = subs.filter((sub) => isRunning(sub, reference));
+  const pausedCount = subs.filter((sub) => sub.isActive && isPausedAt(sub, reference)).length;
   const monthly = getTotalMonthlyCost(active, baseCurrency, rates, reference);
 
   const unconverted = new Set<string>();
@@ -242,12 +296,13 @@ export function getCostSummary(
     monthly,
     yearly: monthly * 12,
     activeCount: active.length,
-    inactiveCount: subs.length - active.length,
+    pausedCount,
+    inactiveCount: subs.length - active.length - pausedCount,
     unconvertedCurrencies: [...unconverted].sort(),
   };
 }
 
-/** Die nächsten Abbuchungen aktiver Abos – mit dem Preis, der am Abbuchungstag gilt. */
+/** Die nächsten Abbuchungen aktiver Abos – mit dem Preis, der am Abbuchungstag gilt (Pausen übersprungen). */
 export function getUpcomingPayments(
   subs: Subscription[],
   baseCurrency: string,
@@ -258,10 +313,11 @@ export function getUpcomingPayments(
   return subs
     .filter((sub) => sub.isActive)
     .flatMap((subscription) => {
-      const date = getNextBillingDate(subscription, reference);
-      const interval = getIntervalAt(subscription, date);
-      if (!interval) return [];
-      const amount = convertCurrency(interval.amount, interval.currency, baseCurrency, rates);
+      const date = getNextChargeDate(subscription, reference);
+      const interval = date && getIntervalAt(subscription, date);
+      if (!date || !interval) return [];
+      const own = getOwnAmount(subscription, interval.amount);
+      const amount = convertCurrency(own, interval.currency, baseCurrency, rates);
       return [{ subscription, date, amount }];
     })
     .sort((a, b) => a.date.getTime() - b.date.getTime())
@@ -393,4 +449,121 @@ export function getMostExpensiveSubscription(
     if (monthly > 0 && (!top || monthly > top.monthly)) top = { subscription, monthly };
   }
   return top;
+}
+
+// ─── Preiserhöhungs-Radar ───────────────────────────────────────────────────
+
+/**
+ * Letzte Preiserhöhung je Abo: Vergleicht den aktuellen Preis mit dem vorherigen. Ist bereits ein
+ * künftiger Preis erfasst, wird stattdessen diese angekündigte Erhöhung gezeigt.
+ * Preissenkungen und Währungswechsel (nicht vergleichbar) werden ignoriert, ebenso inaktive Abos.
+ */
+export function getPriceHikes(
+  subs: Subscription[],
+  baseCurrency: string,
+  rates: ExchangeRates | null,
+  reference: Date = new Date(),
+): PriceHike[] {
+  const today = toISODate(reference);
+  return subs.flatMap((subscription) => {
+    if (!subscription.isActive || subscription.intervals.length < 2) return [];
+    const sorted = [...subscription.intervals].sort((a, b) => a.startDate.localeCompare(b.startDate));
+    const currentIndex = sorted.filter((i) => i.startDate <= today).length - 1;
+    const upcoming = currentIndex >= 0 ? sorted[currentIndex + 1] : undefined;
+    const newer = upcoming ?? sorted[currentIndex];
+    const older = upcoming ? sorted[currentIndex] : sorted[currentIndex - 1];
+    if (!newer || !older || older.currency !== newer.currency || older.amount <= 0) return [];
+
+    const absoluteChange = newer.amount - older.amount;
+    if (absoluteChange <= 0) return [];
+
+    const monthlyIncrease = toMonthlyAmount(
+      convertCurrency(absoluteChange, newer.currency, baseCurrency, rates),
+      subscription.billingCycle,
+    );
+    return [
+      {
+        subscription,
+        previousAmount: older.amount,
+        currentAmount: newer.amount,
+        currency: newer.currency,
+        absoluteChange,
+        percentageChange: absoluteChange / older.amount,
+        monthlyIncrease,
+        effectiveDate: newer.startDate,
+        isUpcoming: newer.startDate > today,
+      },
+    ];
+  });
+}
+
+/** Sortiert nach Mehrkosten pro Monat (vergleichbar über Zyklen/Währungen) oder nach Prozent. */
+export function sortPriceHikes(hikes: PriceHike[], key: PriceHikeSortKey): PriceHike[] {
+  return [...hikes].sort((a, b) =>
+    key === 'percent'
+      ? b.percentageChange - a.percentageChange || b.monthlyIncrease - a.monthlyIncrease
+      : b.monthlyIncrease - a.monthlyIncrease || b.percentageChange - a.percentageChange,
+  );
+}
+
+// ─── Zahlungsarten ──────────────────────────────────────────────────────────
+
+/** Bezeichnung für Abos ohne Zahlungsart. */
+export const UNKNOWN_PAYMENT_METHOD = 'Ohne Angabe';
+
+/**
+ * Rundet Anteile so auf ganze Prozent, dass die Summe exakt 100 ergibt
+ * (Methode des grössten Rests) – sonst zeigt die Liste z.B. 33 % + 33 % + 33 %.
+ */
+export function toWholePercents(values: number[]): number[] {
+  const total = values.reduce((sum, value) => sum + value, 0);
+  if (total <= 0) return values.map(() => 0);
+  const exact = values.map((value) => (value / total) * 100);
+  const result = exact.map(Math.floor);
+  let missing = 100 - result.reduce((sum, value) => sum + value, 0);
+  const byRemainder = exact
+    .map((value, index) => ({ index, rest: value - Math.floor(value) }))
+    .sort((a, b) => b.rest - a.rest);
+  for (const { index } of byRemainder) {
+    if (missing <= 0) break;
+    result[index] = (result[index] ?? 0) + 1;
+    missing -= 1;
+  }
+  return result;
+}
+
+/** Monatliche Fixkosten laufender Abos je Zahlungsart, grösster Anteil zuerst. */
+export function getPaymentMethodBreakdown(
+  subs: Subscription[],
+  baseCurrency: string,
+  rates: ExchangeRates | null,
+  reference: Date = new Date(),
+): PaymentMethodShare[] {
+  const groups = new Map<string, { method: string; subscriptions: SubscriptionCost[] }>();
+
+  for (const subscription of subs) {
+    const monthly = getMonthlyCost(subscription, baseCurrency, rates, reference);
+    if (monthly <= 0) continue;
+    const method = subscription.paymentMethod.trim() || UNKNOWN_PAYMENT_METHOD;
+    const key = method.toLocaleLowerCase('de-CH');
+    const group = groups.get(key) ?? { method, subscriptions: [] };
+    group.subscriptions.push({ subscription, monthly });
+    groups.set(key, group);
+  }
+
+  const entries = [...groups.values()]
+    .map(({ method, subscriptions }) => ({
+      method,
+      subscriptions: subscriptions.sort((a, b) => b.monthly - a.monthly),
+      monthly: subscriptions.reduce((sum, entry) => sum + entry.monthly, 0),
+    }))
+    .sort((a, b) => b.monthly - a.monthly);
+
+  const sum = entries.reduce((acc, entry) => acc + entry.monthly, 0);
+  const percents = toWholePercents(entries.map((entry) => entry.monthly));
+  return entries.map((entry, index) => ({
+    ...entry,
+    share: sum > 0 ? entry.monthly / sum : 0,
+    percent: percents[index] ?? 0,
+  }));
 }

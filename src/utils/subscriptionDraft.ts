@@ -1,4 +1,5 @@
 import type {
+  CostSplit,
   DraftValidation,
   IntervalField,
   PriceIntervalDraft,
@@ -9,6 +10,7 @@ import type {
 import { addDays, parseISODate, toISODate } from './dates';
 import { createId } from './id';
 import { isSupportedCurrency } from './options';
+import { getPauseAt, pauseSubscription, resumeSubscription } from './pauses';
 
 // ─── Parsing ────────────────────────────────────────────────────────────────
 
@@ -61,10 +63,21 @@ export function createEmptyDraft(currency: string, today: Date = new Date()): Su
     intervals: [{ id: createId(), startDate: start, endDate: '', amount: '', currency }],
     isActive: true,
     notes: '',
+    isShared: false,
+    splitType: 'equal',
+    splitPeople: '2',
+    splitAmount: '',
+    isPaused: false,
+    pausedUntil: '',
+    pauses: [],
   };
 }
 
-export function subscriptionToDraft(sub: Subscription, fallbackCurrency: string): SubscriptionDraft {
+export function subscriptionToDraft(
+  sub: Subscription,
+  fallbackCurrency: string,
+  today: Date = new Date(),
+): SubscriptionDraft {
   const intervals: PriceIntervalDraft[] = sortByStart(sub.intervals).map((interval) => ({
     id: interval.id,
     startDate: interval.startDate,
@@ -73,6 +86,7 @@ export function subscriptionToDraft(sub: Subscription, fallbackCurrency: string)
     currency: interval.currency,
   }));
   const current = intervals.find((i) => i.endDate === '') ?? intervals[intervals.length - 1];
+  const pause = getPauseAt(sub, today);
 
   return {
     id: sub.id,
@@ -89,14 +103,28 @@ export function subscriptionToDraft(sub: Subscription, fallbackCurrency: string)
     intervals,
     isActive: sub.isActive,
     notes: sub.notes ?? '',
+    isShared: sub.split !== undefined,
+    splitType: sub.split?.type ?? 'equal',
+    splitPeople: sub.split?.type === 'equal' ? String(sub.split.people) : '2',
+    splitAmount: sub.split?.type === 'fixed' ? formatAmountInput(sub.split.amount) : '',
+    isPaused: pause !== undefined,
+    pausedUntil: pause?.endDate ?? '',
+    pauses: sub.pauses ?? [],
   };
 }
 
+function draftToSplit(draft: SubscriptionDraft): CostSplit | undefined {
+  if (!draft.isShared) return undefined;
+  return draft.splitType === 'equal'
+    ? { type: 'equal', people: Number.parseInt(draft.splitPeople, 10) }
+    : { type: 'fixed', amount: parseAmount(draft.splitAmount) ?? 0 };
+}
+
 /** Setzt einen gültigen Entwurf (siehe validateDraft) in ein speicherbares Abo um. */
-export function draftToSubscription(draft: SubscriptionDraft): Subscription {
+export function draftToSubscription(draft: SubscriptionDraft, today: Date = new Date()): Subscription {
   const optional = (value: string): string | undefined => (value.trim() === '' ? undefined : value.trim());
 
-  return {
+  const subscription: Subscription = {
     id: draft.id,
     name: draft.name.trim(),
     planName: optional(draft.planName),
@@ -116,12 +144,21 @@ export function draftToSubscription(draft: SubscriptionDraft): Subscription {
     })),
     isActive: draft.isActive,
     notes: optional(draft.notes),
+    split: draftToSplit(draft),
+    pauses: draft.pauses,
   };
+
+  // Pause fortschreiben: neue Pause ab heute, Ende anpassen oder laufende Pause beenden.
+  const withPause =
+    draft.isActive && draft.isPaused
+      ? pauseSubscription(subscription, draft.pausedUntil === '' ? null : draft.pausedUntil, today)
+      : resumeSubscription(subscription, today);
+  return { ...withPause, pauses: withPause.pauses?.length ? withPause.pauses : undefined };
 }
 
 // ─── Validierung ────────────────────────────────────────────────────────────
 
-export function validateDraft(draft: SubscriptionDraft): DraftValidation {
+export function validateDraft(draft: SubscriptionDraft, today: Date = new Date()): DraftValidation {
   const fields: DraftValidation['fields'] = {};
   const intervals: DraftValidation['intervals'] = {};
   const flag = (id: string, field: IntervalField, message: string) => {
@@ -134,6 +171,21 @@ export function validateDraft(draft: SubscriptionDraft): DraftValidation {
   if (!isValidISODate(draft.firstBillingDate)) fields.firstBillingDate = 'Bitte ein gültiges Datum wählen.';
   if (!/^\d+$/.test(draft.cancellationNoticeDays.trim())) fields.cancellationNoticeDays = 'Ganze Tage ab 0.';
   if (draft.intervals.length === 0) fields.intervals = 'Mindestens ein Preis ist nötig.';
+
+  if (draft.isShared && draft.splitType === 'equal') {
+    const people = Number(draft.splitPeople.trim());
+    if (!Number.isInteger(people) || people < 2 || people > 99) fields.splitPeople = 'Zwischen 2 und 99 Personen.';
+  }
+  if (draft.isShared && draft.splitType === 'fixed') {
+    const share = parseAmount(draft.splitAmount);
+    const price = parseAmount(draft.intervals.find((i) => i.endDate === '')?.amount ?? '');
+    if (share === null || share <= 0) fields.splitAmount = 'Betrag grösser als 0.';
+    else if (price !== null && share > price) fields.splitAmount = 'Höher als der Gesamtpreis.';
+  }
+  if (draft.isActive && draft.isPaused && draft.pausedUntil !== '') {
+    if (!isValidISODate(draft.pausedUntil)) fields.pausedUntil = 'Ungültiges Datum.';
+    else if (draft.pausedUntil < toISODate(today)) fields.pausedUntil = 'Liegt in der Vergangenheit.';
+  }
 
   const sorted = sortByStart(draft.intervals);
   sorted.forEach((interval, index) => {

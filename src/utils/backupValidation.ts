@@ -1,4 +1,4 @@
-import type { BackupFile, Category, PriceInterval, Subscription, UserSettings } from '../types';
+import type { BackupFile, Category, CostSplit, PausePeriod, PriceInterval, Subscription, UserSettings } from '../types';
 import { isCategoryColor } from './categoryStyles';
 import { isSupportedCurrency } from './options';
 import { isValidISODate } from './subscriptionDraft';
@@ -24,6 +24,21 @@ function isPriceInterval(value: unknown): value is PriceInterval {
   );
 }
 
+function isPausePeriod(value: unknown): value is PausePeriod {
+  return (
+    isRecord(value) &&
+    isString(value.id) &&
+    isDate(value.startDate) &&
+    (value.endDate === null || isDate(value.endDate))
+  );
+}
+
+function isCostSplit(value: unknown): value is CostSplit {
+  if (!isRecord(value)) return false;
+  if (value.type === 'equal') return Number.isInteger(value.people) && (value.people as number) >= 2;
+  return value.type === 'fixed' && isFiniteNumber(value.amount) && value.amount > 0;
+}
+
 function isSubscription(value: unknown): value is Subscription {
   return (
     isRecord(value) &&
@@ -41,7 +56,9 @@ function isSubscription(value: unknown): value is Subscription {
     Array.isArray(value.intervals) &&
     value.intervals.every(isPriceInterval) &&
     typeof value.isActive === 'boolean' &&
-    isOptionalString(value.notes)
+    isOptionalString(value.notes) &&
+    (value.split === undefined || isCostSplit(value.split)) &&
+    (value.pauses === undefined || (Array.isArray(value.pauses) && value.pauses.every(isPausePeriod)))
   );
 }
 

@@ -45,6 +45,22 @@ export interface PriceInterval {
   currency: string;
 }
 
+/** Zeitraum, in dem ein Abo pausiert ist (Schlummer-Modus) – Abbuchungen darin entfallen. */
+export interface PausePeriod {
+  id: string;
+  startDate: string; // YYYY-MM-DD, erster pausierter Tag
+  endDate: string | null; // letzter pausierter Tag; null = unbefristet
+}
+
+/**
+ * Kosten-Splitting: Nur der eigene Anteil zählt.
+ * - equal: Preis gleichmässig auf `people` Personen (inkl. dir) verteilt – folgt Preisänderungen.
+ * - fixed: fester Betrag pro Abrechnung in der Währung des jeweiligen Preises.
+ */
+export type CostSplit = { type: 'equal'; people: number } | { type: 'fixed'; amount: number };
+
+export type CostSplitType = CostSplit['type'];
+
 export interface Subscription {
   id: string;
   name: string;
@@ -59,6 +75,10 @@ export interface Subscription {
   intervals: PriceInterval[];
   isActive: boolean;
   notes?: string;
+  /** Geteiltes Abo; fehlt = du zahlst alles. */
+  split?: CostSplit;
+  /** Pausen-Historie; fehlt bei älteren Daten. */
+  pauses?: PausePeriod[];
 }
 
 export interface Category {
@@ -125,9 +145,25 @@ export interface SubscriptionDraft {
   intervals: PriceIntervalDraft[];
   isActive: boolean;
   notes: string;
+  isShared: boolean;
+  splitType: CostSplitType;
+  splitPeople: string; // Anzahl Personen inkl. dir
+  splitAmount: string; // eigener Betrag pro Abrechnung
+  isPaused: boolean;
+  pausedUntil: string; // '' = unbefristet
+  /** Bestehende Pausen-Historie, wird beim Speichern fortgeschrieben. */
+  pauses: PausePeriod[];
 }
 
-export type DraftField = 'name' | 'categoryId' | 'firstBillingDate' | 'cancellationNoticeDays' | 'intervals';
+export type DraftField =
+  | 'name'
+  | 'categoryId'
+  | 'firstBillingDate'
+  | 'cancellationNoticeDays'
+  | 'intervals'
+  | 'splitPeople'
+  | 'splitAmount'
+  | 'pausedUntil';
 
 export type IntervalField = 'startDate' | 'endDate' | 'amount' | 'currency';
 
@@ -158,7 +194,8 @@ export interface Charge {
 export interface CostSummary {
   monthly: number;
   yearly: number;
-  activeCount: number;
+  activeCount: number; // aktiv und nicht pausiert
+  pausedCount: number;
   inactiveCount: number;
   /** Währungen aktiver Abos, für die (noch) kein Kurs vorliegt. */
   unconvertedCurrencies: string[];
@@ -218,11 +255,37 @@ export interface SubscriptionCost {
   monthly: number; // in Basiswährung
 }
 
+/** Letzte (oder angekündigte) Preiserhöhung eines Abos – Beträge pro Abrechnung, Gesamttarif. */
+export interface PriceHike {
+  subscription: Subscription;
+  previousAmount: number;
+  currentAmount: number;
+  currency: string;
+  absoluteChange: number;
+  percentageChange: number; // 0.167 = +16.7 %
+  /** Mehrkosten pro Monat in Basiswährung (vergleichbar über Zyklen und Währungen). */
+  monthlyIncrease: number;
+  effectiveDate: string; // YYYY-MM-DD
+  isUpcoming: boolean; // Preis gilt erst in Zukunft
+}
+
+export type PriceHikeSortKey = 'absolute' | 'percent';
+
+/** Monatliche Fixkosten je Zahlungsart. */
+export interface PaymentMethodShare {
+  method: string;
+  monthly: number; // in Basiswährung
+  share: number; // 0–1
+  /** Ganzzahlige Prozente, die zusammen exakt 100 ergeben. */
+  percent: number;
+  subscriptions: SubscriptionCost[];
+}
+
 // ─── Dashboard & Navigation ─────────────────────────────────────────────────
 
 export type SubscriptionSortKey = 'due' | 'cost' | 'name';
 
-export type SubscriptionStatusFilter = 'all' | 'active' | 'inactive';
+export type SubscriptionStatusFilter = 'all' | 'active' | 'paused' | 'inactive';
 
 export type AppTab = 'overview' | 'statistics';
 

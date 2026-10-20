@@ -11,6 +11,14 @@ interface UpcomingStatsProps {
   onShowAll: () => void;
 }
 
+function describeOthers({ pausedCount, inactiveCount }: CostSummary): string {
+  const parts = [
+    pausedCount > 0 ? `${pausedCount} pausiert` : null,
+    inactiveCount > 0 ? `${inactiveCount} inaktiv` : null,
+  ].filter((part) => part !== null);
+  return parts.length > 0 ? parts.join(' · ') : 'Alle aktiv';
+}
+
 export function UpcomingStats({ summary, nextPayment, baseCurrency, onShowAll }: UpcomingStatsProps) {
   const today = new Date();
   return (
@@ -19,7 +27,7 @@ export function UpcomingStats({ summary, nextPayment, baseCurrency, onShowAll }:
         label="Aktive Abos"
         value={String(summary.activeCount)}
         icon={Layers}
-        hint={summary.inactiveCount > 0 ? `${summary.inactiveCount} inaktiv` : 'Alle aktiv'}
+        hint={describeOthers(summary)}
       />
       <StatCard
         label="Nächste Abbuchung"

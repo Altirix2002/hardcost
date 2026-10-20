@@ -5,13 +5,18 @@ import {
   getCategoryBreakdown,
   getMonthlySpendHistory,
   getMostExpensiveSubscription,
+  getPaymentMethodBreakdown,
+  getPriceHikes,
 } from '../../utils/calculations';
 import { formatCurrency } from '../../utils/format';
+import { isRunning } from '../../utils/pauses';
 import { StatCard } from '../dashboard/StatCard';
 import { Button } from '../ui/Button';
 import { EmptyState } from '../ui/EmptyState';
 import { GlassCard } from '../ui/GlassCard';
 import { CategoryBreakdown } from './CategoryBreakdown';
+import { PaymentMethodsChart } from './PaymentMethodsChart';
+import { PriceHikeRadar } from './PriceHikeRadar';
 import { SpendChart } from './SpendChart';
 
 interface StatisticsViewProps {
@@ -49,9 +54,12 @@ export function StatisticsView({ subscriptions, categories, baseCurrency, rates,
       average: history.reduce((sum, point) => sum + point.total, 0) / Math.max(1, history.length),
       breakdown: getCategoryBreakdown(subscriptions, categories, baseCurrency, rates, today),
       top: getMostExpensiveSubscription(subscriptions, baseCurrency, rates, today),
-      activeCount: subscriptions.filter((s) => s.isActive).length,
+      activeCount: subscriptions.filter((s) => isRunning(s, today)).length,
+      priceHikes: getPriceHikes(subscriptions, baseCurrency, rates, today),
+      paymentMethods: getPaymentMethodBreakdown(subscriptions, baseCurrency, rates, today),
     };
   }, [subscriptions, categories, baseCurrency, rates]);
+  const categoriesById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
 
   if (subscriptions.length === 0) {
     return (
@@ -103,6 +111,18 @@ export function StatisticsView({ subscriptions, categories, baseCurrency, rates,
       <Panel title="Fixkosten nach Kategorie" description="Monatsäquivalent aller aktiven Abos.">
         {stats.breakdown.length > 0 ? (
           <CategoryBreakdown shares={stats.breakdown} currency={baseCurrency} />
+        ) : (
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">Keine aktiven Abos mit laufenden Kosten.</p>
+        )}
+      </Panel>
+
+      <Panel title="Preiserhöhungs-Radar" description="Letzte bzw. angekündigte Preiserhöhung je Abo.">
+        <PriceHikeRadar hikes={stats.priceHikes} categoriesById={categoriesById} baseCurrency={baseCurrency} />
+      </Panel>
+
+      <Panel title="Nach Zahlungsart" description="Monatliche Fixkosten je Zahlungsmittel – antippen für Details.">
+        {stats.paymentMethods.length > 0 ? (
+          <PaymentMethodsChart shares={stats.paymentMethods} categoriesById={categoriesById} currency={baseCurrency} />
         ) : (
           <p className="text-sm text-zinc-500 dark:text-zinc-400">Keine aktiven Abos mit laufenden Kosten.</p>
         )}

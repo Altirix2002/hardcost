@@ -24,8 +24,10 @@ import { TextField } from '../../ui/TextField';
 import { Toggle } from '../../ui/Toggle';
 import { CategoryPicker } from './CategoryPicker';
 import { LogoPicker } from './LogoPicker';
+import { PauseEditor } from './PauseEditor';
 import { PaymentMethodPicker } from './PaymentMethodPicker';
 import { PriceIntervalEditor } from './PriceIntervalEditor';
+import { SplitEditor } from './SplitEditor';
 
 interface SubscriptionFormModalProps {
   open: boolean;
@@ -79,6 +81,7 @@ export function SubscriptionFormModal({
 
   const update = <K extends keyof SubscriptionDraft>(key: K, value: SubscriptionDraft[K]) =>
     setDraft((current) => ({ ...current, [key]: value }));
+  const patch = (changes: Partial<SubscriptionDraft>) => setDraft((current) => ({ ...current, ...changes }));
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -248,13 +251,18 @@ export function SubscriptionFormModal({
           />
         </FormSection>
 
-        <FormSection title="Weiteres">
+        <FormSection title="Teilen & Pausieren">
+          <SplitEditor draft={draft} errors={errors.fields} onChange={patch} />
+          {draft.isActive && <PauseEditor draft={draft} errors={errors.fields} onChange={patch} />}
           <Toggle
             label="Aktiv"
-            description="Inaktive Abos zählen nicht zu den laufenden Kosten."
+            description="Inaktive (gekündigte) Abos zählen nicht zu den laufenden Kosten."
             checked={draft.isActive}
             onChange={(isActive) => update('isActive', isActive)}
           />
+        </FormSection>
+
+        <FormSection title="Weiteres">
           <TextArea
             label="Notizen"
             placeholder="z.B. Login-Konto, geteilt mit …"

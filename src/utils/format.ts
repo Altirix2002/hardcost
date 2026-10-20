@@ -51,8 +51,14 @@ export function formatCompactNumber(value: number): string {
   return new Intl.NumberFormat(LOCALE, { notation: 'compact', maximumFractionDigits: 1 }).format(value);
 }
 
-export function formatPercent(share: number): string {
-  return new Intl.NumberFormat(LOCALE, { style: 'percent', maximumFractionDigits: 0 }).format(share);
+export function formatPercent(share: number, fractionDigits = 0): string {
+  return new Intl.NumberFormat(LOCALE, { style: 'percent', maximumFractionDigits: fractionDigits }).format(share);
+}
+
+/** Immer mit Vorzeichen vorne, z.B. "+CHF 3.00" (de-CH setzt es sonst hinter den Code: "CHF+3.00"). */
+export function formatSignedCurrency(amount: number, currency: string): string {
+  const sign = amount > 0 ? '+' : amount < 0 ? '−' : '';
+  return `${sign}${formatCurrency(Math.abs(amount), currency)}`;
 }
 
 export function formatRelativeDays(days: number): string {

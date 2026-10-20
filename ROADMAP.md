@@ -21,7 +21,7 @@ Stand: 20.10.2026. Erledigte Punkte abhaken (`[x]`) oder entfernen, neue unten e
 ### Nützlich
 5. [ ] **Wischgesten** – Karten wischen zum Löschen/Pausieren, zwischen Tabs wischen.
 6. [ ] **Abo duplizieren**.
-7. [ ] **Geteilte Abos** – „Familie, ich zahle 1/4“, nur der eigene Anteil zählt.
+7. [x] **Geteilte Abos** – erledigt in Meilenstein 5 (gleichmässig auf X Personen oder fester Betrag).
 8. [ ] **Kalenderansicht der Abbuchungen** (Monatsraster) als Ergänzung zur Liste.
 9. [ ] **Budget/Limit pro Monat** mit Warnung.
 10. [ ] **Kalender-Export (.ics)** – Abbuchungen und Fristen in Google-/Apple-Kalender.
@@ -34,6 +34,8 @@ Stand: 20.10.2026. Erledigte Punkte abhaken (`[x]`) oder entfernen, neue unten e
 **Empfehlung für die nächste Runde:** 2 + 3 + 10 (ohne Server machbar, spart im Alltag am meisten Geld).
 
 ## Erledigt
+
+- [x] **Meilenstein 5:** Kosten-Splitting, Schlummer-Modus (Pausen mit Historie, automatisches Weiterlaufen), Preiserhöhungs-Radar, Auswertung nach Zahlungsart, Kategorie-Prozente ergeben jetzt exakt 100 %
 
 - [x] Tab-Sprung (horizontaler Überlauf → Zoom in mobilem Chrome), ruckelnde Animationen, Glas-Blur-Fehler
 - [x] Neues Logo im Header, Logo-Editor (Zuschneiden für Kreis/Squircle), Logo-Suche

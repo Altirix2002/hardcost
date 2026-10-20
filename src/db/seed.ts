@@ -46,6 +46,7 @@ export const DEMO_SUBSCRIPTIONS: Subscription[] = [
     firstBillingDate: '2022-08-03',
     cancellationNoticeDays: 0,
     isActive: true,
+    split: { type: 'equal', people: 4 },
     intervals: [{ id: 'demo-spotify-1', startDate: '2022-08-03', endDate: null, amount: 25.95, currency: 'CHF' }],
   },
   {

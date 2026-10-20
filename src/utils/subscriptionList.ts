@@ -1,17 +1,36 @@
 import type { ExchangeRates, Subscription, SubscriptionSortKey, SubscriptionStatusFilter } from '../types';
-import { getMonthlyCost, getNextBillingDate } from './calculations';
+import { getMonthlyCost, getNextChargeDate } from './calculations';
+import { isPausedAt, isRunning } from './pauses';
 
 const collator = new Intl.Collator('de-CH', { sensitivity: 'base' });
 
-export function filterSubscriptions(subs: Subscription[], filter: SubscriptionStatusFilter): Subscription[] {
-  if (filter === 'all') return subs;
-  return subs.filter((sub) => sub.isActive === (filter === 'active'));
+export function filterSubscriptions(
+  subs: Subscription[],
+  filter: SubscriptionStatusFilter,
+  reference: Date = new Date(),
+): Subscription[] {
+  switch (filter) {
+    case 'all':
+      return subs;
+    case 'active':
+      return subs.filter((sub) => isRunning(sub, reference));
+    case 'paused':
+      return subs.filter((sub) => sub.isActive && isPausedAt(sub, reference));
+    case 'inactive':
+      return subs.filter((sub) => !sub.isActive);
+  }
+}
+
+/** Reihenfolge der Status beim Sortieren: laufend, pausiert, inaktiv. */
+function statusRank(sub: Subscription, reference: Date): number {
+  if (!sub.isActive) return 2;
+  return isPausedAt(sub, reference) ? 1 : 0;
 }
 
 /**
  * Sortiert nach Fälligkeit (nächste Abbuchung), Kosten (Monatsäquivalent in
- * Basiswährung, teuerste zuerst) oder Name. Inaktive Abos stehen bei
- * Fälligkeit und Kosten immer am Ende.
+ * Basiswährung, teuerste zuerst) oder Name. Pausierte und inaktive Abos stehen
+ * bei Fälligkeit und Kosten immer am Ende.
  */
 export function sortSubscriptions(
   subs: Subscription[],
@@ -27,14 +46,20 @@ export function sortSubscriptions(
   const metric = new Map(
     subs.map((sub) => [
       sub.id,
-      key === 'due'
-        ? getNextBillingDate(sub, reference).getTime()
-        : -getMonthlyCost(sub, baseCurrency, rates, reference),
+      {
+        rank: statusRank(sub, reference),
+        value:
+          key === 'due'
+            ? (getNextChargeDate(sub, reference)?.getTime() ?? Number.MAX_SAFE_INTEGER)
+            : -getMonthlyCost(sub, baseCurrency, rates, reference),
+      },
     ]),
   );
 
   return [...subs].sort((a, b) => {
-    if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
-    return (metric.get(a.id) ?? 0) - (metric.get(b.id) ?? 0) || byName(a, b);
+    const ma = metric.get(a.id);
+    const mb = metric.get(b.id);
+    if (!ma || !mb) return byName(a, b);
+    return ma.rank - mb.rank || ma.value - mb.value || byName(a, b);
   });
 }

@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import type { CategoryShare } from '../../types';
+import { toWholePercents } from '../../utils/calculations';
 import { getCategoryColorClasses } from '../../utils/categoryStyles';
 import { cn } from '../../utils/cn';
 import { formatCurrency, formatPercent } from '../../utils/format';
@@ -12,6 +13,9 @@ interface CategoryBreakdownProps {
 
 /** Gestapelter Gesamtbalken plus beschriftete Einzelbalken – Identität nie nur über Farbe. */
 export function CategoryBreakdown({ shares, currency }: CategoryBreakdownProps) {
+  // Ganze Prozente, die zusammen exakt 100 ergeben.
+  const percents = toWholePercents(shares.map((entry) => entry.share));
+
   return (
     <div className="flex flex-col gap-6">
       <div aria-hidden className="flex h-3 w-full gap-0.5 overflow-hidden rounded-full">
@@ -44,7 +48,7 @@ export function CategoryBreakdown({ shares, currency }: CategoryBreakdownProps) 
               <span className="flex shrink-0 items-baseline gap-2 tabular-nums">
                 <span className="font-medium">{formatCurrency(entry.monthly, currency)}</span>
                 <span className="w-10 text-right text-xs text-zinc-500 dark:text-zinc-400">
-                  {formatPercent(entry.share)}
+                  {formatPercent((percents[index] ?? 0) / 100)}
                 </span>
               </span>
             </div>

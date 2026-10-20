@@ -19,6 +19,7 @@ const SORT_OPTIONS = [
 const STATUS_OPTIONS = [
   { value: 'all' as const, label: 'Alle' },
   { value: 'active' as const, label: 'Aktiv' },
+  { value: 'paused' as const, label: 'Pausiert' },
   { value: 'inactive' as const, label: 'Inaktiv' },
 ];
 
