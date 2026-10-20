@@ -193,6 +193,15 @@ export function getOwnAmount(sub: Subscription, amount: number): number {
  * Abbuchungen während einer Pause entfallen.
  */
 export function getChargesInRange(sub: Subscription, start: Date, end: Date): Charge[] {
+  return collectCharges(sub, start, end, false);
+}
+
+/** Abbuchungen im Zeitraum, die wegen einer Pause entfallen sind (Ersparnis des Schlummer-Modus). */
+export function getSkippedChargesInRange(sub: Subscription, start: Date, end: Date): Charge[] {
+  return collectCharges(sub, start, end, true);
+}
+
+function collectCharges(sub: Subscription, start: Date, end: Date, paused: boolean): Charge[] {
   const first = parseISODate(sub.firstBillingDate);
   const from = startOfDay(start);
   const to = startOfDay(end);
@@ -201,7 +210,7 @@ export function getChargesInRange(sub: Subscription, start: Date, end: Date): Ch
   let n = from > first ? estimateCycleIndex(first, sub.billingCycle, from) : 0;
   let date = getBillingDate(first, sub.billingCycle, n);
   while (date <= to) {
-    if (date >= from && !isPausedAt(sub, date)) {
+    if (date >= from && isPausedAt(sub, date) === paused) {
       const interval = getIntervalAt(sub, date);
       if (interval) {
         charges.push({

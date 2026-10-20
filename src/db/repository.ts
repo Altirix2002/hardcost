@@ -1,5 +1,6 @@
 import type { Category, CategoryColor, Subscription } from '../types';
 import { toISODate } from '../utils/dates';
+import { getDocumentType } from '../utils/documents';
 import { createId } from '../utils/id';
 import { db } from './database';
 import { DEFAULT_CATEGORIES, DEMO_SUBSCRIPTIONS } from './seed';
@@ -9,8 +10,12 @@ export async function saveSubscription(subscription: Subscription): Promise<void
   await db.subscriptions.put(subscription);
 }
 
+/** Löscht ein Abo samt seinen Dokumenten. */
 export async function deleteSubscription(id: string): Promise<void> {
-  await db.subscriptions.delete(id);
+  await db.transaction('rw', db.subscriptions, db.documents, async () => {
+    await db.documents.where('subscriptionId').equals(id).delete();
+    await db.subscriptions.delete(id);
+  });
 }
 
 /** Diese Demo bleibt ungeprüft und zeigt so den Zombie-Hinweis. */
@@ -65,4 +70,35 @@ export async function deleteCategory(id: string): Promise<void> {
     await db.subscriptions.where('categoryId').equals(id).modify({ categoryId: FALLBACK_CATEGORY_ID });
     await db.categories.delete(id);
   });
+}
+
+// ─── Dokumente ──────────────────────────────────────────────────────────────
+
+/**
+ * Speichert eine Datei als Dokument eines Abos (vorher mit validateDocumentFile prüfen).
+ * Bittet den Browser beim ersten Dokument, den Speicher dauerhaft zu behalten – sonst darf er
+ * IndexedDB bei Platzmangel löschen, und mit ihr die Verträge.
+ */
+export async function addDocument(subscriptionId: string, file: File): Promise<void> {
+  const fileType = getDocumentType(file);
+  if (!fileType) throw new Error('Nicht unterstützter Dateityp.');
+  await db.documents.add({
+    id: createId(),
+    subscriptionId,
+    fileName: file.name,
+    fileType,
+    fileSize: file.size,
+    // Als eigenständigen Blob kopieren: Ein File-Verweis kann nach dem Neuladen ungültig sein.
+    blob: new Blob([await file.arrayBuffer()], { type: fileType }),
+    createdAt: new Date().toISOString(),
+  });
+  try {
+    if (navigator.storage?.persist && !(await navigator.storage.persisted())) await navigator.storage.persist();
+  } catch {
+    // Nicht unterstützt – Dokumente bleiben trotzdem gespeichert.
+  }
+}
+
+export async function deleteDocument(id: string): Promise<void> {
+  await db.documents.delete(id);
 }

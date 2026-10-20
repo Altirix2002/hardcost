@@ -22,6 +22,7 @@ import { Select } from '../../ui/Select';
 import { TextArea } from '../../ui/TextArea';
 import { TextField } from '../../ui/TextField';
 import { Toggle } from '../../ui/Toggle';
+import { DocumentManager } from '../../documents/DocumentManager';
 import { CategoryPicker } from './CategoryPicker';
 import { LifetimeCostPanel } from './LifetimeCostPanel';
 import { LogoPicker } from './LogoPicker';
@@ -274,6 +275,17 @@ export function SubscriptionFormModal({
             checked={draft.isActive}
             onChange={(isActive) => update('isActive', isActive)}
           />
+        </FormSection>
+
+        <FormSection
+          title="Dokumente"
+          description={
+            isEditing
+              ? 'Verträge, Rechnungen oder Kündigungsbestätigungen (PDF, JPG, PNG bis 5 MB) – nur auf diesem Gerät gespeichert.'
+              : 'Nach dem ersten Speichern kannst du hier Verträge und Belege ablegen.'
+          }
+        >
+          {isEditing && <DocumentManager subscriptionId={draft.id} />}
         </FormSection>
 
         <FormSection title="Weiteres">

@@ -10,6 +10,10 @@ Stand: 20.10.2026. Erledigte Punkte abhaken (`[x]`) oder entfernen, neue unten e
 - [ ] **Eigene Zahlungsarten** werden aus gespeicherten Abos abgeleitet (`getPaymentMethodSuggestions`). Wird das letzte Abo mit einer Zahlungsart gelöscht, verschwindet auch der Vorschlag.
 - [ ] **Datumsfelder** zeigen im Desktop-Browser teils ein Komma vor dem Datum („,20.10.2026“) – Browser-Darstellung, unschön.
 
+- [ ] **Face ID / Fingerabdruck am echten Handy testen** (App-Sperre, Einstellungen → Privatsphäre). Im Desktop-Test nur PIN geprüft.
+- [ ] **Dokumente sind nicht im JSON-Backup** (Dateien wären zu gross). Idee: optionaler ZIP-Export mit Dokumenten.
+- [ ] **PIN vergessen:** Es gibt keine Wiederherstellung – nur Website-Daten im Browser löschen (dann sind auch die Abos weg). Evtl. Hinweis beim Einrichten ergänzen oder Backup vorher empfehlen.
+
 ## Vorschläge
 
 ### Wichtig
@@ -34,6 +38,8 @@ Stand: 20.10.2026. Erledigte Punkte abhaken (`[x]`) oder entfernen, neue unten e
 **Empfehlung für die nächste Runde:** 2 + 3 + 10 (ohne Server machbar, spart im Alltag am meisten Geld).
 
 ## Erledigt
+
+- [x] **Meilenstein 7:** Lokale Dokumenten-Ablage (PDF/JPG/PNG, Vorschau), App-Sperre mit PIN + Face ID/Fingerabdruck (WebAuthn), Spar-Simulator, „SubPulse Wrapped“-Jahresrückblick
 
 - [x] **Meilenstein 6:** Live-Suche, Mindestlaufzeit (Kündigungsradar erst zum Ende der Bindung), „Bisher insgesamt bezahlt“ aus echten Abbuchungen inkl. Pausen-Ersparnis, Zombie-Abo-Hinweis mit Schnellaktionen
 

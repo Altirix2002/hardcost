@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie';
-import type { Category, ExchangeRates, SettingsRecord, Subscription } from '../types';
+import type { Category, ExchangeRates, SettingsRecord, StoredDocument, Subscription } from '../types';
 import { toISODate } from '../utils/dates';
 import { DEFAULT_CATEGORIES, DEFAULT_SETTINGS } from './seed';
 
@@ -8,6 +8,7 @@ type SubPulseDatabase = Dexie & {
   categories: EntityTable<Category, 'id'>;
   settings: EntityTable<SettingsRecord, 'id'>;
   exchangeRates: EntityTable<ExchangeRates, 'base'>;
+  documents: EntityTable<StoredDocument, 'id'>;
 };
 
 export const db = new Dexie('subpulse') as SubPulseDatabase;
@@ -32,6 +33,11 @@ db.version(2)
         sub.lastReviewedAt ??= today;
       });
   });
+
+// v3: Lokale Dokumenten-Ablage (Verträge, Rechnungen) als Blobs.
+db.version(3).stores({
+  documents: 'id, subscriptionId, createdAt',
+});
 
 // Wird nur beim allerersten Anlegen der Datenbank ausgeführt.
 db.on('populate', async (tx) => {

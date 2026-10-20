@@ -350,3 +350,53 @@ export interface BackupFile {
   categories: Category[];
   subscriptions: Subscription[];
 }
+
+// ─── Dokumente (lokal in IndexedDB) ─────────────────────────────────────────
+
+export type DocumentMimeType = 'application/pdf' | 'image/png' | 'image/jpeg';
+
+/** Vertrag, Rechnung oder Kündigungsbestätigung – als Blob direkt in IndexedDB. */
+export interface StoredDocument {
+  id: string;
+  subscriptionId: string;
+  fileName: string;
+  fileType: DocumentMimeType;
+  fileSize: number; // Bytes
+  blob: Blob;
+  createdAt: string; // ISO-Zeitstempel
+}
+
+// ─── App-Sperre ─────────────────────────────────────────────────────────────
+
+/** Lokal gespeicherte Sperr-Konfiguration (localStorage); der PIN nur als gesalzener Hash. */
+export interface AppLockConfig {
+  enabled: boolean;
+  pinHash: string; // hex, SHA-256 über Salt + PIN
+  pinSalt: string; // hex
+  /** WebAuthn-Credential (base64url) für Face ID / Touch ID / Windows Hello; fehlt = nur PIN. */
+  credentialId?: string;
+}
+
+// ─── Spar-Simulator & Jahresrückblick ───────────────────────────────────────
+
+export interface SavingsSimulation {
+  currentMonthly: number; // in Basiswährung
+  newMonthly: number;
+  savedMonthly: number;
+  savedYearly: number;
+  savedThreeYears: number;
+  reduction: number; // 0–1
+}
+
+/** Kennzahlen für "SubPulse Wrapped" über die letzten 12 Monate. */
+export interface WrappedSummary {
+  periodStart: Date;
+  periodEnd: Date;
+  totalSpent: number; // in Basiswährung
+  chargeCount: number;
+  subscriptionCount: number; // Abos mit mindestens einer Abbuchung
+  topSubscription: { subscription: Subscription; total: number } | null; // Summe im Zeitraum
+  biggestHike: PriceHike | null;
+  savedByPauses: number;
+  savedByCancellations: number;
+}

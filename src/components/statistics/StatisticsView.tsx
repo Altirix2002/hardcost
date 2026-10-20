@@ -1,5 +1,6 @@
-import { useMemo, type ReactNode } from 'react';
-import { ChartPie, Crown, Layers, Plus, TrendingUp } from 'lucide-react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
+import { motion } from 'framer-motion';
+import { ChartPie, ChevronRight, Crown, Layers, Plus, Sparkles, TrendingUp } from 'lucide-react';
 import type { Category, ExchangeRates, Subscription } from '../../types';
 import {
   getCategoryBreakdown,
@@ -9,6 +10,8 @@ import {
   getPriceHikes,
 } from '../../utils/calculations';
 import { formatCurrency } from '../../utils/format';
+import { getWrappedSummary } from '../../utils/insights';
+import { spring } from '../../utils/motion';
 import { isRunning } from '../../utils/pauses';
 import { StatCard } from '../dashboard/StatCard';
 import { Button } from '../ui/Button';
@@ -17,6 +20,8 @@ import { GlassCard } from '../ui/GlassCard';
 import { CategoryBreakdown } from './CategoryBreakdown';
 import { PaymentMethodsChart } from './PaymentMethodsChart';
 import { PriceHikeRadar } from './PriceHikeRadar';
+import { SavingsSimulator } from './SavingsSimulator';
+import { SubPulseWrapped } from './SubPulseWrapped';
 import { SpendChart } from './SpendChart';
 
 interface StatisticsViewProps {
@@ -57,9 +62,12 @@ export function StatisticsView({ subscriptions, categories, baseCurrency, rates,
       activeCount: subscriptions.filter((s) => isRunning(s, today)).length,
       priceHikes: getPriceHikes(subscriptions, baseCurrency, rates, today),
       paymentMethods: getPaymentMethodBreakdown(subscriptions, baseCurrency, rates, today),
+      wrapped: getWrappedSummary(subscriptions, baseCurrency, rates, today),
     };
   }, [subscriptions, categories, baseCurrency, rates]);
   const categoriesById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
+  const [wrappedOpen, setWrappedOpen] = useState(false);
+  const closeWrapped = useCallback(() => setWrappedOpen(false), []);
 
   if (subscriptions.length === 0) {
     return (
@@ -78,6 +86,25 @@ export function StatisticsView({ subscriptions, categories, baseCurrency, rates,
 
   return (
     <>
+      <motion.button
+        type="button"
+        onClick={() => setWrappedOpen(true)}
+        whileHover={{ y: -2 }}
+        whileTap={{ scale: 0.98 }}
+        transition={spring}
+        className="relative flex items-center gap-4 overflow-hidden rounded-3xl bg-linear-to-br from-sky-500 via-indigo-500 to-violet-600 p-5 text-left text-white shadow-lg shadow-indigo-500/25 focus-visible:ring-2 focus-visible:ring-sky-500/50 focus-visible:outline-none"
+      >
+        <span aria-hidden className="pointer-events-none absolute -top-16 -right-10 h-40 w-40 rounded-full bg-white/20 blur-2xl" />
+        <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/20">
+          <Sparkles className="h-6 w-6" aria-hidden />
+        </span>
+        <span className="relative min-w-0 flex-1">
+          <span className="block font-semibold tracking-tight">SubPulse Wrapped</span>
+          <span className="block text-sm text-white/80">Dein Abo-Jahr im Rückblick</span>
+        </span>
+        <ChevronRight className="relative h-5 w-5 shrink-0" aria-hidden />
+      </motion.button>
+
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <StatCard
           label="Teuerstes Abo"
@@ -116,6 +143,15 @@ export function StatisticsView({ subscriptions, categories, baseCurrency, rates,
         )}
       </Panel>
 
+      <Panel title="Spar-Simulator" description="Wähle Abos ab, um zu sehen, was eine Kündigung bringen würde.">
+        <SavingsSimulator
+          subscriptions={subscriptions}
+          categoriesById={categoriesById}
+          baseCurrency={baseCurrency}
+          rates={rates}
+        />
+      </Panel>
+
       <Panel title="Preiserhöhungs-Radar" description="Letzte bzw. angekündigte Preiserhöhung je Abo.">
         <PriceHikeRadar hikes={stats.priceHikes} categoriesById={categoriesById} baseCurrency={baseCurrency} />
       </Panel>
@@ -127,6 +163,14 @@ export function StatisticsView({ subscriptions, categories, baseCurrency, rates,
           <p className="text-sm text-zinc-500 dark:text-zinc-400">Keine aktiven Abos mit laufenden Kosten.</p>
         )}
       </Panel>
+
+      <SubPulseWrapped
+        open={wrappedOpen}
+        summary={stats.wrapped}
+        categoriesById={categoriesById}
+        currency={baseCurrency}
+        onClose={closeWrapped}
+      />
     </>
   );
 }

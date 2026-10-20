@@ -9,6 +9,7 @@ import { FormSection } from '../ui/FormSection';
 import { Modal } from '../ui/Modal';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { Select } from '../ui/Select';
+import { AppLockSection } from './AppLockSection';
 import { BackupSection } from './BackupSection';
 import { CategoryManager } from './CategoryManager';
 
@@ -98,8 +99,15 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
         </FormSection>
 
         <FormSection
+          title="Privatsphäre"
+          description="Sichtschutz vor neugierigen Blicken. Die Daten selbst liegen unverschlüsselt im Browser-Speicher."
+        >
+          <AppLockSection />
+        </FormSection>
+
+        <FormSection
           title="Datensicherung"
-          description="Ein Backup enthält alle Abos inkl. Preisverlauf und Logos, Kategorien und Einstellungen als JSON-Datei."
+          description="Ein Backup enthält alle Abos inkl. Preisverlauf und Logos, Kategorien und Einstellungen als JSON-Datei. Dokumente sind nicht enthalten."
         >
           <BackupSection onRestored={hydrate} />
         </FormSection>
