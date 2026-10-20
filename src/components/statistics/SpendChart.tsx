@@ -192,6 +192,7 @@ export function SpendChart({ points, currency }: SpendChartProps) {
                 width={innerWidth + 16}
                 height={innerHeight}
                 fill="transparent"
+                data-no-tab-swipe
                 className="cursor-crosshair touch-pan-y"
                 onPointerMove={pickFromPointer}
                 onPointerDown={pickFromPointer}

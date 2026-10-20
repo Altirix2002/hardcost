@@ -3,6 +3,7 @@ import { db } from '../db/database';
 import { DEFAULT_SETTINGS } from '../db/seed';
 import { fetchLatestRates, isRatesFresh } from '../services/currency';
 import type { ExchangeRates, SettingsRecord, ThemePreference, UserSettings } from '../types';
+import { canConvert, convertCurrency } from '../utils/calculations';
 import { getCustomPaymentMethods, isDefaultPaymentMethod, normalizePaymentMethod } from '../utils/options';
 
 interface SettingsState {
@@ -53,9 +54,15 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   setTheme: (theme) => get().updateSettings({ theme }),
 
   setBaseCurrency: async (baseCurrency) => {
+    const { settings, rates } = get();
+    // Budget mitnehmen: 80 CHF sollen nach dem Wechsel nicht plötzlich 80 EUR sein.
+    const monthlyBudget =
+      settings.monthlyBudget !== undefined && canConvert(settings.baseCurrency, baseCurrency, rates)
+        ? Math.round(convertCurrency(settings.monthlyBudget, settings.baseCurrency, baseCurrency, rates))
+        : settings.monthlyBudget;
     const cachedRates = (await db.exchangeRates.get(baseCurrency)) ?? null;
     set({ rates: cachedRates });
-    await get().updateSettings({ baseCurrency });
+    await get().updateSettings({ baseCurrency, monthlyBudget });
     await get().refreshRates();
   },
 

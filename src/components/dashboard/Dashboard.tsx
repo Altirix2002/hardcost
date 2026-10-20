@@ -25,6 +25,7 @@ interface DashboardProps {
   categories: Category[];
   baseCurrency: string;
   rates: ExchangeRates | null;
+  monthlyBudget?: number;
   onCreate: () => void;
   onSelect: (subscription: Subscription) => void;
   onShowUpcoming: () => void;
@@ -35,6 +36,7 @@ export function Dashboard({
   categories,
   baseCurrency,
   rates,
+  monthlyBudget,
   onCreate,
   onSelect,
   onShowUpcoming,
@@ -83,6 +85,7 @@ export function Dashboard({
         monthSpend={overview.monthSpend}
         monthName={overview.monthName}
         alert={overview.alerts.length > 0}
+        monthlyBudget={monthlyBudget}
       />
       <UpcomingStats
         summary={overview.summary}

@@ -401,11 +401,32 @@ export function getUpcomingCharges(
   days = 30,
 ): UpcomingCharge[] {
   const start = startOfDay(reference);
-  const end = addDays(start, days);
+  return getChargesBetween(
+    subs.filter((sub) => sub.isActive),
+    start,
+    addDays(start, days),
+    baseCurrency,
+    rates,
+    reference,
+  );
+}
+
+/**
+ * Alle Abbuchungen im Zeitraum [start, end] – auch vergangene (z.B. für die Kalenderansicht).
+ * Deaktivierte Abos ohne Enddatum zählen nur bis heute, weil ihr Ende unbekannt ist.
+ */
+export function getChargesBetween(
+  subs: Subscription[],
+  start: Date,
+  end: Date,
+  baseCurrency: string,
+  rates: ExchangeRates | null,
+  reference: Date = new Date(),
+): UpcomingCharge[] {
+  const today = startOfDay(reference);
   return subs
-    .filter((sub) => sub.isActive)
     .flatMap((subscription) =>
-      getChargesInRange(subscription, start, end).map((charge) => ({
+      getChargesInRange(subscription, start, !subscription.isActive && today < end ? today : end).map((charge) => ({
         subscription,
         date: parseISODate(charge.date),
         amount: convertCurrency(charge.amount, charge.currency, baseCurrency, rates),

@@ -11,6 +11,7 @@ import { FloatingActionButton } from './components/ui/FloatingActionButton';
 import { db } from './db/database';
 import { useApplyTheme } from './hooks/useApplyTheme';
 import { useMediaQuery } from './hooks/useMediaQuery';
+import { useTabSwipe } from './hooks/useTabSwipe';
 import { isAppTab, tabPanelId, useNavigationStore } from './store/useNavigationStore';
 import { useSettingsStore } from './store/useSettingsStore';
 import type { Category, Subscription } from './types';
@@ -78,6 +79,7 @@ export default function App() {
   // Auf dem Handy fährt das Sheet klassisch von unten herein (iOS-Verhalten); den FAB gibt es dort nicht.
   const isDesktop = useMediaQuery('(min-width: 640px)');
   const addLayoutId = isDesktop ? ADD_TRIGGER_LAYOUT_ID : undefined;
+  const tabSwipe = useTabSwipe();
 
   const paymentMethods = useMemo(
     () => getPaymentMethodSuggestions(subscriptions ?? NO_SUBSCRIPTIONS, settings.paymentMethods),
@@ -162,7 +164,7 @@ export default function App() {
         Mindesthöhe auf dem Handy: Würde die Seite beim Wechsel kurz kürzer als der Bildschirm,
         blendet Chrome seine Adressleiste schlagartig ein und das fixierte Dock springt.
       */}
-      <div className="max-sm:min-h-lvh">
+      <div className="max-sm:min-h-lvh" {...tabSwipe}>
         {subscriptions !== undefined && (
           <AnimatePresence mode="wait" initial={false} custom={direction} onExitComplete={scrollToTop}>
             <motion.main
@@ -183,6 +185,7 @@ export default function App() {
                   categories={categories}
                   baseCurrency={settings.baseCurrency}
                   rates={rates}
+                  monthlyBudget={settings.monthlyBudget}
                   onCreate={openCreate}
                   onSelect={openEdit}
                   onShowUpcoming={openUpcoming}

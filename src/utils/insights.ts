@@ -125,3 +125,22 @@ export function getWrappedSummary(
     savedByCancellations,
   };
 }
+
+// ─── Budget ─────────────────────────────────────────────────────────────────
+
+/** Ab diesem Anteil warnt die Budget-Anzeige. */
+export const BUDGET_WARNING_SHARE = 0.9;
+
+export type BudgetLevel = 'ok' | 'warning' | 'over';
+
+export interface BudgetStatus {
+  share: number; // 0–∞ (1 = Budget genau ausgeschöpft)
+  remaining: number; // negativ = überschritten
+  level: BudgetLevel;
+}
+
+export function getBudgetStatus(monthly: number, budget: number): BudgetStatus {
+  const share = budget > 0 ? monthly / budget : 0;
+  const level: BudgetLevel = share > 1 ? 'over' : share >= BUDGET_WARNING_SHARE ? 'warning' : 'ok';
+  return { share, remaining: budget - monthly, level };
+}

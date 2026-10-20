@@ -1,6 +1,6 @@
-import { useId, useMemo, useState, type FormEvent } from 'react';
+import { useId, useMemo, useRef, useState, type FormEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertCircle, Check, Trash2 } from 'lucide-react';
+import { AlertCircle, Check, Copy, Trash2 } from 'lucide-react';
 import { createCategory, saveSubscription } from '../../../db/repository';
 import { deleteWithUndo } from '../../../services/subscriptionActions';
 import { useSettingsStore } from '../../../store/useSettingsStore';
@@ -14,6 +14,7 @@ import {
   addPriceChange,
   createEmptyDraft,
   draftToSubscription,
+  duplicateDraft,
   removePriceInterval,
   setDraftCurrency,
   setFirstBillingDate,
@@ -74,7 +75,10 @@ export function SubscriptionFormModal({
 }: SubscriptionFormModalProps) {
   const formId = useId();
   const rememberPaymentMethod = useSettingsStore((s) => s.rememberPaymentMethod);
-  const isEditing = subscription !== null;
+  // Nach "Duplizieren" ist der Entwurf ein neues Abo, auch wenn das Fenster vom Original kommt.
+  const [isCopy, setIsCopy] = useState(false);
+  const isEditing = subscription !== null && !isCopy;
+  const formRef = useRef<HTMLFormElement>(null);
 
   const buildDraft = () =>
     subscription ? subscriptionToDraft(subscription, baseCurrency) : createEmptyDraft(baseCurrency);
@@ -93,6 +97,7 @@ export function SubscriptionFormModal({
       setDraft(buildDraft());
       setShowErrors(false);
       setConfirmDelete(false);
+      setIsCopy(false);
       setSaving(false);
       setSaveError(null);
     }
@@ -142,6 +147,15 @@ export function SubscriptionFormModal({
     if (subscription) await deleteWithUndo(subscription);
   };
 
+  const handleDuplicate = () => {
+    setDraft((current) => duplicateDraft(current));
+    setIsCopy(true);
+    setShowErrors(false);
+    setConfirmDelete(false);
+    formRef.current?.closest('.overflow-y-auto')?.scrollTo({ top: 0, behavior: 'smooth' });
+    showToast('info', 'Kopie erstellt – anpassen und hinzufügen');
+  };
+
   const footer = (
     <div className="flex flex-col gap-3">
       <AnimatePresence initial={false}>
@@ -175,6 +189,11 @@ export function SubscriptionFormModal({
             {confirmDelete ? 'Wirklich löschen?' : 'Löschen'}
           </Button>
         )}
+        {isEditing && !confirmDelete && (
+          <Button variant="ghost" icon={Copy} onClick={handleDuplicate}>
+            Kopieren
+          </Button>
+        )}
         <div className="ml-auto flex gap-2">
           <Button variant="secondary" onClick={onClose} className="hidden sm:inline-flex">
             Abbrechen
@@ -193,10 +212,10 @@ export function SubscriptionFormModal({
       onClose={onClose}
       title={isEditing ? 'Abo bearbeiten' : 'Neues Abo'}
       footer={footer}
-      layoutId={isEditing ? undefined : layoutId}
+      layoutId={subscription ? undefined : layoutId}
     >
-      <form id={formId} noValidate onSubmit={(event) => void handleSubmit(event)} className="flex flex-col gap-8">
-        {subscription && <LifetimeCostPanel subscription={subscription} baseCurrency={baseCurrency} rates={rates} />}
+      <form ref={formRef} id={formId} noValidate onSubmit={(event) => void handleSubmit(event)} className="flex flex-col gap-8">
+        {isEditing && subscription && <LifetimeCostPanel subscription={subscription} baseCurrency={baseCurrency} rates={rates} />}
 
         <FormSection title="Allgemein">
           <LogoPicker

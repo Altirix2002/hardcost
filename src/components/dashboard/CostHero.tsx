@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { AlertTriangle, CalendarRange, RefreshCw, Wallet } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { CostSummary, ExchangeRates } from '../../types';
@@ -6,6 +7,7 @@ import { parseISODate } from '../../utils/dates';
 import { formatCurrency, formatDate } from '../../utils/format';
 import { AnimatedCurrency } from '../ui/AnimatedCurrency';
 import { GlassCard } from '../ui/GlassCard';
+import { BudgetMeter } from './BudgetMeter';
 
 interface CostHeroProps {
   summary: CostSummary;
@@ -16,6 +18,8 @@ interface CostHeroProps {
   monthName: string;
   /** Kündigungsfrist läuft bald ab: Glow wechselt auf Rotorange und pulsiert sanft. */
   alert?: boolean;
+  /** Monatsbudget in Basiswährung; fehlt = keine Budget-Anzeige. */
+  monthlyBudget?: number;
 }
 
 interface HeroCardProps {
@@ -26,9 +30,10 @@ interface HeroCardProps {
   hint: string;
   glowClassName: string;
   alert: boolean;
+  children?: ReactNode;
 }
 
-function HeroCard({ label, icon: Icon, value, currency, hint, glowClassName, alert }: HeroCardProps) {
+function HeroCard({ label, icon: Icon, value, currency, hint, glowClassName, alert, children }: HeroCardProps) {
   return (
     <GlassCard className="relative overflow-hidden p-6">
       <div
@@ -50,12 +55,21 @@ function HeroCard({ label, icon: Icon, value, currency, hint, glowClassName, ale
           className="mt-3 block text-4xl font-semibold tracking-tight sm:text-5xl"
         />
         <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">{hint}</p>
+        {children}
       </div>
     </GlassCard>
   );
 }
 
-export function CostHero({ summary, baseCurrency, rates, monthSpend, monthName, alert = false }: CostHeroProps) {
+export function CostHero({
+  summary,
+  baseCurrency,
+  rates,
+  monthSpend,
+  monthName,
+  alert = false,
+  monthlyBudget,
+}: CostHeroProps) {
   const hasUnconverted = summary.unconvertedCurrencies.length > 0;
 
   return (
@@ -69,7 +83,11 @@ export function CostHero({ summary, baseCurrency, rates, monthSpend, monthName, 
           hint={`Abbuchungen im ${monthName}: ${formatCurrency(monthSpend, baseCurrency)}`}
           glowClassName="bg-sky-400/30 dark:bg-sky-500/20"
           alert={alert}
-        />
+        >
+          {monthlyBudget !== undefined && (
+            <BudgetMeter monthly={summary.monthly} budget={monthlyBudget} currency={baseCurrency} />
+          )}
+        </HeroCard>
         <HeroCard
           label="Pro Jahr"
           icon={CalendarRange}

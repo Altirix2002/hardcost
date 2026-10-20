@@ -11,6 +11,7 @@ import { SegmentedControl } from '../ui/SegmentedControl';
 import { Select } from '../ui/Select';
 import { AppLockSection } from './AppLockSection';
 import { BackupSection } from './BackupSection';
+import { BudgetSection } from './BudgetSection';
 import { CategoryManager } from './CategoryManager';
 import { PaymentMethodManager } from './PaymentMethodManager';
 
@@ -90,6 +91,10 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
               Aktualisieren
             </Button>
           </div>
+        </FormSection>
+
+        <FormSection title="Budget">
+          <BudgetSection key={settings.baseCurrency} />
         </FormSection>
 
         <FormSection
