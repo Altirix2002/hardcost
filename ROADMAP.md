@@ -5,7 +5,7 @@ Stand: 20.10.2026. Erledigte Punkte abhaken (`[x]`) oder entfernen, neue unten e
 ## Offene Punkte
 
 - [ ] **Logo-Suche hängt an Gratis-Diensten** (Simple Icons, Clearbit Autocomplete, Favicone – siehe `src/services/logoSearch.ts`). Stand 20.10.2026 antworten alle noch. Clearbit Autocomplete gehört zu HubSpot: Das Logo-Feld liefert seit Sept. 2025 nichts mehr (wir nutzen dort nur Name + Domain), der Dienst kann ganz wegfallen. Empfehlung: Wechsel auf **Brandfetch** (Brand Search + Logo, gratis mit Client-ID, ohne Namensnennung, 500k Abrufe/Monat) – braucht ein kostenloses Konto des Nutzers. Ausweich-Lösung ohne Konto: Google-Favicon-Dienst als Fallback.
-- [ ] **Am echten Handy testen:** Tab-Wischen (neu umgesetzt: reagiert schon während der Bewegung), Wechsel Liste ↔ Kalender (Markierung springt nicht mehr, Höhe gleitet).
+- [ ] **Am echten Handy testen:** Löschen eines Abos (Karte klappt jetzt weich zusammen, Liste gleitet nach – auch ganz unten).
 
 ## Vorschläge
 
@@ -20,6 +20,9 @@ Stand: 20.10.2026. Erledigte Punkte abhaken (`[x]`) oder entfernen, neue unten e
 4. [ ] **Budget pro Kategorie** zusätzlich zum Gesamtbudget.
 
 ## Erledigt
+
+- [x] Am Handy getestet: Tab-Wischen, Wechsel Liste ↔ Kalender
+- [x] Ruckeln beim Löschen behoben: Karten klappen weich zusammen statt aus dem Fluss zu springen (kein Scroll-Sprung mehr am Seitenende)
 
 - [x] Am Handy getestet: Face ID automatisch, Wisch-Knöpfe, Datumsfelder, Kalender
 - [x] „Inaktiv“ heisst jetzt „Gekündigt · beendet am …“ (Migration übernimmt das Enddatum alter inaktiver Abos), Filter „Gekündigt“, Logo-Kürzel ohne Satzzeichen
