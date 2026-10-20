@@ -698,3 +698,24 @@ export function getLifetimeCost(
   }
   return result;
 }
+
+// ─── Prognose ───────────────────────────────────────────────────────────────
+
+/**
+ * Erwartete Abbuchungen je Kalendermonat ab dem laufenden Monat – mit bereits erfassten
+ * Preisänderungen, Testphasen, Pausen und Kündigungen.
+ */
+export function getSpendForecast(
+  subs: Subscription[],
+  baseCurrency: string,
+  rates: ExchangeRates | null,
+  reference: Date = new Date(),
+  months = 12,
+): MonthlySpendPoint[] {
+  return Array.from({ length: months }, (_, index) => {
+    const date = new Date(reference.getFullYear(), reference.getMonth() + index, 1);
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    return { year, month, total: getSpendForMonth(subs, year, month, baseCurrency, rates, reference) };
+  });
+}

@@ -14,6 +14,7 @@ import { filterSubscriptions, searchSubscriptions, sortSubscriptions } from '../
 import { SubscriptionList } from '../subscriptions/SubscriptionList';
 import { Button } from '../ui/Button';
 import { EmptyState } from '../ui/EmptyState';
+import { BackupReminder } from './BackupReminder';
 import { CancellationRadar } from './CancellationRadar';
 import { CostHero } from './CostHero';
 import { SubscriptionSearch } from './SubscriptionSearch';
@@ -26,6 +27,8 @@ interface DashboardProps {
   baseCurrency: string;
   rates: ExchangeRates | null;
   monthlyBudget?: number;
+  lastBackupAt?: string;
+  onOpenBackup: () => void;
   onCreate: () => void;
   onSelect: (subscription: Subscription) => void;
   onShowUpcoming: () => void;
@@ -37,6 +40,8 @@ export function Dashboard({
   baseCurrency,
   rates,
   monthlyBudget,
+  lastBackupAt,
+  onOpenBackup,
   onCreate,
   onSelect,
   onShowUpcoming,
@@ -94,6 +99,7 @@ export function Dashboard({
         onShowAll={onShowUpcoming}
       />
       <CancellationRadar alerts={overview.alerts} categoriesById={categoriesById} onSelect={onSelect} />
+      <BackupReminder lastBackupAt={lastBackupAt} subscriptionCount={subscriptions.length} onBackup={onOpenBackup} />
 
       <section className="flex flex-col gap-3">
         {subscriptions.length === 0 ? (

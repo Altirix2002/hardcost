@@ -10,13 +10,15 @@ import { Button } from '../ui/Button';
 interface SpendChartProps {
   points: MonthlySpendPoint[];
   currency: string;
+  /** Ohne Auswahl hervorgehobener Monat (Standard: der letzte, z.B. bei der Prognose der erste). */
+  defaultIndex?: number;
 }
 
 const HEIGHT = 220;
 const PAD = { top: 12, right: 12, bottom: 28, left: 40 };
 
 /** Einreihiges Liniendiagramm der Monatsausgaben mit Fadenkreuz, Tastatursteuerung und Tabellenansicht. */
-export function SpendChart({ points, currency }: SpendChartProps) {
+export function SpendChart({ points, currency, defaultIndex }: SpendChartProps) {
   const [containerRef, width] = useElementWidth<HTMLDivElement>();
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [showTable, setShowTable] = useState(false);
@@ -35,7 +37,8 @@ export function SpendChart({ points, currency }: SpendChartProps) {
   // Schmale Diagramme beschriften nur jeden zweiten Monat – der aktuelle ist immer dabei.
   const labelEvery = innerWidth < 360 ? 2 : 1;
 
-  const shownIndex = activeIndex ?? lastIndex;
+  const restingIndex = defaultIndex ?? lastIndex;
+  const shownIndex = activeIndex ?? restingIndex;
   const shown = points[shownIndex];
 
   const pickFromPointer = (event: PointerEvent<SVGRectElement>) => {
@@ -48,7 +51,7 @@ export function SpendChart({ points, currency }: SpendChartProps) {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
     event.preventDefault();
     const step = event.key === 'ArrowLeft' ? -1 : 1;
-    setActiveIndex((current) => clamp((current ?? lastIndex) + step, 0, lastIndex));
+    setActiveIndex((current) => clamp((current ?? restingIndex) + step, 0, lastIndex));
   };
 
   return (

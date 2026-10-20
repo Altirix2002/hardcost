@@ -137,6 +137,11 @@ export default function App() {
     setSettingsMounted(true);
     setSettingsOpen(true);
   };
+  /** Einstellungen öffnen und zur Datensicherung scrollen. */
+  const openBackup = () => {
+    openSettings();
+    window.setTimeout(() => document.getElementById('backup-section')?.scrollIntoView({ behavior: 'smooth' }), 450);
+  };
   const openUpcoming = () => {
     setUpcomingMounted(true);
     setUpcomingOpen(true);
@@ -186,6 +191,8 @@ export default function App() {
                   baseCurrency={settings.baseCurrency}
                   rates={rates}
                   monthlyBudget={settings.monthlyBudget}
+                  lastBackupAt={settings.lastBackupAt}
+                  onOpenBackup={openBackup}
                   onCreate={openCreate}
                   onSelect={openEdit}
                   onShowUpcoming={openUpcoming}

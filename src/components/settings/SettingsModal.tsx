@@ -119,8 +119,9 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
         </FormSection>
 
         <FormSection
+          id="backup-section"
           title="Datensicherung"
-          description="Ein Backup enthält alle Abos inkl. Preisverlauf und Logos, Kategorien und Einstellungen als JSON-Datei. Dokumente sind nicht enthalten."
+          description="Ein Backup enthält alle Abos inkl. Preisverlauf und Logos, Kategorien und Einstellungen. Mit «Dokumente mitsichern» kommen auch die Dokumente mit (als ZIP)."
         >
           <BackupSection onRestored={hydrate} />
         </FormSection>

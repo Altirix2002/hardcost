@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
-import { ChartPie, ChevronRight, Crown, Layers, Plus, Sparkles, TrendingUp } from 'lucide-react';
+import { ChartPie, ChevronRight, Crown, Info, Layers, Plus, Sparkles, TrendingUp } from 'lucide-react';
 import type { Category, ExchangeRates, Subscription } from '../../types';
 import {
   getCategoryBreakdown,
@@ -8,8 +8,9 @@ import {
   getMostExpensiveSubscription,
   getPaymentMethodBreakdown,
   getPriceHikes,
+  getSpendForecast,
 } from '../../utils/calculations';
-import { formatInteger } from '../../utils/format';
+import { formatCurrency, formatInteger } from '../../utils/format';
 import { getWrappedSummary } from '../../utils/insights';
 import { spring } from '../../utils/motion';
 import { isRunning } from '../../utils/pauses';
@@ -56,8 +57,12 @@ export function StatisticsView({ subscriptions, categories, baseCurrency, rates,
   const stats = useMemo(() => {
     const today = new Date();
     const history = getMonthlySpendHistory(subscriptions, baseCurrency, rates, today);
+    const forecast = getSpendForecast(subscriptions, baseCurrency, rates, today);
     return {
       history,
+      monthsWithData: history.filter((point) => point.total > 0).length,
+      forecast,
+      forecastTotal: forecast.reduce((sum, point) => sum + point.total, 0),
       average: history.reduce((sum, point) => sum + point.total, 0) / Math.max(1, history.length),
       breakdown: getCategoryBreakdown(subscriptions, categories, baseCurrency, rates, today),
       top: getMostExpensiveSubscription(subscriptions, baseCurrency, rates, today),
@@ -135,6 +140,22 @@ export function StatisticsView({ subscriptions, categories, baseCurrency, rates,
         description="Tatsächliche Abbuchungen je Monat – jeweils mit dem damals gültigen Preis."
       >
         <SpendChart key={baseCurrency} points={stats.history} currency={baseCurrency} />
+        {stats.monthsWithData < 3 && (
+          <p className="flex items-start gap-2 rounded-2xl bg-sky-500/10 p-3 text-xs text-sky-800 dark:text-sky-200">
+            <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            <span>
+              Der Verlauf füllt sich mit der Zeit. Tipp: Trage bei älteren Abos die tatsächliche erste Abbuchung ein –
+              dann erscheinen auch die vergangenen Monate. Unten siehst du schon die Prognose.
+            </span>
+          </p>
+        )}
+      </Panel>
+
+      <Panel
+        title="Prognose: nächste 12 Monate"
+        description={`Erwartete Abbuchungen inkl. erfasster Preisänderungen, Testphasen und Kündigungen – zusammen ${formatCurrency(stats.forecastTotal, baseCurrency)}.`}
+      >
+        <SpendChart key={`forecast-${baseCurrency}`} points={stats.forecast} currency={baseCurrency} defaultIndex={0} />
       </Panel>
 
       <Panel title="Fixkosten nach Kategorie" description="Monatsäquivalent aller aktiven Abos.">
