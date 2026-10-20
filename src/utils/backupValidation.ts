@@ -1,4 +1,4 @@
-import type { BackupFile, Category, CostSplit, PausePeriod, PriceInterval, Subscription, UserSettings } from '../types';
+import type { BackupDocument, BackupFile, Category, CostSplit, PausePeriod, PriceInterval, Subscription, UserSettings } from '../types';
 import { isCategoryColor } from './categoryStyles';
 import { isSupportedCurrency } from './options';
 import { isValidISODate } from './subscriptionDraft';
@@ -64,6 +64,20 @@ function isSubscription(value: unknown): value is Subscription {
   );
 }
 
+function isBackupDocument(value: unknown): value is BackupDocument {
+  return (
+    isRecord(value) &&
+    isString(value.id) &&
+    isString(value.subscriptionId) &&
+    isString(value.fileName) &&
+    (value.fileType === 'application/pdf' || value.fileType === 'image/png' || value.fileType === 'image/jpeg') &&
+    isFiniteNumber(value.fileSize) &&
+    isString(value.createdAt) &&
+    isString(value.path) &&
+    value.path.startsWith('documents/')
+  );
+}
+
 function isCategory(value: unknown): value is Category {
   return (
     isRecord(value) &&
@@ -108,6 +122,10 @@ export function parseBackup(text: string): BackupFile {
   const badSubscription = data.subscriptions.findIndex((s) => !isSubscription(s));
   if (badSubscription !== -1) throw new Error(`Abo Nr. ${badSubscription + 1} im Backup ist ungültig.`);
 
+  if (data.documents !== undefined && (!Array.isArray(data.documents) || !data.documents.every(isBackupDocument))) {
+    throw new Error('Die Dokumentenliste im Backup ist ungültig.');
+  }
+
   return {
     app: 'subpulse',
     version: 1,
@@ -115,5 +133,6 @@ export function parseBackup(text: string): BackupFile {
     settings: data.settings,
     categories: data.categories.filter(isCategory),
     subscriptions: data.subscriptions.filter(isSubscription),
+    documents: Array.isArray(data.documents) ? data.documents.filter(isBackupDocument) : undefined,
   };
 }

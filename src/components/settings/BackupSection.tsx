@@ -1,15 +1,18 @@
 import { useRef, useState, type ChangeEvent } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, CheckCircle2, Download, Upload } from 'lucide-react';
-import { backupFileName, createBackup, restoreBackup } from '../../services/backup';
-import type { BackupFile } from '../../types';
-import { parseBackup } from '../../utils/backupValidation';
+import { db } from '../../db/database';
+import { backupFileName, createBackup, createBackupZip, readBackupFile, restoreBackup } from '../../services/backup';
+import { useSettingsStore } from '../../store/useSettingsStore';
+import type { ParsedBackup } from '../../types';
 import { cn } from '../../utils/cn';
-import { downloadTextFile } from '../../utils/download';
+import { downloadBlob, downloadTextFile } from '../../utils/download';
 import { INSET_PANEL } from '../../utils/fieldStyles';
 import { formatDate } from '../../utils/format';
 import { sheetSpring } from '../../utils/motion';
 import { Button } from '../ui/Button';
+import { Toggle } from '../ui/Toggle';
 
 interface BackupSectionProps {
   /** Wird nach erfolgreichem Import aufgerufen (z.B. um Einstellungen neu zu laden). */
@@ -20,15 +23,32 @@ type Status = { kind: 'success' | 'error'; message: string } | null;
 
 export function BackupSection({ onRestored }: BackupSectionProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [pending, setPending] = useState<BackupFile | null>(null);
+  const [pending, setPending] = useState<ParsedBackup | null>(null);
   const [status, setStatus] = useState<Status>(null);
   const [busy, setBusy] = useState(false);
+  const [includeDocuments, setIncludeDocuments] = useState(true);
+  const documentCount = useLiveQuery(() => db.documents.count(), []) ?? 0;
+  const updateSettings = useSettingsStore((s) => s.updateSettings);
 
   const handleExport = async () => {
     setStatus(null);
-    const backup = await createBackup();
-    downloadTextFile(backupFileName(), JSON.stringify(backup, null, 2));
-    setStatus({ kind: 'success', message: `${backup.subscriptions.length} Abos exportiert.` });
+    setBusy(true);
+    try {
+      if (includeDocuments && documentCount > 0) {
+        const { blob, backup, documentCount: count } = await createBackupZip();
+        downloadBlob(backupFileName(new Date(), 'zip'), blob);
+        setStatus({ kind: 'success', message: `${backup.subscriptions.length} Abos und ${count} Dokumente exportiert.` });
+      } else {
+        const backup = await createBackup();
+        downloadTextFile(backupFileName(), JSON.stringify(backup, null, 2));
+        setStatus({ kind: 'success', message: `${backup.subscriptions.length} Abos exportiert.` });
+      }
+      await updateSettings({ lastBackupAt: new Date().toISOString() });
+    } catch {
+      setStatus({ kind: 'error', message: 'Export fehlgeschlagen – bitte nochmals versuchen.' });
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleFile = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -37,7 +57,7 @@ export function BackupSection({ onRestored }: BackupSectionProps) {
     if (!file) return;
     setStatus(null);
     try {
-      setPending(parseBackup(await file.text()));
+      setPending(await readBackupFile(file));
     } catch (cause) {
       setPending(null);
       setStatus({ kind: 'error', message: cause instanceof Error ? cause.message : 'Backup konnte nicht gelesen werden.' });
@@ -52,7 +72,9 @@ export function BackupSection({ onRestored }: BackupSectionProps) {
       await onRestored();
       setStatus({
         kind: 'success',
-        message: `${pending.subscriptions.length} Abos und ${pending.categories.length} Kategorien wiederhergestellt.`,
+        message: `${pending.backup.subscriptions.length} Abos, ${pending.backup.categories.length} Kategorien${
+          pending.documents ? ` und ${pending.documents.length} Dokumente` : ''
+        } wiederhergestellt.`,
       });
       setPending(null);
     } catch {
@@ -65,17 +87,25 @@ export function BackupSection({ onRestored }: BackupSectionProps) {
   return (
     <div className="flex flex-col gap-3">
       <div className="grid grid-cols-2 gap-2">
-        <Button variant="secondary" icon={Download} onClick={() => void handleExport()}>
+        <Button variant="secondary" icon={Download} disabled={busy} onClick={() => void handleExport()}>
           Exportieren
         </Button>
         <Button variant="secondary" icon={Upload} onClick={() => inputRef.current?.click()}>
           Importieren
         </Button>
       </div>
+      {documentCount > 0 && (
+        <Toggle
+          label="Dokumente mitsichern"
+          description={`Exportiert ein ZIP mit allen ${documentCount} Dokumenten statt nur der JSON-Datei.`}
+          checked={includeDocuments}
+          onChange={setIncludeDocuments}
+        />
+      )}
       <input
         ref={inputRef}
         type="file"
-        accept="application/json,.json"
+        accept="application/json,.json,application/zip,.zip"
         className="hidden"
         onChange={(event) => void handleFile(event)}
       />
@@ -91,12 +121,15 @@ export function BackupSection({ onRestored }: BackupSectionProps) {
           >
             <div className={cn(INSET_PANEL, 'flex flex-col gap-3')}>
               <p className="text-sm">
-                Backup vom <strong>{formatDate(new Date(pending.exportedAt), true)}</strong> mit{' '}
-                {pending.subscriptions.length} Abos und {pending.categories.length} Kategorien.
+                Backup vom <strong>{formatDate(new Date(pending.backup.exportedAt), true)}</strong> mit{' '}
+                {pending.backup.subscriptions.length} Abos, {pending.backup.categories.length} Kategorien
+                {pending.documents ? ` und ${pending.documents.length} Dokumenten` : ''}.
               </p>
               <p className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-400">
                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-                Alle aktuellen Abos und Kategorien werden dabei ersetzt.
+                {pending.documents
+                  ? 'Alle aktuellen Abos, Kategorien und Dokumente werden dabei ersetzt.'
+                  : 'Alle aktuellen Abos und Kategorien werden dabei ersetzt. Dokumente bleiben, soweit ihr Abo im Backup ist.'}
               </p>
               <div className="flex justify-end gap-2">
                 <Button size="sm" variant="ghost" onClick={() => setPending(null)}>

@@ -355,6 +355,18 @@ export interface BackupFile {
   settings: UserSettings;
   categories: Category[];
   subscriptions: Subscription[];
+  /** Nur im ZIP-Backup: Metadaten der Dokumente, die Dateien liegen unter `path` im Archiv. */
+  documents?: BackupDocument[];
+}
+
+export interface BackupDocument extends Omit<StoredDocument, 'blob'> {
+  path: string; // z.B. "documents/<id>-vertrag.pdf"
+}
+
+/** Eingelesenes Backup; `documents` ist null bei reinen JSON-Backups (bestehende Dokumente bleiben). */
+export interface ParsedBackup {
+  backup: BackupFile;
+  documents: StoredDocument[] | null;
 }
 
 // ─── Dokumente (lokal in IndexedDB) ─────────────────────────────────────────
