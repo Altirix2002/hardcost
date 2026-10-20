@@ -8,6 +8,7 @@ import type {
   CostSplit,
   CostSummary,
   ExchangeRates,
+  LifetimeCost,
   MonthlySpendPoint,
   PaymentMethodShare,
   PriceHike,
@@ -89,31 +90,57 @@ export function getCancellationDeadline(sub: Subscription, reference: Date = new
   return addDays(getNextBillingDate(sub, reference), -sub.cancellationNoticeDays);
 }
 
+/** Letzter Tag der Mindestlaufzeit, falls sie am Stichtag noch läuft. */
+export function getActiveCommitmentEnd(sub: Subscription, reference: Date = new Date()): Date | null {
+  if (!sub.minimumCommitmentUntil) return null;
+  const end = parseISODate(sub.minimumCommitmentUntil);
+  return end >= startOfDay(reference) ? end : null;
+}
+
 /**
  * Nächste Kündigungsfrist, die sich noch einhalten lässt. Ist die Frist vor der
  * nächsten Abbuchung schon verstrichen, zählt die Frist vor der übernächsten.
+ * Während einer Mindestlaufzeit gilt: kündbar erst auf deren Ende (Ende minus Kündigungsfrist);
+ * wird diese Frist verpasst, verlängert sich das Abo regulär.
  * Liefert null für inaktive, pausierte oder bereits beendete Abos.
  */
 export function getCancellationWindow(sub: Subscription, reference: Date = new Date()): CancellationWindow | null {
   if (!isRunning(sub, reference) || !getCurrentInterval(sub, reference)) return null;
 
   const today = startOfDay(reference);
-  let renewalDate = getNextBillingDate(sub, today);
-  let deadline = addDays(renewalDate, -sub.cancellationNoticeDays);
+  const notice = sub.cancellationNoticeDays;
+  let from = today;
+
+  const commitmentEnd = getActiveCommitmentEnd(sub, today);
+  if (commitmentEnd) {
+    // Erste Abbuchung nach der Bindung ist die erste, die sich verhindern lässt.
+    const renewalDate = getNextBillingDate(sub, addDays(commitmentEnd, 1));
+    const deadline = addDays(commitmentEnd, -notice);
+    if (deadline >= today) {
+      return { deadline, renewalDate, daysLeft: daysBetween(today, deadline), endsCommitment: true };
+    }
+    from = renewalDate;
+  }
+
+  let renewalDate = getNextBillingDate(sub, from);
+  let deadline = addDays(renewalDate, -notice);
   while (deadline < today) {
     renewalDate = getNextBillingDate(sub, addDays(renewalDate, 1));
-    deadline = addDays(renewalDate, -sub.cancellationNoticeDays);
+    deadline = addDays(renewalDate, -notice);
   }
-  return { deadline, renewalDate, daysLeft: daysBetween(today, deadline) };
+  return { deadline, renewalDate, daysLeft: daysBetween(today, deadline), endsCommitment: false };
 }
 
-/** Kündigungsalarm, falls die Frist innerhalb von `windowDays` abläuft (nur Abos mit Kündigungsfrist). */
+/**
+ * Kündigungsalarm, falls die Frist innerhalb von `windowDays` abläuft. Gilt für Abos mit
+ * Kündigungsfrist sowie für das nahende Ende einer Mindestlaufzeit.
+ */
 export function getCancellationAlert(
   sub: Subscription,
   reference: Date = new Date(),
   windowDays: number = CANCELLATION_ALERT_DAYS,
 ): CancellationWindow | null {
-  if (sub.cancellationNoticeDays <= 0) return null;
+  if (sub.cancellationNoticeDays <= 0 && !getActiveCommitmentEnd(sub, reference)) return null;
   const window = getCancellationWindow(sub, reference);
   return window && window.daysLeft <= windowDays ? window : null;
 }
@@ -566,4 +593,49 @@ export function getPaymentMethodBreakdown(
     share: sum > 0 ? entry.monthly / sum : 0,
     percent: percents[index] ?? 0,
   }));
+}
+
+// ─── Lifetime-Kosten ────────────────────────────────────────────────────────
+
+/** Überlappende Tage zweier geschlossener Zeiträume [aStart, aEnd] und [bStart, bEnd]. */
+function overlapDays(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date): number {
+  const start = aStart > bStart ? aStart : bStart;
+  const end = aEnd < bEnd ? aEnd : bEnd;
+  return end < start ? 0 : daysBetween(start, end) + 1;
+}
+
+/**
+ * Was seit der ersten Abbuchung tatsächlich bezahlt wurde: Summe aller Einzelabbuchungen bis heute,
+ * jeweils mit dem damals gültigen Preis und dem eigenen Anteil. Abbuchungen in Pausen entfallen und
+ * werden separat als Ersparnis ausgewiesen. Fremdwährungen werden mit aktuellen Kursen umgerechnet.
+ */
+export function getLifetimeCost(
+  sub: Subscription,
+  baseCurrency: string,
+  rates: ExchangeRates | null,
+  reference: Date = new Date(),
+): LifetimeCost {
+  const since = parseISODate(sub.firstBillingDate);
+  const today = startOfDay(reference);
+  const result: LifetimeCost = { totalPaid: 0, chargeCount: 0, since, pausedDays: 0, skippedCharges: 0, savedByPauses: 0 };
+  if (since > today) return result;
+
+  for (let n = 0, date = since; date <= today; n += 1, date = getBillingDate(since, sub.billingCycle, n)) {
+    const interval = getIntervalAt(sub, date);
+    if (!interval) continue;
+    const amount = convertCurrency(getOwnAmount(sub, interval.amount), interval.currency, baseCurrency, rates);
+    if (isPausedAt(sub, date)) {
+      result.skippedCharges += 1;
+      result.savedByPauses += amount;
+    } else {
+      result.chargeCount += 1;
+      result.totalPaid += amount;
+    }
+  }
+
+  for (const pause of sub.pauses ?? []) {
+    const end = pause.endDate ? parseISODate(pause.endDate) : today;
+    result.pausedDays += overlapDays(parseISODate(pause.startDate), end, since, today);
+  }
+  return result;
 }

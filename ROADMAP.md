@@ -16,7 +16,7 @@ Stand: 20.10.2026. Erledigte Punkte abhaken (`[x]`) oder entfernen, neue unten e
 1. [ ] **Erinnerungen per Push** – „Netflix wird morgen abgebucht“, „Kündigungsfrist läuft in 3 Tagen ab“. Ohne Server nur eingeschränkt (beim Öffnen der App); zuverlässig bräuchte es einen kleinen Server.
 2. [ ] **Testphasen/Gratis-Abos** – „Testphase endet am …“ mit Warnung davor.
 3. [ ] **Gekündigt-Status** – Kündigungsdatum („läuft noch bis 30.11.“), zählt bis zum Ende mit.
-4. [ ] **Suche in der Abo-Liste** – ab ca. 15 Abos nötig.
+4. [x] **Suche in der Abo-Liste** – erledigt in Meilenstein 6.
 
 ### Nützlich
 5. [ ] **Wischgesten** – Karten wischen zum Löschen/Pausieren, zwischen Tabs wischen.
@@ -34,6 +34,8 @@ Stand: 20.10.2026. Erledigte Punkte abhaken (`[x]`) oder entfernen, neue unten e
 **Empfehlung für die nächste Runde:** 2 + 3 + 10 (ohne Server machbar, spart im Alltag am meisten Geld).
 
 ## Erledigt
+
+- [x] **Meilenstein 6:** Live-Suche, Mindestlaufzeit (Kündigungsradar erst zum Ende der Bindung), „Bisher insgesamt bezahlt“ aus echten Abbuchungen inkl. Pausen-Ersparnis, Zombie-Abo-Hinweis mit Schnellaktionen
 
 - [x] **Meilenstein 5:** Kosten-Splitting, Schlummer-Modus (Pausen mit Historie, automatisches Weiterlaufen), Preiserhöhungs-Radar, Auswertung nach Zahlungsart, Kategorie-Prozente ergeben jetzt exakt 100 %
 

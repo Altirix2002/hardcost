@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { Plus, SearchX, Sparkles } from 'lucide-react';
+import { useDeferredValue, useMemo } from 'react';
+import { Plus, RotateCcw, SearchX, Sparkles } from 'lucide-react';
 import { loadDemoSubscriptions } from '../../db/repository';
 import { useDashboardStore } from '../../store/useDashboardStore';
 import type { Category, ExchangeRates, Subscription } from '../../types';
@@ -10,12 +10,13 @@ import {
   getUpcomingPayments,
 } from '../../utils/calculations';
 import { formatMonthName } from '../../utils/format';
-import { filterSubscriptions, sortSubscriptions } from '../../utils/subscriptionList';
+import { filterSubscriptions, searchSubscriptions, sortSubscriptions } from '../../utils/subscriptionList';
 import { SubscriptionList } from '../subscriptions/SubscriptionList';
 import { Button } from '../ui/Button';
 import { EmptyState } from '../ui/EmptyState';
 import { CancellationRadar } from './CancellationRadar';
 import { CostHero } from './CostHero';
+import { SubscriptionSearch } from './SubscriptionSearch';
 import { SubscriptionToolbar } from './SubscriptionToolbar';
 import { UpcomingStats } from './UpcomingStats';
 
@@ -42,6 +43,12 @@ export function Dashboard({
   const statusFilter = useDashboardStore((s) => s.statusFilter);
   const setSortKey = useDashboardStore((s) => s.setSortKey);
   const setStatusFilter = useDashboardStore((s) => s.setStatusFilter);
+  const searchQuery = useDashboardStore((s) => s.searchQuery);
+  const setSearchQuery = useDashboardStore((s) => s.setSearchQuery);
+  const resetFilters = useDashboardStore((s) => s.resetFilters);
+  // Eingabe bleibt sofort flüssig; die Liste filtert mit niedriger Priorität hinterher.
+  const deferredQuery = useDeferredValue(searchQuery);
+  const isSearching = deferredQuery.trim() !== '';
 
   const categoriesById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
 
@@ -57,8 +64,14 @@ export function Dashboard({
   }, [subscriptions, baseCurrency, rates]);
 
   const visible = useMemo(
-    () => sortSubscriptions(filterSubscriptions(subscriptions, statusFilter), sortKey, baseCurrency, rates),
-    [subscriptions, statusFilter, sortKey, baseCurrency, rates],
+    () =>
+      sortSubscriptions(
+        searchSubscriptions(filterSubscriptions(subscriptions, statusFilter), deferredQuery, categoriesById),
+        sortKey,
+        baseCurrency,
+        rates,
+      ),
+    [subscriptions, statusFilter, deferredQuery, categoriesById, sortKey, baseCurrency, rates],
   );
 
   return (
@@ -104,6 +117,7 @@ export function Dashboard({
               statusFilter={statusFilter}
               onStatusFilterChange={setStatusFilter}
             />
+            <SubscriptionSearch value={searchQuery} onChange={setSearchQuery} />
             {visible.length > 0 ? (
               <SubscriptionList
                 subscriptions={visible}
@@ -115,8 +129,17 @@ export function Dashboard({
             ) : (
               <EmptyState
                 icon={SearchX}
-                title="Keine Abos in dieser Ansicht"
-                description="Wähle oben einen anderen Filter, um alle Abos zu sehen."
+                title={isSearching ? `Keine Treffer für «${deferredQuery.trim()}»` : 'Keine Abos in dieser Ansicht'}
+                description={
+                  isSearching
+                    ? 'Gesucht wird in Name, Tarif, Kategorie, Zahlungsart und Notizen.'
+                    : 'Wähle oben einen anderen Filter, um alle Abos zu sehen.'
+                }
+                action={
+                  <Button variant="secondary" icon={RotateCcw} onClick={resetFilters}>
+                    Filter zurücksetzen
+                  </Button>
+                }
               />
             )}
           </>

@@ -61,7 +61,9 @@ export function CancellationRadar({ alerts, categoriesById, onSelect }: Cancella
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium">{subscription.name}</span>
                       <span className="block truncate text-xs text-zinc-500 dark:text-zinc-400">
-                        Verlängert sich am {formatDate(window.renewalDate, true)}
+                        {window.endsCommitment
+                          ? `Mindestlaufzeit endet · sonst Abbuchung am ${formatDate(window.renewalDate, true)}`
+                          : `Verlängert sich am ${formatDate(window.renewalDate, true)}`}
                       </span>
                     </span>
                     <span className="shrink-0 text-right">

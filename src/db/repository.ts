@@ -1,4 +1,5 @@
 import type { Category, CategoryColor, Subscription } from '../types';
+import { toISODate } from '../utils/dates';
 import { createId } from '../utils/id';
 import { db } from './database';
 import { DEFAULT_CATEGORIES, DEMO_SUBSCRIPTIONS } from './seed';
@@ -12,8 +13,14 @@ export async function deleteSubscription(id: string): Promise<void> {
   await db.subscriptions.delete(id);
 }
 
+/** Diese Demo bleibt ungeprüft und zeigt so den Zombie-Hinweis. */
+const DEMO_ZOMBIE_ID = 'demo-icloud';
+
 export async function loadDemoSubscriptions(): Promise<void> {
-  await db.subscriptions.bulkPut(DEMO_SUBSCRIPTIONS);
+  const today = toISODate(new Date());
+  await db.subscriptions.bulkPut(
+    DEMO_SUBSCRIPTIONS.map((sub) => (sub.id === DEMO_ZOMBIE_ID ? sub : { ...sub, lastReviewedAt: today })),
+  );
 }
 
 /** Erstellt eine eigene Kategorie; existiert der Name bereits, wird die bestehende zurückgegeben. */

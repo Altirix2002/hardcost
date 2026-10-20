@@ -207,6 +207,7 @@ export default function App() {
             subscription={editing}
             categories={categories}
             baseCurrency={settings.baseCurrency}
+            rates={rates}
             paymentMethods={paymentMethods}
             onClose={closeForm}
           />

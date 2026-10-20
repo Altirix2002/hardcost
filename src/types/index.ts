@@ -79,6 +79,10 @@ export interface Subscription {
   split?: CostSplit;
   /** Pausen-Historie; fehlt bei älteren Daten. */
   pauses?: PausePeriod[];
+  /** Mindestlaufzeit (Vertragsbindung): Abbuchungen bis und mit diesem Tag sind nicht kündbar. */
+  minimumCommitmentUntil?: string; // YYYY-MM-DD
+  /** Wann das Abo zuletzt bewusst geprüft bzw. bearbeitet wurde (Zombie-Erkennung). */
+  lastReviewedAt?: string; // YYYY-MM-DD
 }
 
 export interface Category {
@@ -151,6 +155,7 @@ export interface SubscriptionDraft {
   splitAmount: string; // eigener Betrag pro Abrechnung
   isPaused: boolean;
   pausedUntil: string; // '' = unbefristet
+  minimumCommitmentUntil: string; // '' = keine Mindestlaufzeit
   /** Bestehende Pausen-Historie, wird beim Speichern fortgeschrieben. */
   pauses: PausePeriod[];
 }
@@ -163,7 +168,8 @@ export type DraftField =
   | 'intervals'
   | 'splitPeople'
   | 'splitAmount'
-  | 'pausedUntil';
+  | 'pausedUntil'
+  | 'minimumCommitmentUntil';
 
 export type IntervalField = 'startDate' | 'endDate' | 'amount' | 'currency';
 
@@ -206,6 +212,8 @@ export interface CancellationWindow {
   deadline: Date; // letzter Tag zum Kündigen
   renewalDate: Date; // Abbuchung, die damit verhindert wird
   daysLeft: number;
+  /** Die Frist beendet gleichzeitig die Mindestlaufzeit. */
+  endsCommitment: boolean;
 }
 
 export interface CancellationAlert {
@@ -267,6 +275,16 @@ export interface PriceHike {
   monthlyIncrease: number;
   effectiveDate: string; // YYYY-MM-DD
   isUpcoming: boolean; // Preis gilt erst in Zukunft
+}
+
+/** Tatsächlich bezahlte Summe seit Vertragsbeginn (Einzelabbuchungen, eigener Anteil). */
+export interface LifetimeCost {
+  totalPaid: number; // in Basiswährung
+  chargeCount: number;
+  since: Date; // erste Abbuchung
+  pausedDays: number; // pausierte Tage bis heute
+  skippedCharges: number; // durch Pausen entfallene Abbuchungen
+  savedByPauses: number; // deren Summe in Basiswährung
 }
 
 export type PriceHikeSortKey = 'absolute' | 'percent';

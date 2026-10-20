@@ -1,4 +1,4 @@
-import type { ExchangeRates, Subscription, SubscriptionSortKey, SubscriptionStatusFilter } from '../types';
+import type { Category, ExchangeRates, Subscription, SubscriptionSortKey, SubscriptionStatusFilter } from '../types';
 import { getMonthlyCost, getNextChargeDate } from './calculations';
 import { isPausedAt, isRunning } from './pauses';
 
@@ -19,6 +19,30 @@ export function filterSubscriptions(
     case 'inactive':
       return subs.filter((sub) => !sub.isActive);
   }
+}
+
+/** Kleinschreibung ohne Akzente, damit "cafe" auch "Café" findet. */
+function normalizeSearch(value: string): string {
+  return value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLocaleLowerCase('de-CH');
+}
+
+/**
+ * Volltextsuche über Name, Tarif, Kategorie, Zahlungsart und Notizen.
+ * Mehrere Wörter müssen alle vorkommen (in beliebigen Feldern), z.B. "netflix twint".
+ */
+export function searchSubscriptions(
+  subs: Subscription[],
+  query: string,
+  categoriesById: Map<string, Category>,
+): Subscription[] {
+  const terms = normalizeSearch(query).split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return subs;
+  return subs.filter((sub) => {
+    const haystack = normalizeSearch(
+      [sub.name, sub.planName, categoriesById.get(sub.categoryId)?.name, sub.paymentMethod, sub.notes].join(' '),
+    );
+    return terms.every((term) => haystack.includes(term));
+  });
 }
 
 /** Reihenfolge der Status beim Sortieren: laufend, pausiert, inaktiv. */

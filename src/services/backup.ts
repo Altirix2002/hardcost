@@ -30,7 +30,12 @@ export async function restoreBackup(backup: BackupFile): Promise<void> {
   await db.transaction('rw', db.subscriptions, db.categories, db.settings, async () => {
     await Promise.all([db.subscriptions.clear(), db.categories.clear()]);
     await db.categories.bulkPut(backup.categories);
-    await db.subscriptions.bulkPut(backup.subscriptions);
+    // Ältere Backups kennen kein Prüfdatum: Stand des Exports gilt als geprüft (Zombie-Erkennung).
+    const exported = new Date(backup.exportedAt);
+    const exportedOn = toISODate(Number.isNaN(exported.getTime()) ? new Date() : exported);
+    await db.subscriptions.bulkPut(
+      backup.subscriptions.map((sub) => ({ ...sub, lastReviewedAt: sub.lastReviewedAt ?? exportedOn })),
+    );
     await db.settings.put({ id: 'user', ...backup.settings });
   });
 }

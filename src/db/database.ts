@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type { Category, ExchangeRates, SettingsRecord, Subscription } from '../types';
+import { toISODate } from '../utils/dates';
 import { DEFAULT_CATEGORIES, DEFAULT_SETTINGS } from './seed';
 
 type SubPulseDatabase = Dexie & {
@@ -17,6 +18,20 @@ db.version(1).stores({
   settings: 'id',
   exchangeRates: 'base',
 });
+
+// v2: Zombie-Erkennung. Bestehende Abos hatten kein Erfassungsdatum – sie gelten als heute geprüft,
+// sonst wären nach dem Update alle älteren Verträge auf einen Schlag als "vergessen" markiert.
+db.version(2)
+  .stores({})
+  .upgrade(async (tx) => {
+    const today = toISODate(new Date());
+    await tx
+      .table<Subscription, string>('subscriptions')
+      .toCollection()
+      .modify((sub) => {
+        sub.lastReviewedAt ??= today;
+      });
+  });
 
 // Wird nur beim allerersten Anlegen der Datenbank ausgeführt.
 db.on('populate', async (tx) => {

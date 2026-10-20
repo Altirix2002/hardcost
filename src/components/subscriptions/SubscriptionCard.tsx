@@ -1,6 +1,7 @@
-import { AlarmClock, CalendarClock, Moon, PauseCircle, Users } from 'lucide-react';
+import { AlarmClock, CalendarClock, Lock, Moon, PauseCircle, Users } from 'lucide-react';
 import type { Category, ExchangeRates, Subscription } from '../../types';
 import {
+  getActiveCommitmentEnd,
   getCancellationAlert,
   getCurrentInterval,
   getMonthlyCost,
@@ -11,9 +12,11 @@ import { addDays, daysBetween } from '../../utils/dates';
 import { BILLING_CYCLE_SUFFIX, formatCurrency, formatDate, formatRelativeDays } from '../../utils/format';
 import { cn } from '../../utils/cn';
 import { getResumeDate, isPausedAt } from '../../utils/pauses';
+import { isZombie } from '../../utils/review';
 import { Badge } from '../ui/Badge';
 import { GlassCard } from '../ui/GlassCard';
 import { SubscriptionLogo } from './SubscriptionLogo';
+import { ZombieHint } from './ZombieHint';
 
 interface SubscriptionCardProps {
   subscription: Subscription;
@@ -35,6 +38,8 @@ export function SubscriptionCard({ subscription, category, baseCurrency, rates, 
   const nextBilling = getNextChargeDate(subscription, today);
   const resumeDate = isPaused ? getResumeDate(subscription, today) : null;
   const alert = getCancellationAlert(subscription, today);
+  const commitmentEnd = isActive ? getActiveCommitmentEnd(subscription, today) : null;
+  const zombie = isZombie(subscription, today);
   const showOriginalPrice =
     interval !== undefined && (split !== undefined || interval.currency !== baseCurrency || billingCycle !== 'monthly');
 
@@ -120,11 +125,23 @@ export function SubscriptionCard({ subscription, category, baseCurrency, rates, 
         </div>
       </div>
 
-      {alert && (
+      {(alert || commitmentEnd) && (
+        <div className="-mt-1 flex flex-wrap gap-2">
+          {alert && (
+            <Badge color="amber" icon={AlarmClock}>
+              Kündigen bis {formatDate(alert.deadline)}
+            </Badge>
+          )}
+          {commitmentEnd && (
+            <Badge color="indigo" icon={Lock}>
+              Mindestlaufzeit bis {formatDate(commitmentEnd, true)}
+            </Badge>
+          )}
+        </div>
+      )}
+      {zombie && (
         <div className="-mt-1">
-          <Badge color="amber" icon={AlarmClock}>
-            Kündigen bis {formatDate(alert.deadline)}
-          </Badge>
+          <ZombieHint subscription={subscription} />
         </div>
       )}
     </GlassCard>

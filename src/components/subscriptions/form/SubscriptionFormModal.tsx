@@ -2,7 +2,7 @@ import { useId, useMemo, useState, type FormEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, Check, Trash2 } from 'lucide-react';
 import { createCategory, deleteSubscription, saveSubscription } from '../../../db/repository';
-import type { Category, DraftValidation, Subscription, SubscriptionDraft } from '../../../types';
+import type { Category, DraftValidation, ExchangeRates, Subscription, SubscriptionDraft } from '../../../types';
 import { BILLING_CYCLE_OPTIONS, CURRENCY_OPTIONS } from '../../../utils/options';
 import {
   addPriceChange,
@@ -23,6 +23,7 @@ import { TextArea } from '../../ui/TextArea';
 import { TextField } from '../../ui/TextField';
 import { Toggle } from '../../ui/Toggle';
 import { CategoryPicker } from './CategoryPicker';
+import { LifetimeCostPanel } from './LifetimeCostPanel';
 import { LogoPicker } from './LogoPicker';
 import { PauseEditor } from './PauseEditor';
 import { PaymentMethodPicker } from './PaymentMethodPicker';
@@ -35,6 +36,7 @@ interface SubscriptionFormModalProps {
   subscription: Subscription | null;
   categories: Category[];
   baseCurrency: string;
+  rates: ExchangeRates | null;
   /** Vorschläge für die Zahlungsart, inkl. selbst eingetragener. */
   paymentMethods: string[];
   onClose: () => void;
@@ -47,6 +49,7 @@ export function SubscriptionFormModal({
   subscription,
   categories,
   baseCurrency,
+  rates,
   paymentMethods,
   onClose,
 }: SubscriptionFormModalProps) {
@@ -164,6 +167,8 @@ export function SubscriptionFormModal({
   return (
     <Modal open={open} onClose={onClose} title={isEditing ? 'Abo bearbeiten' : 'Neues Abo'} footer={footer}>
       <form id={formId} noValidate onSubmit={(event) => void handleSubmit(event)} className="flex flex-col gap-8">
+        {subscription && <LifetimeCostPanel subscription={subscription} baseCurrency={baseCurrency} rates={rates} />}
+
         <FormSection title="Allgemein">
           <LogoPicker
             name={draft.name}
@@ -231,6 +236,15 @@ export function SubscriptionFormModal({
               error={errors.fields.cancellationNoticeDays}
             />
           </div>
+          <TextField
+            type="date"
+            label="Mindestlaufzeit bis"
+            hint="Optional – erst zum Ende dieser Bindung regulär kündbar (z.B. bei 12- oder 24-Monats-Verträgen)."
+            min={draft.firstBillingDate}
+            value={draft.minimumCommitmentUntil}
+            onChange={(event) => update('minimumCommitmentUntil', event.target.value)}
+            error={errors.fields.minimumCommitmentUntil}
+          />
           <PaymentMethodPicker
             value={draft.paymentMethod}
             suggestions={paymentMethods}

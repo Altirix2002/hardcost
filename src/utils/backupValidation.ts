@@ -58,7 +58,9 @@ function isSubscription(value: unknown): value is Subscription {
     typeof value.isActive === 'boolean' &&
     isOptionalString(value.notes) &&
     (value.split === undefined || isCostSplit(value.split)) &&
-    (value.pauses === undefined || (Array.isArray(value.pauses) && value.pauses.every(isPausePeriod)))
+    (value.pauses === undefined || (Array.isArray(value.pauses) && value.pauses.every(isPausePeriod))) &&
+    (value.minimumCommitmentUntil === undefined || isDate(value.minimumCommitmentUntil)) &&
+    (value.lastReviewedAt === undefined || isDate(value.lastReviewedAt))
   );
 }
 

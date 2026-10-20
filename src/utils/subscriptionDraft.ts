@@ -70,6 +70,7 @@ export function createEmptyDraft(currency: string, today: Date = new Date()): Su
     isPaused: false,
     pausedUntil: '',
     pauses: [],
+    minimumCommitmentUntil: '',
   };
 }
 
@@ -110,6 +111,7 @@ export function subscriptionToDraft(
     isPaused: pause !== undefined,
     pausedUntil: pause?.endDate ?? '',
     pauses: sub.pauses ?? [],
+    minimumCommitmentUntil: sub.minimumCommitmentUntil ?? '',
   };
 }
 
@@ -146,6 +148,9 @@ export function draftToSubscription(draft: SubscriptionDraft, today: Date = new 
     notes: optional(draft.notes),
     split: draftToSplit(draft),
     pauses: draft.pauses,
+    minimumCommitmentUntil: optional(draft.minimumCommitmentUntil),
+    // Speichern zählt als bewusste Prüfung (Zombie-Erkennung).
+    lastReviewedAt: toISODate(today),
   };
 
   // Pause fortschreiben: neue Pause ab heute, Ende anpassen oder laufende Pause beenden.
@@ -181,6 +186,12 @@ export function validateDraft(draft: SubscriptionDraft, today: Date = new Date()
     const price = parseAmount(draft.intervals.find((i) => i.endDate === '')?.amount ?? '');
     if (share === null || share <= 0) fields.splitAmount = 'Betrag grösser als 0.';
     else if (price !== null && share > price) fields.splitAmount = 'Höher als der Gesamtpreis.';
+  }
+  if (draft.minimumCommitmentUntil !== '') {
+    if (!isValidISODate(draft.minimumCommitmentUntil)) fields.minimumCommitmentUntil = 'Ungültiges Datum.';
+    else if (draft.minimumCommitmentUntil < draft.firstBillingDate) {
+      fields.minimumCommitmentUntil = 'Liegt vor der ersten Abbuchung.';
+    }
   }
   if (draft.isActive && draft.isPaused && draft.pausedUntil !== '') {
     if (!isValidISODate(draft.pausedUntil)) fields.pausedUntil = 'Ungültiges Datum.';
