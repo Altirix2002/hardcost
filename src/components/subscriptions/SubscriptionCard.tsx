@@ -2,11 +2,13 @@ import { AlarmClock, CalendarClock, CalendarX, Gift, Lock, Moon, Users } from 'l
 import type { Category, ExchangeRates, Subscription } from '../../types';
 import {
   getActiveCommitmentEnd,
+  getBindingEnd,
   getCancellationAlert,
   getCurrentInterval,
   getMonthlyCost,
   getNextChargeDate,
   getRegularMonthlyCost,
+  hasNoticePeriod,
 } from '../../utils/calculations';
 import { addDays, daysBetween, parseISODate } from '../../utils/dates';
 import { BILLING_CYCLE_SUFFIX, formatCurrency, formatDate, formatRelativeDays } from '../../utils/format';
@@ -46,15 +48,16 @@ export function SubscriptionCard({ subscription, category, baseCurrency, rates, 
   const resumeDate = isPaused ? getResumeDate(subscription, today) : null;
   const alert = getCancellationAlert(subscription, today);
   // Bei Testphase ohne Kündigungsfrist sagt "Gratis bis …" bereits alles.
-  const showAlert = alert !== null && !(alert.endsTrial && subscription.cancellationNoticeDays === 0);
-  const commitmentEnd = isActive && !endsOn ? getActiveCommitmentEnd(subscription, today) : null;
+  const showAlert = alert !== null && !(alert.endsTrial && !hasNoticePeriod(subscription));
+  const bindingEnd = isActive && !endsOn ? getBindingEnd(subscription, today) : null;
+  const inCommitment = bindingEnd !== null && getActiveCommitmentEnd(subscription, today) !== null;
   const zombie = isZombie(subscription, today);
   const showOriginalPrice =
     interval !== undefined &&
     !inTrial &&
     !isFree &&
     (split !== undefined || interval.currency !== baseCurrency || billingCycle !== 'monthly');
-  const hasBadges = showAlert || commitmentEnd !== null || inTrial || runningOut;
+  const hasBadges = showAlert || bindingEnd !== null || inTrial || runningOut;
 
   return (
     <GlassCard
@@ -175,9 +178,9 @@ export function SubscriptionCard({ subscription, category, baseCurrency, rates, 
               Kündigen bis {formatDate(alert.deadline)}
             </Badge>
           )}
-          {commitmentEnd && (
+          {bindingEnd && (
             <Badge color="indigo" icon={Lock}>
-              Mindestlaufzeit bis {formatDate(commitmentEnd, true)}
+              {inCommitment ? 'Mindestlaufzeit' : 'Laufzeit'} bis {formatDate(bindingEnd, true)}
             </Badge>
           )}
         </div>

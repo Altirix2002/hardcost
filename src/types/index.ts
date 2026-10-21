@@ -61,6 +61,17 @@ export type CostSplit = { type: 'equal'; people: number } | { type: 'fixed'; amo
 
 export type CostSplitType = CostSplit['type'];
 
+/**
+ * Anschlussregel nach der Mindestlaufzeit:
+ * - flexible: vor jeder Abbuchung kündbar (z.B. monatlich kündbar nach deutschem Recht)
+ * - fixed: verlängert sich jeweils um `months` Monate, kündbar nur auf das Ende dieser Laufzeit
+ */
+export type ContractRenewal = { type: 'flexible' } | { type: 'fixed'; months: number };
+
+export type ContractRenewalType = ContractRenewal['type'];
+
+export type NoticeUnit = 'days' | 'months';
+
 export interface Subscription {
   id: string;
   name: string;
@@ -72,6 +83,12 @@ export interface Subscription {
   billingCycle: BillingCycle;
   firstBillingDate: string; // YYYY-MM-DD
   cancellationNoticeDays: number; // Kündigungsfrist in Tagen
+  /** Kündigungsfrist in Monaten (z.B. "3 Monate"); hat Vorrang vor `cancellationNoticeDays`. */
+  cancellationNoticeMonths?: number;
+  /** Kündigung nur auf ein Monatsende möglich ("1 Monat auf Monatsende"). */
+  noticeToMonthEnd?: boolean;
+  /** Was nach der Mindestlaufzeit gilt; fehlt = flexibel kündbar. */
+  renewal?: ContractRenewal;
   intervals: PriceInterval[];
   isActive: boolean;
   notes?: string;
@@ -154,7 +171,11 @@ export interface SubscriptionDraft {
   logoShape: LogoShape;
   billingCycle: BillingCycle;
   firstBillingDate: string;
-  cancellationNoticeDays: string;
+  cancellationNoticeDays: string; // Wert der Frist, Einheit in `noticeUnit`
+  noticeUnit: NoticeUnit;
+  noticeToMonthEnd: boolean;
+  renewalType: ContractRenewalType;
+  renewalMonths: string;
   currency: string; // Standardwährung für neue Preisintervalle
   intervals: PriceIntervalDraft[];
   notes: string;
@@ -179,6 +200,7 @@ export type DraftField =
   | 'categoryId'
   | 'firstBillingDate'
   | 'cancellationNoticeDays'
+  | 'renewalMonths'
   | 'intervals'
   | 'splitPeople'
   | 'splitAmount'
@@ -232,6 +254,8 @@ export interface CancellationWindow {
   endsCommitment: boolean;
   /** Die Frist ist das Ende einer Gratis-Testphase. */
   endsTrial: boolean;
+  /** Wird die Frist verpasst, verlängert sich der Vertrag um so viele Monate; fehlt = nur bis zur nächsten Abbuchung. */
+  renewsForMonths?: number;
 }
 
 export interface CancellationAlert {

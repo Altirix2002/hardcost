@@ -1,4 +1,4 @@
-import type { BillingCycle, SelectOption, Subscription } from '../types';
+import type { BillingCycle, ContractRenewalType, NoticeUnit, SelectOption, Subscription } from '../types';
 import { BILLING_CYCLE_LABELS } from './format';
 
 /** Von der Frankfurter API unterstützte Währungen, häufige zuerst. */
@@ -27,6 +27,16 @@ export function isSupportedCurrency(code: string): boolean {
 export const BILLING_CYCLE_OPTIONS: SelectOption<BillingCycle>[] = (
   Object.keys(BILLING_CYCLE_LABELS) as BillingCycle[]
 ).map((cycle) => ({ value: cycle, label: BILLING_CYCLE_LABELS[cycle] }));
+
+export const NOTICE_UNIT_OPTIONS: SelectOption<NoticeUnit>[] = [
+  { value: 'days', label: 'Tage' },
+  { value: 'months', label: 'Monate' },
+];
+
+export const RENEWAL_OPTIONS: SelectOption<ContractRenewalType>[] = [
+  { value: 'flexible', label: 'Vor jeder Abbuchung kündbar' },
+  { value: 'fixed', label: 'Verlängert sich um feste Laufzeit' },
+];
 
 export const PAYMENT_METHOD_SUGGESTIONS = [
   'Kreditkarte',

@@ -38,6 +38,7 @@ import { PaymentMethodPicker } from './PaymentMethodPicker';
 import { PriceIntervalEditor } from './PriceIntervalEditor';
 import { SplitEditor } from './SplitEditor';
 import { CancellationEditor, TrialEditor } from './StatusEditors';
+import { ContractTermsEditor } from './ContractTermsEditor';
 
 interface SubscriptionFormModalProps {
   open: boolean;
@@ -268,31 +269,16 @@ export function SubscriptionFormModal({
               options={CURRENCY_OPTIONS}
               onChange={(currency) => setDraft((current) => setDraftCurrency(current, currency))}
             />
-            <DateField
-              label="Erste Abbuchung"
-              value={draft.firstBillingDate}
-              onChange={(date) => setDraft((current) => setFirstBillingDate(current, date))}
-              error={errors.fields.firstBillingDate}
-            />
-            <TextField
-              label="Kündigungsfrist"
-              inputMode="numeric"
-              hint="In Tagen"
-              value={draft.cancellationNoticeDays}
-              onChange={(event) => update('cancellationNoticeDays', event.target.value)}
-              error={errors.fields.cancellationNoticeDays}
-            />
+            <div className="col-span-2">
+              <DateField
+                label="Erste Abbuchung"
+                value={draft.firstBillingDate}
+                onChange={(date) => setDraft((current) => setFirstBillingDate(current, date))}
+                error={errors.fields.firstBillingDate}
+              />
+            </div>
           </div>
-          <DateField
-            clearable
-            placeholder="Keine"
-            label="Mindestlaufzeit bis"
-            hint="Optional – erst zum Ende dieser Bindung regulär kündbar (z.B. bei 12- oder 24-Monats-Verträgen)."
-            min={draft.firstBillingDate}
-            value={draft.minimumCommitmentUntil}
-            onChange={(date) => update('minimumCommitmentUntil', date)}
-            error={errors.fields.minimumCommitmentUntil}
-          />
+          <ContractTermsEditor draft={draft} errors={errors.fields} onChange={patch} />
           <PaymentMethodPicker
             value={draft.paymentMethod}
             suggestions={paymentMethods}

@@ -88,9 +88,40 @@ export function getNextChargeDate(sub: Subscription, reference: Date = new Date(
   return hasEndedAt(sub, date) ? null : date;
 }
 
+// ─── Kündigungsfristen & Anschlusslaufzeit ──────────────────────────────────
+
+/** Hat das Abo überhaupt eine Kündigungsfrist (in Tagen oder Monaten)? */
+export function hasNoticePeriod(sub: Subscription): boolean {
+  return (sub.cancellationNoticeMonths ?? 0) > 0 || sub.cancellationNoticeDays > 0;
+}
+
+function isLastDayOfMonth(date: Date): boolean {
+  return addDays(date, 1).getDate() === 1;
+}
+
+/**
+ * Letzter Tag, an dem gekündigt werden muss, damit der Vertrag mit `end` (letzter Vertragstag) endet.
+ * Monatsfristen rechnen von Monatsende zu Monatsende: "2 Monate auf 31.12." = bis 31.10.
+ */
+export function getNoticeDeadline(sub: Subscription, end: Date): Date {
+  const months = sub.cancellationNoticeMonths ?? 0;
+  if (months > 0) {
+    if (isLastDayOfMonth(end)) return new Date(end.getFullYear(), end.getMonth() - months + 1, 0);
+    return addMonthsClamped(end, -months);
+  }
+  return addDays(end, -sub.cancellationNoticeDays);
+}
+
+/** Letzter Vertragstag, mit dem sich die Abbuchung am `renewal` noch verhindern lässt. */
+function getLastDayBefore(sub: Subscription, renewal: Date): Date {
+  // "Auf Monatsende": nur zum Ende des Vormonats der Abbuchung.
+  return sub.noticeToMonthEnd ? new Date(renewal.getFullYear(), renewal.getMonth(), 0) : addDays(renewal, -1);
+}
+
 /** Letzter Tag, an dem vor der nächsten Abbuchung noch gekündigt werden kann. */
 export function getCancellationDeadline(sub: Subscription, reference: Date = new Date()): Date {
-  return addDays(getNextBillingDate(sub, reference), -sub.cancellationNoticeDays);
+  const renewal = getNextBillingDate(sub, reference);
+  return getNoticeDeadline(sub, getLastDayBefore(sub, renewal));
 }
 
 /** Letzter Tag der Mindestlaufzeit, falls sie am Stichtag noch läuft. */
@@ -101,10 +132,38 @@ export function getActiveCommitmentEnd(sub: Subscription, reference: Date = new 
 }
 
 /**
+ * Ende der k-ten festen Anschlusslaufzeit (k = 1 ist die erste nach der Mindestlaufzeit). Ohne
+ * Mindestlaufzeit beginnen die Laufzeiten mit der ersten Abbuchung. Immer vom Start aus rechnen,
+ * damit Monatsenden nicht wegdriften.
+ */
+function getRenewalTermEnd(sub: Subscription, months: number, k: number): Date {
+  const start = sub.minimumCommitmentUntil
+    ? addDays(parseISODate(sub.minimumCommitmentUntil), 1)
+    : parseISODate(sub.firstBillingDate);
+  return addDays(addMonthsClamped(start, k * months), -1);
+}
+
+/**
+ * Ende der laufenden Vertragsbindung am Stichtag: Mindestlaufzeit oder – bei fester Verlängerung –
+ * die aktuelle Anschlusslaufzeit. null, wenn das Abo flexibel kündbar ist.
+ */
+export function getBindingEnd(sub: Subscription, reference: Date = new Date()): Date | null {
+  const commitmentEnd = getActiveCommitmentEnd(sub, reference);
+  if (commitmentEnd) return commitmentEnd;
+  if (sub.renewal?.type !== 'fixed' || sub.renewal.months <= 0) return null;
+  const today = startOfDay(reference);
+  let k = 1;
+  let end = getRenewalTermEnd(sub, sub.renewal.months, k);
+  while (end < today) end = getRenewalTermEnd(sub, sub.renewal.months, ++k);
+  return end;
+}
+
+/**
  * Nächste Kündigungsfrist, die sich noch einhalten lässt. Ist die Frist vor der
  * nächsten Abbuchung schon verstrichen, zählt die Frist vor der übernächsten.
- * Während einer Mindestlaufzeit gilt: kündbar erst auf deren Ende (Ende minus Kündigungsfrist);
- * wird diese Frist verpasst, verlängert sich das Abo regulär.
+ * Während einer Mindestlaufzeit gilt: kündbar erst auf deren Ende (Ende minus Kündigungsfrist).
+ * Danach entscheidet die Anschlussregel: feste Verlängerung → kündbar nur auf das Ende der
+ * jeweiligen Laufzeit; flexibel → vor jeder Abbuchung.
  * Liefert null für inaktive, pausierte oder bereits beendete Abos.
  */
 export function getCancellationWindow(sub: Subscription, reference: Date = new Date()): CancellationWindow | null {
@@ -112,17 +171,26 @@ export function getCancellationWindow(sub: Subscription, reference: Date = new D
   if (sub.endsOn !== undefined || !isRunning(sub, reference) || !getCurrentInterval(sub, reference)) return null;
 
   const today = startOfDay(reference);
-  const notice = sub.cancellationNoticeDays;
+  const fixedMonths = sub.renewal?.type === 'fixed' && sub.renewal.months > 0 ? sub.renewal.months : undefined;
+  const window = (end: Date, renewalDate: Date, flags: Partial<CancellationWindow> = {}): CancellationWindow => {
+    const deadline = getNoticeDeadline(sub, end);
+    return {
+      deadline,
+      renewalDate,
+      daysLeft: daysBetween(today, deadline),
+      endsCommitment: false,
+      endsTrial: false,
+      ...flags,
+    };
+  };
   let from = today;
 
   // Testphase: Kündigen vor der ersten kostenpflichtigen Abbuchung.
   if (sub.trialEndsAt && isInTrialAt(sub, today)) {
     const trialEnd = parseISODate(sub.trialEndsAt);
     const renewalDate = getNextChargeDate(sub, today) ?? addDays(trialEnd, 1);
-    const deadline = addDays(trialEnd, -notice);
-    if (deadline >= today) {
-      return { deadline, renewalDate, daysLeft: daysBetween(today, deadline), endsCommitment: false, endsTrial: true };
-    }
+    const trial = window(trialEnd, renewalDate, { endsTrial: true });
+    if (trial.deadline >= today) return trial;
     from = renewalDate;
   }
 
@@ -130,25 +198,34 @@ export function getCancellationWindow(sub: Subscription, reference: Date = new D
   if (commitmentEnd) {
     // Erste Abbuchung nach der Bindung ist die erste, die sich verhindern lässt.
     const renewalDate = getNextBillingDate(sub, addDays(commitmentEnd, 1));
-    const deadline = addDays(commitmentEnd, -notice);
-    if (deadline >= today) {
-      return { deadline, renewalDate, daysLeft: daysBetween(today, deadline), endsCommitment: true, endsTrial: false };
-    }
+    const commitment = window(commitmentEnd, renewalDate, { endsCommitment: true, renewsForMonths: fixedMonths });
+    if (commitment.deadline >= today) return commitment;
     from = renewalDate;
   }
 
-  let renewalDate = getNextBillingDate(sub, from);
-  let deadline = addDays(renewalDate, -notice);
-  while (deadline < today) {
-    renewalDate = getNextBillingDate(sub, addDays(renewalDate, 1));
-    deadline = addDays(renewalDate, -notice);
+  if (fixedMonths) {
+    const term = (k: number) => {
+      const end = getRenewalTermEnd(sub, fixedMonths, k);
+      return window(end, getNextBillingDate(sub, addDays(end, 1)), { renewsForMonths: fixedMonths });
+    };
+    let k = 1;
+    let next = term(k);
+    while (next.deadline < today) next = term(++k);
+    return next;
   }
-  return { deadline, renewalDate, daysLeft: daysBetween(today, deadline), endsCommitment: false, endsTrial: false };
+
+  let renewalDate = getNextBillingDate(sub, from);
+  let next = window(getLastDayBefore(sub, renewalDate), renewalDate);
+  while (next.deadline < today) {
+    renewalDate = getNextBillingDate(sub, addDays(renewalDate, 1));
+    next = window(getLastDayBefore(sub, renewalDate), renewalDate);
+  }
+  return next;
 }
 
 /**
  * Kündigungsalarm, falls die Frist innerhalb von `windowDays` abläuft. Gilt für Abos mit
- * Kündigungsfrist sowie für das nahende Ende einer Mindestlaufzeit.
+ * Kündigungsfrist, fester Verlängerung sowie für das nahende Ende einer Mindestlaufzeit.
  */
 export function getCancellationAlert(
   sub: Subscription,
@@ -156,7 +233,10 @@ export function getCancellationAlert(
   windowDays: number = CANCELLATION_ALERT_DAYS,
 ): CancellationWindow | null {
   const hasDeadline =
-    sub.cancellationNoticeDays > 0 || getActiveCommitmentEnd(sub, reference) !== null || isInTrialAt(sub, reference);
+    hasNoticePeriod(sub) ||
+    sub.renewal?.type === 'fixed' ||
+    getActiveCommitmentEnd(sub, reference) !== null ||
+    isInTrialAt(sub, reference);
   if (!hasDeadline) return null;
   const window = getCancellationWindow(sub, reference);
   return window && window.daysLeft <= windowDays ? window : null;

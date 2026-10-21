@@ -87,9 +87,11 @@ export function CancellationRadar({ alerts, categoriesById, onSelect }: Cancella
                             <span className="block truncate text-xs text-zinc-500 dark:text-zinc-400">
                               {window.endsTrial
                                 ? `Testphase endet · danach Abbuchung am ${formatDate(window.renewalDate, true)}`
-                                : window.endsCommitment
-                                  ? `Mindestlaufzeit endet · sonst Abbuchung am ${formatDate(window.renewalDate, true)}`
-                                  : `Verlängert sich am ${formatDate(window.renewalDate, true)}`}
+                                : window.renewsForMonths
+                                  ? `${window.endsCommitment ? 'Mindestlaufzeit' : 'Laufzeit'} endet · sonst +${window.renewsForMonths} Mt. ab ${formatDate(window.renewalDate, true)}`
+                                  : window.endsCommitment
+                                    ? `Mindestlaufzeit endet · sonst Abbuchung am ${formatDate(window.renewalDate, true)}`
+                                    : `Verlängert sich am ${formatDate(window.renewalDate, true)}`}
                             </span>
                           </span>
                           <span className="shrink-0 text-right">

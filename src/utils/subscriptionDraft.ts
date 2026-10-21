@@ -59,6 +59,10 @@ export function createEmptyDraft(currency: string, today: Date = new Date()): Su
     billingCycle: 'monthly',
     firstBillingDate: start,
     cancellationNoticeDays: '0',
+    noticeUnit: 'days',
+    noticeToMonthEnd: false,
+    renewalType: 'flexible',
+    renewalMonths: '12',
     currency,
     intervals: [{ id: createId(), startDate: start, endDate: '', amount: '', currency }],
     notes: '',
@@ -102,7 +106,11 @@ export function subscriptionToDraft(
     logoShape: sub.logoShape,
     billingCycle: sub.billingCycle,
     firstBillingDate: sub.firstBillingDate,
-    cancellationNoticeDays: String(sub.cancellationNoticeDays),
+    cancellationNoticeDays: String(sub.cancellationNoticeMonths ?? sub.cancellationNoticeDays),
+    noticeUnit: sub.cancellationNoticeMonths !== undefined ? 'months' : 'days',
+    noticeToMonthEnd: sub.noticeToMonthEnd ?? false,
+    renewalType: sub.renewal?.type ?? 'flexible',
+    renewalMonths: sub.renewal?.type === 'fixed' ? String(sub.renewal.months) : '12',
     currency: current?.currency ?? fallbackCurrency,
     intervals,
     notes: sub.notes ?? '',
@@ -129,6 +137,19 @@ function draftToSplit(draft: SubscriptionDraft): CostSplit | undefined {
     : { type: 'fixed', amount: parseAmount(draft.splitAmount) ?? 0 };
 }
 
+/** Frist in Tagen oder Monaten – die jeweils andere Angabe entfällt. */
+function draftToNotice(
+  draft: SubscriptionDraft,
+): Pick<Subscription, 'cancellationNoticeDays' | 'cancellationNoticeMonths' | 'noticeToMonthEnd'> {
+  const value = Number.parseInt(draft.cancellationNoticeDays, 10) || 0;
+  const inMonths = draft.noticeUnit === 'months' && value > 0;
+  return {
+    cancellationNoticeDays: inMonths ? 0 : value,
+    cancellationNoticeMonths: inMonths ? value : undefined,
+    noticeToMonthEnd: draft.noticeToMonthEnd || undefined,
+  };
+}
+
 /** Setzt einen gültigen Entwurf (siehe validateDraft) in ein speicherbares Abo um. */
 export function draftToSubscription(draft: SubscriptionDraft, today: Date = new Date()): Subscription {
   const optional = (value: string): string | undefined => (value.trim() === '' ? undefined : value.trim());
@@ -143,7 +164,9 @@ export function draftToSubscription(draft: SubscriptionDraft, today: Date = new 
     logoShape: draft.logoShape,
     billingCycle: draft.billingCycle,
     firstBillingDate: draft.firstBillingDate,
-    cancellationNoticeDays: Number.parseInt(draft.cancellationNoticeDays, 10) || 0,
+    ...draftToNotice(draft),
+    renewal:
+      draft.renewalType === 'fixed' ? { type: 'fixed', months: Number.parseInt(draft.renewalMonths, 10) } : undefined,
     intervals: sortByStart(draft.intervals).map((interval) => ({
       id: interval.id,
       startDate: interval.startDate,
@@ -184,7 +207,13 @@ export function validateDraft(draft: SubscriptionDraft, today: Date = new Date()
   if (!draft.name.trim()) fields.name = 'Bitte einen Namen eingeben.';
   if (!draft.categoryId) fields.categoryId = 'Bitte eine Kategorie wählen.';
   if (!isValidISODate(draft.firstBillingDate)) fields.firstBillingDate = 'Bitte ein gültiges Datum wählen.';
-  if (!/^\d+$/.test(draft.cancellationNoticeDays.trim())) fields.cancellationNoticeDays = 'Ganze Tage ab 0.';
+  if (!/^\d+$/.test(draft.cancellationNoticeDays.trim())) {
+    fields.cancellationNoticeDays = draft.noticeUnit === 'months' ? 'Ganze Monate ab 0.' : 'Ganze Tage ab 0.';
+  }
+  if (draft.renewalType === 'fixed') {
+    const months = Number(draft.renewalMonths.trim());
+    if (!Number.isInteger(months) || months < 1 || months > 120) fields.renewalMonths = 'Zwischen 1 und 120 Monaten.';
+  }
   if (draft.intervals.length === 0) fields.intervals = 'Mindestens ein Preis ist nötig.';
 
   if (draft.isShared && draft.splitType === 'equal') {

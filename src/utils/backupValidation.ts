@@ -39,6 +39,11 @@ function isCostSplit(value: unknown): value is CostSplit {
   return value.type === 'fixed' && isFiniteNumber(value.amount) && value.amount > 0;
 }
 
+function isContractRenewal(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  return value.type === 'flexible' || (value.type === 'fixed' && isFiniteNumber(value.months) && value.months > 0);
+}
+
 function isSubscription(value: unknown): value is Subscription {
   return (
     isRecord(value) &&
@@ -53,6 +58,9 @@ function isSubscription(value: unknown): value is Subscription {
     isDate(value.firstBillingDate) &&
     isFiniteNumber(value.cancellationNoticeDays) &&
     value.cancellationNoticeDays >= 0 &&
+    (value.cancellationNoticeMonths === undefined || isFiniteNumber(value.cancellationNoticeMonths)) &&
+    (value.noticeToMonthEnd === undefined || typeof value.noticeToMonthEnd === 'boolean') &&
+    (value.renewal === undefined || isContractRenewal(value.renewal)) &&
     Array.isArray(value.intervals) &&
     value.intervals.every(isPriceInterval) &&
     typeof value.isActive === 'boolean' &&

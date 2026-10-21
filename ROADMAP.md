@@ -21,7 +21,7 @@ Stand: 21.10.2026. Erledigte Punkte abhaken (`[x]`) oder entfernen, neue unten e
 ## Meilenstein 9 (in Arbeit)
 
 - [x] **9a Rebranding HardCost:** Name, neues Icon, Markenverlauf (Plus-Knopf, aktiver Tab, Hauptknöpfe), Datenbank-Umzug `subpulse` → `hardcost`, alte Backups weiter importierbar, Repo heisst `hardcost` (neue URL – App am Handy neu installieren)
-- [ ] 9b Datenmodell & Migration (Zahlungsarten mit Ablaufdatum/Kartentyp, Anschlusslaufzeit, eigene Reihenfolge, Markenfarbe)
+- [x] **9b Anschlusslaufzeit:** feste Verlängerung um X Monate oder flexibel kündbar, Frist in Tagen oder Monaten, «nur auf Monatsende»; Radar zeigt «sonst +12 Mt.», Karte «Laufzeit bis …». Fristen rechnen jetzt ab dem letzten Vertragstag (einen Tag früher als bisher bei Tagesfristen). Neue Felder sind optional – keine DB-Migration nötig, alte Backups gültig
 - [ ] 9c Bezahlkarten-Radar, Kategorie-Budgets, Fixkosten-Quote, Einweg-/virtuelle Karten
 - [ ] 9d Abo-Friedhof (eigener Tab, Spar-Tracker, Reaktivieren)
 - [ ] 9e Karten: Drehung, Einstellungs-Knopf, Ruhemodus, Markenfarbe, Wischgeste
