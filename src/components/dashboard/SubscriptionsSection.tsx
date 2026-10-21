@@ -1,0 +1,196 @@
+import { useDeferredValue, useEffect, useMemo } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Plus, RotateCcw, SearchX, Sparkles } from 'lucide-react';
+import { loadDemoSubscriptions, saveManualOrder } from '../../db/repository';
+import { useDashboardStore } from '../../store/useDashboardStore';
+import type { Category, ExchangeRates, Subscription } from '../../types';
+import { isArchived } from '../../utils/archive';
+import { crossfadeVariants, swapVariants } from '../../utils/motion';
+import { filterSubscriptions, searchSubscriptions, sortSubscriptions } from '../../utils/subscriptionList';
+import { ReorderableSubscriptions } from '../subscriptions/ReorderableSubscriptions';
+import { SubscriptionList } from '../subscriptions/SubscriptionList';
+import { SubscriptionTileGrid } from '../subscriptions/SubscriptionTileGrid';
+import { AutoHeight } from '../ui/AutoHeight';
+import { Button } from '../ui/Button';
+import { EmptyState } from '../ui/EmptyState';
+import { SubscriptionSearch } from './SubscriptionSearch';
+import { SubscriptionToolbar } from './SubscriptionToolbar';
+
+interface SubscriptionsSectionProps {
+  subscriptions: Subscription[];
+  categoriesById: Map<string, Category>;
+  baseCurrency: string;
+  rates: ExchangeRates | null;
+  onCreate: () => void;
+  onSelect: (subscription: Subscription) => void;
+}
+
+/**
+ * Abo-Liste mit Filter, Sortierung, Suche, Liste/Kacheln und Anordnen – in der Übersicht unter den
+ * Kennzahlen und allein im Tab «Abos». Filter und Ansicht teilen sich beide über den Dashboard-Store.
+ */
+export function SubscriptionsSection({
+  subscriptions,
+  categoriesById,
+  baseCurrency,
+  rates,
+  onCreate,
+  onSelect,
+}: SubscriptionsSectionProps) {
+  const sortKey = useDashboardStore((s) => s.sortKey);
+  const statusFilter = useDashboardStore((s) => s.statusFilter);
+  const setSortKey = useDashboardStore((s) => s.setSortKey);
+  const setStatusFilter = useDashboardStore((s) => s.setStatusFilter);
+  const viewMode = useDashboardStore((s) => s.viewMode);
+  const setViewMode = useDashboardStore((s) => s.setViewMode);
+  const searchQuery = useDashboardStore((s) => s.searchQuery);
+  const setSearchQuery = useDashboardStore((s) => s.setSearchQuery);
+  const resetFilters = useDashboardStore((s) => s.resetFilters);
+  const reordering = useDashboardStore((s) => s.reordering);
+  const setReordering = useDashboardStore((s) => s.setReordering);
+  // Eingabe bleibt sofort flüssig; die Liste filtert mit niedriger Priorität hinterher.
+  const deferredQuery = useDeferredValue(searchQuery);
+  const isSearching = deferredQuery.trim() !== '';
+
+  // Beendete Abos liegen im Friedhof-Tab; hier bleiben laufende, pausierte und auslaufende.
+  const current = useMemo(() => subscriptions.filter((sub) => !isArchived(sub)), [subscriptions]);
+
+  // Eigene Reihenfolge über alle Abos der Übersicht – Grundlage fürs Anordnen in gefilterten Ansichten.
+  const manualOrder = useMemo(
+    () => sortSubscriptions(current, 'manual', baseCurrency, rates),
+    [current, baseCurrency, rates],
+  );
+
+  // Erstmals "Eigene Reihenfolge": aktuelle Reihenfolge festschreiben, damit neue Abos sauber hinten anstehen.
+  useEffect(() => {
+    if (sortKey === 'manual' && manualOrder.some((sub) => sub.sortOrder === undefined)) {
+      void saveManualOrder(manualOrder.map((sub) => sub.id));
+    }
+  }, [sortKey, manualOrder]);
+
+  const visible = useMemo(
+    () =>
+      sortSubscriptions(
+        searchSubscriptions(filterSubscriptions(current, statusFilter), deferredQuery, categoriesById),
+        sortKey,
+        baseCurrency,
+        rates,
+      ),
+    [current, statusFilter, deferredQuery, categoriesById, sortKey, baseCurrency, rates],
+  );
+
+  // Wechsel zwischen Liste und Leer-Zustand: das eine klappt zu, das andere gleichzeitig auf – so bleibt
+  // die Seitenhöhe fliessend (siehe collapseItemVariants).
+  // Keine Scroll-Anker in der Abo-Liste: Karten/Kacheln stehen im Layout sofort am neuen Platz und gleiten
+  // nur optisch dorthin – Chrome würde auf den Layout-Platz "korrigieren" und die Seite springen lassen.
+  return (
+    <section className="[overflow-anchor:none]">
+      <AnimatePresence initial={false}>
+        {subscriptions.length === 0 ? (
+          <motion.div key="empty" variants={swapVariants} initial="hidden" animate="visible" exit="exit">
+            <EmptyState
+              icon={Sparkles}
+              title="Noch keine Abos erfasst"
+              description="Alle Daten bleiben lokal auf deinem Gerät. Erfasse dein erstes Abo oder lade Beispiele zum Ausprobieren."
+              action={
+                <div className="flex flex-wrap justify-center gap-2">
+                  <Button icon={Plus} onClick={onCreate}>
+                    Erstes Abo erfassen
+                  </Button>
+                  <Button variant="secondary" onClick={() => void loadDemoSubscriptions()}>
+                    Beispiele laden
+                  </Button>
+                </div>
+              }
+            />
+          </motion.div>
+        ) : (
+          <motion.div key="list" variants={swapVariants} initial="hidden" animate="visible" exit="exit">
+            {/* Kein gap um die Treffer: Beim Wechsel Treffer ↔ "Keine Treffer" sind kurz beide da –
+                ein gap käme dabei sprunghaft dazu bzw. fiele weg. */}
+            <div>
+              <div className="flex flex-col gap-3 pb-3">
+                <SubscriptionToolbar
+                  count={visible.length}
+                  sortKey={sortKey}
+                  onSortChange={setSortKey}
+                  statusFilter={statusFilter}
+                  onStatusFilterChange={setStatusFilter}
+                  viewMode={viewMode}
+                  onViewModeChange={setViewMode}
+                  reordering={reordering}
+                  onReorderingChange={setReordering}
+                />
+                <SubscriptionSearch value={searchQuery} onChange={setSearchQuery} />
+              </div>
+              <AnimatePresence initial={false}>
+                {visible.length > 0 ? (
+                  <motion.div key="results" variants={swapVariants} initial="hidden" animate="visible" exit="exit">
+                    {/* Ansicht wechseln: an Ort und Stelle überblenden, die Höhe gleitet mit (kein Wegschieben). */}
+                    <AutoHeight className="-mx-2 -mt-2" innerClassName="relative px-2 pt-2">
+                      <AnimatePresence initial={false} mode="popLayout">
+                        <motion.div
+                          key={reordering ? `${viewMode}-reorder` : viewMode}
+                          variants={crossfadeVariants}
+                          initial="hidden"
+                          animate="visible"
+                          exit="exit"
+                        >
+                          {reordering && sortKey === 'manual' ? (
+                            <ReorderableSubscriptions
+                              subscriptions={visible}
+                              allOrdered={manualOrder}
+                              viewMode={viewMode}
+                              categoriesById={categoriesById}
+                              baseCurrency={baseCurrency}
+                              rates={rates}
+                            />
+                          ) : viewMode === 'tiles' ? (
+                            <SubscriptionTileGrid
+                              subscriptions={visible}
+                              categoriesById={categoriesById}
+                              baseCurrency={baseCurrency}
+                              rates={rates}
+                              onSelect={onSelect}
+                            />
+                          ) : (
+                            <SubscriptionList
+                              subscriptions={visible}
+                              categoriesById={categoriesById}
+                              baseCurrency={baseCurrency}
+                              rates={rates}
+                              onSelect={onSelect}
+                            />
+                          )}
+                        </motion.div>
+                      </AnimatePresence>
+                    </AutoHeight>
+                  </motion.div>
+                ) : (
+                  <motion.div key="no-results" variants={swapVariants} initial="hidden" animate="visible" exit="exit">
+                    <EmptyState
+                      icon={SearchX}
+                      title={
+                        isSearching ? `Keine Treffer für «${deferredQuery.trim()}»` : 'Keine Abos in dieser Ansicht'
+                      }
+                      description={
+                        isSearching
+                          ? 'Gesucht wird in Name, Tarif, Kategorie, Zahlungsart und Notizen.'
+                          : 'Wähle oben einen anderen Filter, um alle Abos zu sehen.'
+                      }
+                      action={
+                        <Button variant="secondary" icon={RotateCcw} onClick={resetFilters}>
+                          Filter zurücksetzen
+                        </Button>
+                      }
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
+  );
+}

@@ -110,7 +110,7 @@ export interface Subscription {
   sortOrder?: number;
 }
 
-/** Dominante Farben eines Logos als Hex (#rrggbb). */
+/** Dominante Farben eines Logos als Hex (#rrggbb); als Kartenfarbe auch eine CSS-Farbe (Kategorie). */
 export interface BrandColors {
   primary: string;
   secondary: string;
@@ -442,7 +442,8 @@ export type SubscriptionViewMode = 'list' | 'tiles';
 
 export type SubscriptionStatusFilter = 'all' | 'active' | 'paused' | 'cancelled';
 
-export type AppTab = 'overview' | 'statistics' | 'archive';
+/** 'subscriptions' = nur die Abo-Liste, ohne Kennzahlen und Hinweise der Übersicht. */
+export type AppTab = 'overview' | 'subscriptions' | 'statistics' | 'archive';
 
 // ─── Abo-Friedhof ───────────────────────────────────────────────────────────
 

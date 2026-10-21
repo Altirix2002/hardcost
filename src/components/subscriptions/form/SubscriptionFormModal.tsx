@@ -51,8 +51,9 @@ interface SubscriptionFormModalProps {
   /** Vorschläge für die Zahlungsart, inkl. selbst eingetragener. */
   paymentMethods: string[];
   onClose: () => void;
-  /** Morph-Quelle (Plus-Knopf), nur beim Erfassen auf dem Desktop. */
-  layoutId?: string;
+  /** Morph-Ursprung (Plus-Knopf), nur beim Erfassen. */
+  morphFrom?: DOMRect | null;
+  onMorphEnd?: () => void;
 }
 
 const NO_ERRORS: DraftValidation = { isValid: true, fields: {}, intervals: {} };
@@ -73,7 +74,8 @@ export function SubscriptionFormModal({
   rates,
   paymentMethods,
   onClose,
-  layoutId,
+  morphFrom,
+  onMorphEnd,
 }: SubscriptionFormModalProps) {
   const formId = useId();
   const rememberPaymentMethod = useSettingsStore((s) => s.rememberPaymentMethod);
@@ -216,7 +218,8 @@ export function SubscriptionFormModal({
       onClose={onClose}
       title={isEditing ? 'Abo bearbeiten' : 'Neues Abo'}
       footer={footer}
-      layoutId={subscription ? undefined : layoutId}
+      morphFrom={subscription ? null : morphFrom}
+      onMorphEnd={onMorphEnd}
     >
       <form ref={formRef} id={formId} noValidate onSubmit={(event) => void handleSubmit(event)} className="flex flex-col gap-8">
         {isEditing && subscription && <LifetimeCostPanel subscription={subscription} baseCurrency={baseCurrency} rates={rates} />}

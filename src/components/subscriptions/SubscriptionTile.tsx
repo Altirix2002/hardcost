@@ -10,7 +10,7 @@ import {
 } from '../../utils/calculations';
 import { useCardFlip } from '../../hooks/useCardFlip';
 import { useSettingsStore } from '../../store/useSettingsStore';
-import { brandColorStyle } from '../../utils/brandColors';
+import { brandColorStyle, getCardColors } from '../../utils/brandColors';
 import { getSubscriptionFacts } from '../../utils/cardFacts';
 import { cn } from '../../utils/cn';
 import { formatCurrency } from '../../utils/format';
@@ -84,6 +84,7 @@ export function SubscriptionTile({
     () => getSubscriptionFacts(subscription, baseCurrency, rates, cards, new Date()),
     [subscription, baseCurrency, rates, cards],
   );
+  const colors = getCardColors(subscription, category);
   const toggleFlip = () => {
     if (flippable) setFlipped((value) => !value);
   };
@@ -144,7 +145,7 @@ export function SubscriptionTile({
   );
 
   return (
-    <div className="relative h-full" style={brandColorStyle(subscription.brandColors)}>
+    <div className="relative h-full" style={brandColorStyle(colors)}>
       <motion.div style={{ rotateY, transformPerspective: 900 }} className="h-full">
         <GlassCard
           interactive={flippable}
@@ -158,9 +159,13 @@ export function SubscriptionTile({
             event.preventDefault();
             toggleFlip();
           }}
-          className="h-full focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:outline-none"
+          // Ganze Karte in (abgedunkelter) Markenfarbe; im Ruhemodus bewusst neutral.
+          className={cn(
+            'h-full focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:outline-none',
+            colors && !paused && 'brand-surface',
+          )}
         >
-          <CardAura brandColors={subscription.brandColors} sleeping={paused} />
+          <CardAura brandColors={colors ?? undefined} sleeping={paused} />
           <CardFaces face={face} sleeping={paused} front={front} back={<SubscriptionTileBack facts={facts} />} />
         </GlassCard>
       </motion.div>

@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
-import type { BrandColors, Subscription } from '../types';
+import type { BrandColors, Category, Subscription } from '../types';
+import { getCategoryColorValue } from './categoryStyles';
 
 /** Kantenlänge, auf die das Logo zum Auszählen verkleinert wird. */
 const SAMPLE_SIZE = 40;
@@ -131,8 +132,19 @@ export async function withBrandColors(sub: Subscription, previous?: Subscription
   return { ...sub, brandColors: (await extractBrandColors(sub.logoUrl)) ?? undefined };
 }
 
-/** CSS-Variablen für Glow und Akzentlinie – der einzige Inline-Style der Karte (Farbe ist dynamisch). */
-export function brandColorStyle(colors: BrandColors | undefined): CSSProperties | undefined {
+/**
+ * Farbe einer Abo-Karte: aus dem Logo, sonst die des Initialen-Logos (Kategoriefarbe). null nur ohne
+ * Logo-Farben und ohne Kategorie.
+ */
+export function getCardColors(sub: Subscription, category?: Category): BrandColors | null {
+  if (sub.logoUrl && sub.brandColors) return sub.brandColors;
+  if (!category) return null;
+  const color = getCategoryColorValue(category.color);
+  return { primary: color, secondary: color };
+}
+
+/** CSS-Variablen für Einfärbung, Glow und Akzentlinie – der einzige Inline-Style der Karte (Farbe ist dynamisch). */
+export function brandColorStyle(colors: BrandColors | null): CSSProperties | undefined {
   if (!colors) return undefined;
   return { '--brand': colors.primary, '--brand-2': colors.secondary } as CSSProperties;
 }

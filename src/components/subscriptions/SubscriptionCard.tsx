@@ -16,7 +16,7 @@ import {
 } from '../../utils/calculations';
 import { addDays, daysBetween, parseISODate } from '../../utils/dates';
 import { BILLING_CYCLE_SUFFIX, formatCurrency, formatDate, formatRelativeDays } from '../../utils/format';
-import { brandColorStyle } from '../../utils/brandColors';
+import { brandColorStyle, getCardColors } from '../../utils/brandColors';
 import { getSubscriptionFacts } from '../../utils/cardFacts';
 import { cn } from '../../utils/cn';
 import { getResumeDate, isPausedAt } from '../../utils/pauses';
@@ -75,6 +75,7 @@ export function SubscriptionCard({
     () => getSubscriptionFacts(subscription, baseCurrency, rates, cards, new Date()),
     [subscription, baseCurrency, rates, cards],
   );
+  const colors = getCardColors(subscription, category);
   const today = new Date();
   const { billingCycle, split, endsOn, trialEndsAt } = subscription;
   const isActive = isActiveAt(subscription, today);
@@ -254,7 +255,7 @@ export function SubscriptionCard({
 
   return (
     // Markenfarben als CSS-Variablen für Glow und Akzentlinie (siehe CardAura).
-    <div className="relative h-full" style={brandColorStyle(subscription.brandColors)}>
+    <div className="relative h-full" style={brandColorStyle(colors)}>
       {/* Nur diese Ebene dreht sich – das Zahnrad daneben bleibt stehen. */}
       <motion.div style={{ rotateY, transformPerspective: 1200 }} className="h-full">
         <GlassCard
@@ -269,9 +270,13 @@ export function SubscriptionCard({
             event.preventDefault();
             toggleFlip();
           }}
-          className="h-full focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:outline-none"
+          // Ganze Karte in (abgedunkelter) Markenfarbe; im Ruhemodus bewusst neutral.
+          className={cn(
+            'h-full focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:outline-none',
+            colors && !isPaused && 'brand-surface',
+          )}
         >
-          <CardAura brandColors={subscription.brandColors} sleeping={isPaused} />
+          <CardAura brandColors={colors ?? undefined} sleeping={isPaused} />
           <CardFaces
             face={face}
             sleeping={isPaused}

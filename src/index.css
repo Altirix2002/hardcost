@@ -159,3 +159,18 @@
     transform: translateX(-50%);
   }
 }
+
+/*
+ * Abo-Karte in Markenfarbe (getCardColors): ganze Fläche eingefärbt, aber abgedunkelt bzw. hell
+ * gemischt – kräftige Marken wie Netflix oder YouTube werden so nicht knallrot. Ohne Layer, damit
+ * es die Glas-Hintergrundfarbe von GlassCard überschreibt.
+ */
+.brand-surface {
+  background-color: color-mix(in srgb, var(--brand) 14%, rgb(255 255 255 / 0.78));
+  border-color: color-mix(in srgb, var(--brand) 28%, transparent);
+}
+
+.dark .brand-surface {
+  background-color: color-mix(in srgb, var(--brand) 20%, rgb(12 12 14 / 0.9));
+  border-color: color-mix(in srgb, var(--brand) 32%, transparent);
+}

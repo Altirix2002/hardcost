@@ -9,10 +9,10 @@ import { MobileDock } from './components/layout/MobileDock';
 import { DynamicIsland } from './components/ui/DynamicIsland';
 import { FloatingActionButton } from './components/ui/FloatingActionButton';
 import { ArchiveView } from './components/archive/ArchiveView';
+import { SubscriptionsSection } from './components/dashboard/SubscriptionsSection';
 import { db } from './db/database';
 import { backfillBrandColors } from './db/repository';
 import { useApplyTheme } from './hooks/useApplyTheme';
-import { useMediaQuery } from './hooks/useMediaQuery';
 import { useTabSwipe } from './hooks/useTabSwipe';
 import { isAppTab, tabPanelId, useNavigationStore } from './store/useNavigationStore';
 import { useSettingsStore } from './store/useSettingsStore';
@@ -33,14 +33,9 @@ const loadUpcomingModal = () => import('./components/dashboard/UpcomingPaymentsM
 const SubscriptionFormModal = lazy(() => loadFormModal().then((m) => ({ default: m.SubscriptionFormModal })));
 const SettingsModal = lazy(() => loadSettingsModal().then((m) => ({ default: m.SettingsModal })));
 const StatisticsView = lazy(() => loadStatistics().then((m) => ({ default: m.StatisticsView })));
-const UpcomingPaymentsModal = lazy(() =>
-  loadUpcomingModal().then((m) => ({ default: m.UpcomingPaymentsModal })),
-);
+const UpcomingPaymentsModal = lazy(() => loadUpcomingModal().then((m) => ({ default: m.UpcomingPaymentsModal })));
 
 const PRELOAD_DELAY_MS = 1500;
-
-/** Plus-Knopf und Erfassen-Fenster teilen sich diese layoutId (Morph – Desktop-Knopf bzw. Handy-Dock). */
-const ADD_TRIGGER_LAYOUT_ID = 'subscription-trigger';
 
 /**
  * Richtungsabhängiger Tab-Wechsel: neuer Inhalt gleitet aus der Klickrichtung herein.
@@ -68,6 +63,7 @@ export default function App() {
 
   const subscriptions = useLiveQuery(() => db.subscriptions.toArray(), []);
   const categories = useLiveQuery(() => db.categories.toArray(), []) ?? NO_CATEGORIES;
+  const categoriesById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Subscription | null>(null);
@@ -77,9 +73,10 @@ export default function App() {
   const [settingsMounted, setSettingsMounted] = useState(false);
   const [upcomingOpen, setUpcomingOpen] = useState(false);
   const [upcomingMounted, setUpcomingMounted] = useState(false);
-  const modalOpen = formOpen || settingsOpen || upcomingOpen;
-  // Beide Plus-Knöpfe sind im DOM (je einer per CSS versteckt) – die layoutId darf nur der sichtbare tragen.
-  const isDesktop = useMediaQuery('(min-width: 640px)');
+  const otherModalOpen = settingsOpen || upcomingOpen;
+  // Lage des Plus-Knopfs, solange das Erfassen-Formular aus ihm herausgewachsen ist (Morph).
+  const [morphFrom, setMorphFrom] = useState<DOMRect | null>(null);
+  const endMorph = useCallback(() => setMorphFrom(null), []);
   useTabSwipe();
 
   const paymentMethods = useMemo(
@@ -94,7 +91,8 @@ export default function App() {
   // Ausgelagerte Chunks nach dem ersten Rendern vorladen, damit das erste Öffnen ohne Wartezeit klappt.
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      void loadFormModal();
+      // Formular schon geschlossen einhängen: Das erste Antippen des Plus-Knopfs morpht dann ohne Verzögerung.
+      void loadFormModal().then(() => setFormMounted(true));
       void loadSettingsModal();
       void loadStatistics();
       void loadUpcomingModal();
@@ -130,6 +128,11 @@ export default function App() {
     setEditing(null);
     setFormMounted(true);
     setFormOpen(true);
+  };
+  /** Über den Plus-Knopf: Das Formular wächst aus dem Knopf heraus (Morph). */
+  const createFrom = (origin: DOMRect) => {
+    setMorphFrom(origin);
+    openCreate();
   };
   const openEdit = (subscription: Subscription) => {
     setEditing(subscription);
@@ -200,6 +203,15 @@ export default function App() {
                   onSelect={openEdit}
                   onShowUpcoming={openUpcoming}
                 />
+              ) : activeTab === 'subscriptions' ? (
+                <SubscriptionsSection
+                  subscriptions={subscriptions}
+                  categoriesById={categoriesById}
+                  baseCurrency={settings.baseCurrency}
+                  rates={rates}
+                  onCreate={openCreate}
+                  onSelect={openEdit}
+                />
               ) : activeTab === 'archive' ? (
                 <ArchiveView
                   subscriptions={subscriptions}
@@ -225,20 +237,23 @@ export default function App() {
       </div>
 
       <AnimatePresence>
-        {!modalOpen && <FloatingActionButton
+        {/* Beim Erfassen bleiben beide stehen: Das Formular wächst aus dem Plus-Knopf und kehrt dorthin zurück. */}
+        {!otherModalOpen && (
+          <FloatingActionButton
             key="fab"
             icon={Plus}
             label="Abo hinzufügen"
-            onClick={openCreate}
-            layoutId={isDesktop ? ADD_TRIGGER_LAYOUT_ID : undefined}
-          />}
-        {!modalOpen && (
+            onClick={createFrom}
+            hidden={morphFrom !== null}
+          />
+        )}
+        {!otherModalOpen && (
           <MobileDock
             key="dock"
             activeTab={activeTab}
             onTabChange={setActiveTab}
-            onAdd={openCreate}
-            addLayoutId={isDesktop ? undefined : ADD_TRIGGER_LAYOUT_ID}
+            onAdd={createFrom}
+            addHidden={morphFrom !== null}
           />
         )}
       </AnimatePresence>
@@ -255,7 +270,8 @@ export default function App() {
             rates={rates}
             paymentMethods={paymentMethods}
             onClose={closeForm}
-            layoutId={ADD_TRIGGER_LAYOUT_ID}
+            morphFrom={morphFrom}
+            onMorphEnd={endMorph}
           />
         )}
         {settingsMounted && <SettingsModal open={settingsOpen} onClose={closeSettings} />}

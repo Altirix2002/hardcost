@@ -24,9 +24,10 @@ export function CardFaces({ face, front, back, sleeping = false }: CardFacesProp
       <div aria-hidden={face !== 'front'} className={cn('h-full', faceClass(face === 'front'))}>
         {front}
       </div>
+      {/* Gespiegelt: Die Karte steht dann um 180° gedreht – so liest sich die Rückseite richtig herum. */}
       <div
         aria-hidden={face !== 'back'}
-        className={cn('card-back absolute inset-0 overflow-hidden', faceClass(face === 'back'))}
+        className={cn('card-back absolute inset-0 -scale-x-100 overflow-hidden', faceClass(face === 'back'))}
       >
         {back}
       </div>

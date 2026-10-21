@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ChartPie, Ghost, LayoutGrid } from 'lucide-react';
+import { ChartPie, Ghost, LayoutGrid, WalletCards } from 'lucide-react';
 import { tabPanelId } from '../../store/useNavigationStore';
 import type { AppTab } from '../../types';
 import { cn } from '../../utils/cn';
@@ -17,6 +17,7 @@ interface TabBarProps {
 
 const TABS = [
   { id: 'overview' as const, label: 'Übersicht', icon: LayoutGrid },
+  { id: 'subscriptions' as const, label: 'Abos', icon: WalletCards },
   { id: 'statistics' as const, label: 'Statistiken', icon: ChartPie },
   { id: 'archive' as const, label: 'Friedhof', icon: Ghost },
 ];

@@ -85,6 +85,14 @@ const TONE_CLASSES: Record<CategoryTone, (hue: CategoryHue) => CategoryColorClas
   }),
 };
 
+const TONE_SHADE: Record<CategoryTone, number> = { light: 400, base: 500, dark: 700 };
+
+/** Farbe des Initialen-Logos (`solid`) als CSS-Wert – z.B. für die eingefärbte Abo-Karte ohne Logo. */
+export function getCategoryColorValue(color: CategoryColor): string {
+  const { hue, tone } = parseCategoryColor(color);
+  return `var(--color-${hue}-${TONE_SHADE[tone]})`;
+}
+
 export function toCategoryColor(hue: CategoryHue, tone: CategoryTone): CategoryColor {
   return tone === 'base' ? hue : `${hue}-${tone}`;
 }
