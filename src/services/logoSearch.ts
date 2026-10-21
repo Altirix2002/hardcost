@@ -1,7 +1,10 @@
-import type { BrandIcon, WebsiteMatch } from '../types';
+import type { BrandfetchMatch, BrandIcon, WebsiteMatch } from '../types';
 
 /**
- * Logo-Suche über frei nutzbare Dienste ohne API-Schlüssel – alle liefern CORS-Header,
+ * Logo-Suche, Reihenfolge = Ausweichkette:
+ * - Brandfetch: offizielle Marken-Logos (Brand Search API, öffentliche Client-ID). Laut Vorgabe von
+ *   Brandfetch nur per Hotlink nutzbar – diese Logos werden als Adresse gespeichert, nicht zugeschnitten.
+ * Danach frei nutzbare Dienste ohne API-Schlüssel – alle liefern CORS-Header,
  * damit die Bilder im Editor zugeschnitten und lokal gespeichert werden können:
  * - Simple Icons: ~3'400 einfarbige Marken-Icons (Katalog einmalig laden, lokal durchsuchen)
  * - Clearbit Autocomplete: Firmenname → Website
@@ -11,6 +14,12 @@ const SIMPLE_ICONS_VERSION = '15';
 export const SIMPLE_ICONS_INDEX_URL = `https://cdn.jsdelivr.net/npm/simple-icons@${SIMPLE_ICONS_VERSION}/data/simple-icons.json`;
 const COMPANY_SUGGEST_URL = 'https://autocomplete.clearbit.com/v1/companies/suggest';
 
+/** Öffentliche Client-ID für Brandfetch (für den Einsatz im Browser gedacht). */
+const BRANDFETCH_CLIENT_ID = '1ido8Ki8oACApJZQ9SI';
+const BRANDFETCH_SEARCH_URL = 'https://api.brandfetch.io/v2/search/';
+const BRANDFETCH_CDN = 'https://cdn.brandfetch.io/';
+
+const MAX_BRANDFETCH = 8;
 const MAX_BRANDS = 12;
 const MAX_WEBSITES = 6;
 
@@ -96,6 +105,44 @@ export async function searchBrandIcons(query: string): Promise<BrandIcon[]> {
     .sort((a, b) => a.score - b.score || a.brand.icon.title.length - b.brand.icon.title.length)
     .slice(0, MAX_BRANDS)
     .map(({ brand }) => brand.icon);
+}
+
+// ─── Brandfetch ─────────────────────────────────────────────────────────────
+
+/** Brandfetch-Logos dürfen nur direkt von deren CDN geladen werden (kein Zuschnitt, keine Kopie). */
+export function isHotlinkedLogo(url: string): boolean {
+  return url.startsWith(BRANDFETCH_CDN);
+}
+
+/**
+ * Dauerhafte Logo-Adresse (Logo Link). Die Bild-URLs der Suche tragen ein Zeit-Token – diese hier
+ * bleibt gültig und lässt sich so im Abo speichern. 256 px, weil das Logo bis 64 px gross erscheint.
+ */
+export function brandfetchLogoUrl(domain: string): string {
+  return `${BRANDFETCH_CDN}${encodeURIComponent(domain)}/w/256/h/256/icon?c=${BRANDFETCH_CLIENT_ID}`;
+}
+
+export async function searchBrandfetch(query: string, signal?: AbortSignal): Promise<BrandfetchMatch[]> {
+  const trimmed = query.trim();
+  if (trimmed.length < 2) return [];
+  const url = `${BRANDFETCH_SEARCH_URL}${encodeURIComponent(trimmed)}?c=${BRANDFETCH_CLIENT_ID}`;
+  const response = await fetch(url, { signal });
+  if (!response.ok) throw new Error(`Brandfetch nicht erreichbar (${response.status})`);
+  const data: unknown = await response.json();
+  if (!Array.isArray(data)) return [];
+
+  return data
+    .flatMap((entry: unknown): BrandfetchMatch[] => {
+      if (!isRecord(entry) || !isString(entry.icon) || !isString(entry.domain)) return [];
+      return [
+        {
+          name: isString(entry.name) && entry.name ? entry.name : entry.domain,
+          domain: entry.domain,
+          iconUrl: brandfetchLogoUrl(entry.domain),
+        },
+      ];
+    })
+    .slice(0, MAX_BRANDFETCH);
 }
 
 // ─── Websites ───────────────────────────────────────────────────────────────

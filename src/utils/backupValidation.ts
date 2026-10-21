@@ -55,6 +55,12 @@ function isContractRenewal(value: unknown): boolean {
   return value.type === 'flexible' || (value.type === 'fixed' && isFiniteNumber(value.months) && value.months > 0);
 }
 
+const isHexColor = (value: unknown): value is string => isString(value) && /^#[0-9a-f]{6}$/i.test(value);
+
+function isBrandColors(value: unknown): boolean {
+  return isRecord(value) && isHexColor(value.primary) && isHexColor(value.secondary);
+}
+
 function isSubscription(value: unknown): value is Subscription {
   return (
     isRecord(value) &&
@@ -81,7 +87,8 @@ function isSubscription(value: unknown): value is Subscription {
     (value.minimumCommitmentUntil === undefined || isDate(value.minimumCommitmentUntil)) &&
     (value.lastReviewedAt === undefined || isDate(value.lastReviewedAt)) &&
     (value.trialEndsAt === undefined || isDate(value.trialEndsAt)) &&
-    (value.endsOn === undefined || isDate(value.endsOn))
+    (value.endsOn === undefined || isDate(value.endsOn)) &&
+    (value.brandColors === undefined || isBrandColors(value.brandColors))
   );
 }
 

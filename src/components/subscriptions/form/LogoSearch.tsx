@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Globe, Loader2, SearchX, Sparkles } from 'lucide-react';
+import { BadgeCheck, Globe, Loader2, SearchX, Sparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { brandIconUrl, searchBrandIcons, searchWebsites, websiteIconUrl } from '../../../services/logoSearch';
-import type { BrandIcon, LogoSource, WebsiteMatch } from '../../../types';
+import {
+  brandIconUrl,
+  searchBrandfetch,
+  searchBrandIcons,
+  searchWebsites,
+  websiteIconUrl,
+} from '../../../services/logoSearch';
+import type { BrandfetchMatch, BrandIcon, LogoSource, WebsiteMatch } from '../../../types';
 import { cn } from '../../../utils/cn';
 import { INSET_PANEL } from '../../../utils/fieldStyles';
 import { spring, springWithFade } from '../../../utils/motion';
@@ -18,6 +24,7 @@ interface LogoSearchProps {
 
 interface SearchResults {
   query: string;
+  brandfetch: BrandfetchMatch[];
   brands: BrandIcon[];
   websites: WebsiteMatch[];
   failed: boolean;
@@ -42,6 +49,7 @@ function ResultSection({
   hidden,
   onHide,
   onPick,
+  crossOrigin = true,
 }: {
   title: string;
   icon: LucideIcon;
@@ -49,6 +57,8 @@ function ResultSection({
   hidden: Set<string>;
   onHide: (key: string) => void;
   onPick: (source: LogoSource) => void;
+  /** Hotlink-Bilder ohne CORS-Modus laden. */
+  crossOrigin?: boolean;
 }) {
   const visible = tiles.filter((tile) => !hidden.has(tile.key));
   if (visible.length === 0) return null;
@@ -76,7 +86,7 @@ function ResultSection({
               <img
                 src={tile.imageUrl}
                 alt=""
-                crossOrigin="anonymous"
+                crossOrigin={crossOrigin ? 'anonymous' : undefined}
                 loading="lazy"
                 onError={() => onHide(tile.key)}
                 className="h-12 w-12 rounded-[30%] bg-white object-contain p-2 shadow-sm ring-1 ring-black/5 dark:ring-white/10"
@@ -102,17 +112,20 @@ export function LogoSearch({ initialQuery, onPick, onCancel }: LogoSearchProps) 
     if (trimmed.length < 2) return;
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
-      void Promise.allSettled([searchBrandIcons(trimmed), searchWebsites(trimmed, controller.signal)]).then(
-        ([brands, websites]) => {
-          if (controller.signal.aborted) return;
-          setResults({
-            query: trimmed,
-            brands: brands.status === 'fulfilled' ? brands.value : [],
-            websites: websites.status === 'fulfilled' ? websites.value : [],
-            failed: brands.status === 'rejected' && websites.status === 'rejected',
-          });
-        },
-      );
+      void Promise.allSettled([
+        searchBrandfetch(trimmed, controller.signal),
+        searchBrandIcons(trimmed),
+        searchWebsites(trimmed, controller.signal),
+      ]).then(([brandfetch, brands, websites]) => {
+        if (controller.signal.aborted) return;
+        setResults({
+          query: trimmed,
+          brandfetch: brandfetch.status === 'fulfilled' ? brandfetch.value : [],
+          brands: brands.status === 'fulfilled' ? brands.value : [],
+          websites: websites.status === 'fulfilled' ? websites.value : [],
+          failed: brandfetch.status === 'rejected' && brands.status === 'rejected' && websites.status === 'rejected',
+        });
+      });
     }, DEBOUNCE_MS);
     return () => {
       window.clearTimeout(timer);
@@ -121,6 +134,12 @@ export function LogoSearch({ initialQuery, onPick, onCancel }: LogoSearchProps) 
   }, [trimmed]);
 
   const current = results?.query === trimmed ? results : null;
+  const brandfetchTiles: ResultTile[] = (current?.brandfetch ?? []).map((match) => ({
+    key: `brandfetch-${match.domain}`,
+    label: match.name,
+    imageUrl: match.iconUrl,
+    source: { src: match.iconUrl, hotlink: true },
+  }));
   const brandTiles: ResultTile[] = (current?.brands ?? []).map((brand) => ({
     key: `brand-${brand.slug}`,
     label: brand.title,
@@ -133,7 +152,7 @@ export function LogoSearch({ initialQuery, onPick, onCancel }: LogoSearchProps) 
     imageUrl: websiteIconUrl(site.domain),
     source: { src: websiteIconUrl(site.domain) },
   }));
-  const visibleCount = [...brandTiles, ...websiteTiles].filter((tile) => !hidden.has(tile.key)).length;
+  const visibleCount = [...brandfetchTiles, ...brandTiles, ...websiteTiles].filter((tile) => !hidden.has(tile.key)).length;
   const hide = (key: string) => setHidden((previous) => new Set(previous).add(key));
 
   return (
@@ -165,6 +184,15 @@ export function LogoSearch({ initialQuery, onPick, onCancel }: LogoSearchProps) 
             </motion.div>
           ) : current && visibleCount > 0 ? (
             <motion.div key={`results-${current.query}`} className="flex flex-col gap-4">
+              <ResultSection
+                title="Offizielle Logos"
+                icon={BadgeCheck}
+                tiles={brandfetchTiles}
+                hidden={hidden}
+                onHide={hide}
+                onPick={onPick}
+                crossOrigin={false}
+              />
               <ResultSection title="Marken" icon={Sparkles} tiles={brandTiles} hidden={hidden} onHide={hide} onPick={onPick} />
               <ResultSection title="Websites" icon={Globe} tiles={websiteTiles} hidden={hidden} onHide={hide} onPick={onPick} />
             </motion.div>
@@ -189,7 +217,8 @@ export function LogoSearch({ initialQuery, onPick, onCancel }: LogoSearchProps) 
 
       <div className="flex items-end justify-between gap-3">
         <p className="text-[11px] leading-snug text-zinc-500 dark:text-zinc-400">
-          Der Suchbegriff geht an Simple Icons, Clearbit und Favicone. Das gewählte Logo wird lokal gespeichert.
+          Der Suchbegriff geht an Brandfetch, Simple Icons, Clearbit und Favicone. Offizielle Logos lädt die App
+          direkt von Brandfetch, alle anderen werden lokal gespeichert.
         </p>
         <Button size="sm" variant="ghost" onClick={onCancel} className="shrink-0">
           Abbrechen

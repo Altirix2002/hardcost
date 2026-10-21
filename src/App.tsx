@@ -10,6 +10,7 @@ import { DynamicIsland } from './components/ui/DynamicIsland';
 import { FloatingActionButton } from './components/ui/FloatingActionButton';
 import { ArchiveView } from './components/archive/ArchiveView';
 import { db } from './db/database';
+import { backfillBrandColors } from './db/repository';
 import { useApplyTheme } from './hooks/useApplyTheme';
 import { useMediaQuery } from './hooks/useMediaQuery';
 import { useTabSwipe } from './hooks/useTabSwipe';
@@ -98,6 +99,8 @@ export default function App() {
       void loadSettingsModal();
       void loadStatistics();
       void loadUpcomingModal();
+      // Markenfarben für Logos von vor Meilenstein 9 nachträglich bestimmen.
+      void backfillBrandColors();
     }, PRELOAD_DELAY_MS);
     return () => window.clearTimeout(timer);
   }, []);

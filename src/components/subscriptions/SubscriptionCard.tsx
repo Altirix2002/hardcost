@@ -1,4 +1,7 @@
+import { useMemo, useState, type KeyboardEvent } from 'react';
+import { motion } from 'framer-motion';
 import { AlarmClock, CalendarClock, CalendarX, CreditCard, Gift, Lock, Moon, Users } from 'lucide-react';
+import { useCardFlip } from '../../hooks/useCardFlip';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import type { Category, ExchangeRates, Subscription } from '../../types';
 import {
@@ -13,6 +16,8 @@ import {
 } from '../../utils/calculations';
 import { addDays, daysBetween, parseISODate } from '../../utils/dates';
 import { BILLING_CYCLE_SUFFIX, formatCurrency, formatDate, formatRelativeDays } from '../../utils/format';
+import { brandColorStyle } from '../../utils/brandColors';
+import { getSubscriptionFacts } from '../../utils/cardFacts';
 import { cn } from '../../utils/cn';
 import { getResumeDate, isPausedAt } from '../../utils/pauses';
 import {
@@ -26,6 +31,10 @@ import { isZombie } from '../../utils/review';
 import { isActiveAt, isInTrialAt, isRunningOut } from '../../utils/status';
 import { Badge } from '../ui/Badge';
 import { GlassCard } from '../ui/GlassCard';
+import { CardAura } from './CardAura';
+import { CardFaces } from './CardFaces';
+import { CardSettingsButton } from './CardSettingsButton';
+import { SubscriptionCardBack } from './SubscriptionCardBack';
 import { SubscriptionLogo } from './SubscriptionLogo';
 import { ZombieHint } from './ZombieHint';
 
@@ -34,10 +43,31 @@ interface SubscriptionCardProps {
   category?: Category;
   baseCurrency: string;
   rates: ExchangeRates | null;
+  /** Zahnrad oben links: öffnet die Abo-Einstellungen. */
   onSelect?: (subscription: Subscription) => void;
+  /** Von aussen gesteuerte Drehung (Wischkarte); ohne Angabe dreht sich die Karte selbst. */
+  flipped?: boolean;
+  onToggleFlip?: () => void;
 }
 
-export function SubscriptionCard({ subscription, category, baseCurrency, rates, onSelect }: SubscriptionCardProps) {
+export function SubscriptionCard({
+  subscription,
+  category,
+  baseCurrency,
+  rates,
+  onSelect,
+  flipped: controlledFlipped,
+  onToggleFlip,
+}: SubscriptionCardProps) {
+  const [ownFlipped, setOwnFlipped] = useState(false);
+  const flipped = controlledFlipped ?? ownFlipped;
+  const toggleFlip = onToggleFlip ?? (() => setOwnFlipped((value) => !value));
+  const { rotateY, face } = useCardFlip(flipped);
+  const cards = useSettingsStore((st) => st.settings.paymentCards);
+  const facts = useMemo(
+    () => getSubscriptionFacts(subscription, baseCurrency, rates, cards, new Date()),
+    [subscription, baseCurrency, rates, cards],
+  );
   const today = new Date();
   const { billingCycle, split, endsOn, trialEndsAt } = subscription;
   const isActive = isActiveAt(subscription, today);
@@ -61,7 +91,7 @@ export function SubscriptionCard({ subscription, category, baseCurrency, rates, 
   const inCommitment = bindingEnd !== null && getActiveCommitmentEnd(subscription, today) !== null;
   const zombie = isZombie(subscription, today);
   // Bezahlkarte: Wegwerfkarten immer markieren, Ablauf erst ab 30 Tagen vorher.
-  const card = findPaymentCard(useSettingsStore((st) => st.settings.paymentCards), subscription.paymentMethod);
+  const card = findPaymentCard(cards, subscription.paymentMethod);
   const cardExpiry = card ? getCardExpiryDate(card) : null;
   const cardDaysLeft = isRunning && cardExpiry ? daysBetween(today, cardExpiry) : null;
   const cardExpiring = cardDaysLeft !== null && cardDaysLeft <= CARD_EXPIRY_ALERT_DAYS;
@@ -73,13 +103,9 @@ export function SubscriptionCard({ subscription, category, baseCurrency, rates, 
     (split !== undefined || interval.currency !== baseCurrency || billingCycle !== 'monthly');
   const hasBadges = showAlert || bindingEnd !== null || inTrial || runningOut || cardExpiring || disposableCard;
 
-  return (
-    <GlassCard
-      interactive={Boolean(onSelect)}
-      onClick={onSelect ? () => onSelect(subscription) : undefined}
-      // Inhalt statt ganzer Karte abdunkeln: Unter 100 % Deckkraft schaltet Chrome den Glas-Blur ab.
-      className={cn('flex h-full flex-col gap-4 p-4', !isRunning && '*:opacity-60')}
-    >
+  const front = (
+    // Inhalt statt ganzer Karte abdunkeln: Unter 100 % Deckkraft schaltet Chrome den Glas-Blur ab.
+    <div className={cn('flex h-full flex-col gap-4 p-4', !isRunning && !isPaused && 'opacity-60')}>
       <div className="flex items-start gap-3">
         <SubscriptionLogo
           name={subscription.name}
@@ -216,6 +242,40 @@ export function SubscriptionCard({ subscription, category, baseCurrency, rates, 
           <ZombieHint subscription={subscription} />
         </div>
       )}
-    </GlassCard>
+    </div>
+  );
+
+  return (
+    // Markenfarben als CSS-Variablen für Glow und Akzentlinie (siehe CardAura).
+    <div className="relative h-full" style={brandColorStyle(subscription.brandColors)}>
+      {/* Nur diese Ebene dreht sich – das Zahnrad daneben bleibt stehen. */}
+      <motion.div style={{ rotateY, transformPerspective: 1200 }} className="h-full">
+        <GlassCard
+          interactive
+          role="button"
+          tabIndex={0}
+          aria-pressed={flipped}
+          aria-label={`${subscription.name}: ${flipped ? 'Vorderseite' : 'Details'} zeigen`}
+          onClick={toggleFlip}
+          onKeyDown={(event: KeyboardEvent<HTMLDivElement>) => {
+            if (event.target !== event.currentTarget || (event.key !== 'Enter' && event.key !== ' ')) return;
+            event.preventDefault();
+            toggleFlip();
+          }}
+          className="h-full focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:outline-none"
+        >
+          <CardAura brandColors={subscription.brandColors} sleeping={isPaused} />
+          <CardFaces
+            face={face}
+            sleeping={isPaused}
+            back={<SubscriptionCardBack name={subscription.name} facts={facts} baseCurrency={baseCurrency} />}
+            front={front}
+          />
+        </GlassCard>
+      </motion.div>
+      {onSelect && (
+        <CardSettingsButton label={`${subscription.name} bearbeiten`} onPress={() => onSelect(subscription)} />
+      )}
+    </div>
   );
 }

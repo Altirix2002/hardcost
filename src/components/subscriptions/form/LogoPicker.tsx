@@ -2,6 +2,7 @@ import { useRef, useState, type ChangeEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Circle, Crop, ImagePlus, Search, Squircle, Trash2 } from 'lucide-react';
 import type { CategoryColor, LogoShape, LogoSource } from '../../../types';
+import { isHotlinkedLogo } from '../../../services/logoSearch';
 import { fileToEditableDataUrl } from '../../../utils/image';
 import { sheetSpringWithFade } from '../../../utils/motion';
 import { Button } from '../../ui/Button';
@@ -78,11 +79,13 @@ export function LogoPicker({ name, logoUrl, shape, color, onLogoChange, onShapeC
             </Button>
             {logoUrl && (
               <>
-                <IconButton
-                  icon={Crop}
-                  label="Logo zuschneiden"
-                  onClick={() => setPanel({ mode: 'edit', source: { src: logoUrl } })}
-                />
+                {!isHotlinkedLogo(logoUrl) && (
+                  <IconButton
+                    icon={Crop}
+                    label="Logo zuschneiden"
+                    onClick={() => setPanel({ mode: 'edit', source: { src: logoUrl } })}
+                  />
+                )}
                 <IconButton icon={Trash2} label="Logo entfernen" onClick={() => onLogoChange('')} />
               </>
             )}
@@ -112,7 +115,15 @@ export function LogoPicker({ name, logoUrl, shape, color, onLogoChange, onShapeC
             {panel.mode === 'search' ? (
               <LogoSearch
                 initialQuery={name.trim()}
-                onPick={(source) => setPanel({ mode: 'edit', source })}
+                onPick={(source) => {
+                  // Brandfetch-Logos nur per Hotlink: direkt übernehmen statt zuschneiden.
+                  if (source.hotlink) {
+                    onLogoChange(source.src);
+                    close();
+                  } else {
+                    setPanel({ mode: 'edit', source });
+                  }
+                }}
                 onCancel={close}
               />
             ) : (

@@ -2,6 +2,7 @@ import { useId, useMemo, useRef, useState, type FormEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, Check, Copy, Trash2 } from 'lucide-react';
 import { createCategory, saveSubscription } from '../../../db/repository';
+import { withBrandColors } from '../../../utils/brandColors';
 import { deleteWithUndo } from '../../../services/subscriptionActions';
 import { useSettingsStore } from '../../../store/useSettingsStore';
 import { showToast } from '../../../store/useToastStore';
@@ -124,8 +125,10 @@ export function SubscriptionFormModal({
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     setSaving(true);
     setSaveError(null);
-    const saved = draftToSubscription(draft);
+    let saved: Subscription;
     try {
+      // Markenfarben einmal beim Speichern bestimmen (nur bei neuem Logo).
+      saved = await withBrandColors(draftToSubscription(draft), subscription ?? undefined);
       await saveSubscription(saved);
       await rememberPaymentMethod(saved.paymentMethod);
     } catch {

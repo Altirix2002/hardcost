@@ -1,4 +1,5 @@
 import type { Category, CategoryColor, StoredDocument, Subscription } from '../types';
+import { extractBrandColors } from '../utils/brandColors';
 import { addDays, toISODate } from '../utils/dates';
 import { getDocumentType } from '../utils/documents';
 import { createId } from '../utils/id';
@@ -140,4 +141,16 @@ export async function addDocument(subscriptionId: string, file: File): Promise<v
 
 export async function deleteDocument(id: string): Promise<void> {
   await db.documents.delete(id);
+}
+
+/**
+ * Einmalig für Abos mit Logo, aber ohne Markenfarben (vor Meilenstein 9 gespeichert): Farben nachträglich
+ * bestimmen. Ändert nur dieses Feld – zählt also nicht als Prüfung (Zombie-Erkennung).
+ */
+export async function backfillBrandColors(): Promise<void> {
+  const missing = await db.subscriptions.filter((sub) => Boolean(sub.logoUrl) && !sub.brandColors).toArray();
+  for (const sub of missing) {
+    const brandColors = sub.logoUrl ? await extractBrandColors(sub.logoUrl) : null;
+    if (brandColors) await db.subscriptions.update(sub.id, { brandColors });
+  }
 }

@@ -104,6 +104,14 @@ export interface Subscription {
   trialEndsAt?: string; // YYYY-MM-DD
   /** Gekündigt: letzter Tag, an dem das Abo noch läuft – danach keine Abbuchungen mehr. */
   endsOn?: string; // YYYY-MM-DD
+  /** Aus dem Logo bestimmte Markenfarben (Glas-Glow, Akzentlinie); fehlt = noch nicht bestimmt bzw. kein Logo. */
+  brandColors?: BrandColors;
+}
+
+/** Dominante Farben eines Logos als Hex (#rrggbb). */
+export interface BrandColors {
+  primary: string;
+  secondary: string;
 }
 
 export interface Category {
@@ -384,6 +392,22 @@ export interface PriceHike {
   isUpcoming: boolean; // Preis gilt erst in Zukunft
 }
 
+/** Detail- und Vertragsdaten für die Rückseite einer Abo-Karte. */
+export interface SubscriptionFacts {
+  /** Nächste tatsächliche Abbuchung (eigener Anteil, Originalwährung); null = keine anstehend. */
+  nextCharge: { date: Date; amount: number; currency: string } | null;
+  /** Spätester Kündigungstag für die nächste verhinderbare Abbuchung; null = keine Frist. */
+  cancelBy: Date | null;
+  /** Ende der Bindung (Mindest- oder feste Anschlusslaufzeit); null = flexibel. */
+  boundUntil: Date | null;
+  /** Feste Verlängerung in Monaten; fehlt = flexibel kündbar. */
+  renewsForMonths?: number;
+  paymentMethod: string;
+  card?: PaymentCard;
+  paidTotal: number; // bisher bezahlt, Basiswährung
+  since: Date; // erste Abbuchung
+}
+
 /** Tatsächlich bezahlte Summe seit Vertragsbeginn (Einzelabbuchungen, eigener Anteil). */
 export interface LifetimeCost {
   totalPaid: number; // in Basiswährung
@@ -443,6 +467,13 @@ export interface BrandIcon {
   hex: string; // Markenfarbe ohne #, z.B. "E50914"
 }
 
+/** Treffer der Brandfetch-Suche; das Logo wird per Hotlink vom Brandfetch-CDN geladen. */
+export interface BrandfetchMatch {
+  name: string;
+  domain: string;
+  iconUrl: string;
+}
+
 /** Website-Treffer der Firmensuche; das Icon kommt vom Favicon-Dienst. */
 export interface WebsiteMatch {
   name: string;
@@ -456,6 +487,8 @@ export interface LogoSource {
   monochrome?: boolean;
   /** Markenfarbe als Hex (#RRGGBB) – wird als Hintergrund angeboten. */
   brandColor?: string;
+  /** Darf nur per Hotlink genutzt werden (Brandfetch): direkt übernehmen, ohne Zuschnitt. */
+  hotlink?: boolean;
 }
 
 /** Zuschnitt im Logo-Editor; Versatz relativ zur Kantenlänge (0 = zentriert). */

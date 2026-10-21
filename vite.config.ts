@@ -90,6 +90,16 @@ export default defineConfig({
             },
           },
           {
+            // Brandfetch-Logos (nur per Hotlink erlaubt): im Browser zwischenspeichern, damit sie offline erscheinen.
+            urlPattern: /^https:\/\/cdn\.brandfetch\.io\/.*/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'brandfetch-logos',
+              expiration: { maxEntries: 120, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
             // Katalog der Logo-Suche (Simple Icons, versionsfixiert) – ändert sich nicht, also langfristig cachen.
             urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/npm\/simple-icons@.*\.json$/,
             handler: 'CacheFirst',
