@@ -30,6 +30,8 @@ interface SubscriptionTileProps {
   rates: ExchangeRates | null;
   /** Zahnrad oben links: öffnet die Abo-Einstellungen. */
   onSelect?: (subscription: Subscription) => void;
+  /** Aus im Anordnen-Modus: Antippen dreht dann nicht. */
+  flippable?: boolean;
 }
 
 interface TileStatus {
@@ -67,7 +69,14 @@ function getTileStatus(sub: Subscription, today: Date): TileStatus | null {
 }
 
 /** Kompakte Kachel: Logo, Name und Monatspreis – antippen dreht sie um, das Zahnrad öffnet die Einstellungen. */
-export function SubscriptionTile({ subscription, category, baseCurrency, rates, onSelect }: SubscriptionTileProps) {
+export function SubscriptionTile({
+  subscription,
+  category,
+  baseCurrency,
+  rates,
+  onSelect,
+  flippable = true,
+}: SubscriptionTileProps) {
   const [flipped, setFlipped] = useState(false);
   const { rotateY, face } = useCardFlip(flipped);
   const cards = useSettingsStore((st) => st.settings.paymentCards);
@@ -75,7 +84,9 @@ export function SubscriptionTile({ subscription, category, baseCurrency, rates, 
     () => getSubscriptionFacts(subscription, baseCurrency, rates, cards, new Date()),
     [subscription, baseCurrency, rates, cards],
   );
-  const toggleFlip = () => setFlipped((value) => !value);
+  const toggleFlip = () => {
+    if (flippable) setFlipped((value) => !value);
+  };
   const today = new Date();
   const active = isActiveAt(subscription, today);
   const paused = active && isPausedAt(subscription, today);
@@ -136,9 +147,9 @@ export function SubscriptionTile({ subscription, category, baseCurrency, rates, 
     <div className="relative h-full" style={brandColorStyle(subscription.brandColors)}>
       <motion.div style={{ rotateY, transformPerspective: 900 }} className="h-full">
         <GlassCard
-          interactive
-          role="button"
-          tabIndex={0}
+          interactive={flippable}
+          role={flippable ? 'button' : undefined}
+          tabIndex={flippable ? 0 : undefined}
           aria-pressed={flipped}
           aria-label={`${subscription.name}, ${price}${showsAmount ? ' pro Monat' : ''}${status ? `, ${status.label}` : ''} – ${flipped ? 'Vorderseite' : 'Details'} zeigen`}
           onClick={toggleFlip}

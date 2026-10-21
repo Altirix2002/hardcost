@@ -26,6 +26,18 @@
     }
   }
 
+  /* Anordnen-Modus: Karten wackeln wie auf dem iPhone-Homescreen. */
+  --animate-jiggle: jiggle 0.3s ease-in-out infinite alternate;
+
+  @keyframes jiggle {
+    from {
+      transform: rotate(-0.7deg);
+    }
+    to {
+      transform: rotate(0.7deg);
+    }
+  }
+
   --font-sans:
     -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', ui-sans-serif, system-ui, sans-serif;
 }

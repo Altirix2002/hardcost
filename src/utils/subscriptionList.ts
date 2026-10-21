@@ -67,6 +67,15 @@ export function sortSubscriptions(
 ): Subscription[] {
   const byName = (a: Subscription, b: Subscription) => collator.compare(a.name, b.name);
   if (key === 'name') return [...subs].sort(byName);
+  if (key === 'manual') {
+    // Noch nie angeordnete Abos (neu erfasst) hinten anhängen – in Fälligkeits-Reihenfolge.
+    const ordered = subs.filter((sub) => sub.sortOrder !== undefined);
+    const rest = subs.filter((sub) => sub.sortOrder === undefined);
+    return [
+      ...ordered.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)),
+      ...sortSubscriptions(rest, 'due', baseCurrency, rates, reference),
+    ];
+  }
 
   // Sortierschlüssel einmal vorberechnen statt in jedem Vergleich.
   const metric = new Map(

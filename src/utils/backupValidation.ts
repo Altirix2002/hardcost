@@ -88,7 +88,8 @@ function isSubscription(value: unknown): value is Subscription {
     (value.lastReviewedAt === undefined || isDate(value.lastReviewedAt)) &&
     (value.trialEndsAt === undefined || isDate(value.trialEndsAt)) &&
     (value.endsOn === undefined || isDate(value.endsOn)) &&
-    (value.brandColors === undefined || isBrandColors(value.brandColors))
+    (value.brandColors === undefined || isBrandColors(value.brandColors)) &&
+    (value.sortOrder === undefined || isFiniteNumber(value.sortOrder))
   );
 }
 

@@ -154,3 +154,10 @@ export async function backfillBrandColors(): Promise<void> {
     if (brandColors) await db.subscriptions.update(sub.id, { brandColors });
   }
 }
+
+/** Speichert die eigene Reihenfolge: Position = Index in `orderedIds`. */
+export async function saveManualOrder(orderedIds: string[]): Promise<void> {
+  await db.transaction('rw', db.subscriptions, async () => {
+    await Promise.all(orderedIds.map((id, sortOrder) => db.subscriptions.update(id, { sortOrder })));
+  });
+}

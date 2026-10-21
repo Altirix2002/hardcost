@@ -1,7 +1,7 @@
-import { useDeferredValue, useMemo } from 'react';
+import { useDeferredValue, useEffect, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Plus, RotateCcw, SearchX, Sparkles } from 'lucide-react';
-import { loadDemoSubscriptions } from '../../db/repository';
+import { loadDemoSubscriptions, saveManualOrder } from '../../db/repository';
 import { useDashboardStore } from '../../store/useDashboardStore';
 import type { Category, ExchangeRates, Subscription, UserSettings } from '../../types';
 import { getCancellationAlerts, getCostSummary, getSpendForMonth, getUpcomingPayments } from '../../utils/calculations';
@@ -11,6 +11,7 @@ import { DEFAULT_COST_RATIO_THRESHOLDS, getCategoryBudgets, getCostRatio } from 
 import { getPaymentCardAlerts } from '../../utils/paymentCards';
 import { crossfadeVariants, swapVariants } from '../../utils/motion';
 import { filterSubscriptions, searchSubscriptions, sortSubscriptions } from '../../utils/subscriptionList';
+import { ReorderableSubscriptions } from '../subscriptions/ReorderableSubscriptions';
 import { SubscriptionList } from '../subscriptions/SubscriptionList';
 import { SubscriptionTileGrid } from '../subscriptions/SubscriptionTileGrid';
 import { AutoHeight } from '../ui/AutoHeight';
@@ -59,6 +60,8 @@ export function Dashboard({
   const searchQuery = useDashboardStore((s) => s.searchQuery);
   const setSearchQuery = useDashboardStore((s) => s.setSearchQuery);
   const resetFilters = useDashboardStore((s) => s.resetFilters);
+  const reordering = useDashboardStore((s) => s.reordering);
+  const setReordering = useDashboardStore((s) => s.setReordering);
   // Eingabe bleibt sofort flüssig; die Liste filtert mit niedriger Priorität hinterher.
   const deferredQuery = useDeferredValue(searchQuery);
   const isSearching = deferredQuery.trim() !== '';
@@ -84,6 +87,19 @@ export function Dashboard({
 
   // Beendete Abos liegen im Friedhof-Tab; hier bleiben laufende, pausierte und auslaufende.
   const current = useMemo(() => subscriptions.filter((sub) => !isArchived(sub)), [subscriptions]);
+
+  // Eigene Reihenfolge über alle Abos der Übersicht – Grundlage fürs Anordnen in gefilterten Ansichten.
+  const manualOrder = useMemo(
+    () => sortSubscriptions(current, 'manual', baseCurrency, rates),
+    [current, baseCurrency, rates],
+  );
+
+  // Erstmals "Eigene Reihenfolge": aktuelle Reihenfolge festschreiben, damit neue Abos sauber hinten anstehen.
+  useEffect(() => {
+    if (sortKey === 'manual' && manualOrder.some((sub) => sub.sortOrder === undefined)) {
+      void saveManualOrder(manualOrder.map((sub) => sub.id));
+    }
+  }, [sortKey, manualOrder]);
 
   const visible = useMemo(
     () =>
@@ -158,6 +174,8 @@ export function Dashboard({
                     onStatusFilterChange={setStatusFilter}
                     viewMode={viewMode}
                     onViewModeChange={setViewMode}
+                    reordering={reordering}
+                    onReorderingChange={setReordering}
                   />
                   <SubscriptionSearch value={searchQuery} onChange={setSearchQuery} />
                 </div>
@@ -168,13 +186,22 @@ export function Dashboard({
                       <AutoHeight className="-mx-2 -mt-2" innerClassName="relative px-2 pt-2">
                         <AnimatePresence initial={false} mode="popLayout">
                           <motion.div
-                            key={viewMode}
+                            key={reordering ? `${viewMode}-reorder` : viewMode}
                             variants={crossfadeVariants}
                             initial="hidden"
                             animate="visible"
                             exit="exit"
                           >
-                            {viewMode === 'tiles' ? (
+                            {reordering && sortKey === 'manual' ? (
+                              <ReorderableSubscriptions
+                                subscriptions={visible}
+                                allOrdered={manualOrder}
+                                viewMode={viewMode}
+                                categoriesById={categoriesById}
+                                baseCurrency={baseCurrency}
+                                rates={rates}
+                              />
+                            ) : viewMode === 'tiles' ? (
                               <SubscriptionTileGrid
                                 subscriptions={visible}
                                 categoriesById={categoriesById}

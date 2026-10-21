@@ -48,6 +48,8 @@ interface SubscriptionCardProps {
   /** Von aussen gesteuerte Drehung (Wischkarte); ohne Angabe dreht sich die Karte selbst. */
   flipped?: boolean;
   onToggleFlip?: () => void;
+  /** Aus im Anordnen-Modus: Antippen dreht dann nicht. */
+  flippable?: boolean;
 }
 
 export function SubscriptionCard({
@@ -58,10 +60,15 @@ export function SubscriptionCard({
   onSelect,
   flipped: controlledFlipped,
   onToggleFlip,
+  flippable = true,
 }: SubscriptionCardProps) {
   const [ownFlipped, setOwnFlipped] = useState(false);
   const flipped = controlledFlipped ?? ownFlipped;
-  const toggleFlip = onToggleFlip ?? (() => setOwnFlipped((value) => !value));
+  const toggleFlip = () => {
+    if (!flippable) return;
+    if (onToggleFlip) onToggleFlip();
+    else setOwnFlipped((value) => !value);
+  };
   const { rotateY, face } = useCardFlip(flipped);
   const cards = useSettingsStore((st) => st.settings.paymentCards);
   const facts = useMemo(
@@ -251,9 +258,9 @@ export function SubscriptionCard({
       {/* Nur diese Ebene dreht sich – das Zahnrad daneben bleibt stehen. */}
       <motion.div style={{ rotateY, transformPerspective: 1200 }} className="h-full">
         <GlassCard
-          interactive
-          role="button"
-          tabIndex={0}
+          interactive={flippable}
+          role={flippable ? 'button' : undefined}
+          tabIndex={flippable ? 0 : undefined}
           aria-pressed={flipped}
           aria-label={`${subscription.name}: ${flipped ? 'Vorderseite' : 'Details'} zeigen`}
           onClick={toggleFlip}

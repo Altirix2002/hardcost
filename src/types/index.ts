@@ -106,6 +106,8 @@ export interface Subscription {
   endsOn?: string; // YYYY-MM-DD
   /** Aus dem Logo bestimmte Markenfarben (Glas-Glow, Akzentlinie); fehlt = noch nicht bestimmt bzw. kein Logo. */
   brandColors?: BrandColors;
+  /** Position in der eigenen Reihenfolge (aufsteigend); fehlt = noch nie angeordnet. */
+  sortOrder?: number;
 }
 
 /** Dominante Farben eines Logos als Hex (#rrggbb). */
@@ -432,7 +434,8 @@ export interface PaymentMethodShare {
 
 // ─── Dashboard & Navigation ─────────────────────────────────────────────────
 
-export type SubscriptionSortKey = 'due' | 'cost' | 'name';
+/** 'manual' = eigene Reihenfolge (per Drag & Drop, gilt für Liste und Kacheln). */
+export type SubscriptionSortKey = 'due' | 'cost' | 'name' | 'manual';
 
 /** Darstellung der Abo-Liste: grosse Karten oder kompakte Kacheln (mehr Abos auf einen Blick). */
 export type SubscriptionViewMode = 'list' | 'tiles';

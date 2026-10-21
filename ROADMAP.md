@@ -24,7 +24,7 @@ Stand: 21.10.2026. Erledigte Punkte abhaken (`[x]`) oder entfernen, neue unten e
 - [x] **9c Finanz-Wächter:** Bezahlkarten in den Einstellungen (Typ normal/virtuell/Einweg, gültig bis MM/JJ, letzte 4 Ziffern), Karten-Radar (30 Tage vor Ablauf; Einweg-/virtuelle Karten 7 Tage vor jeder Abbuchung), Karten-Badge auf dem Abo; Monatslimit je Kategorie mit Ampel 80/95/100 % und rotem Alarm, Übersicht in Statistiken; Fixkosten-Quote mit einstellbarer Ampel (Standard 10/20 %)
 - [x] **9d Abo-Friedhof:** eigener Tab (nur wirklich beendete Abos; auslaufende bleiben in der Übersicht), Spar-Tracker seit Kündigung, 1-Klick-Reaktivieren mit Rückgängig (Lücke wird als Pause eingetragen, damit «Bisher bezahlt» stimmt); Tab-Leiste am Handy und bis 1024 px kompakt (inaktive Tabs nur als Symbol)
 - [x] **9e Karten & Logos:** Brandfetch als erste Logo-Quelle (offizielle Logos per Hotlink, offline zwischengespeichert; danach Simple Icons, Favicons, Initialen); Markenfarben aus dem Logo (Glow + Akzentlinie, schwarze Logos bleiben schwarz); Antippen dreht Karte/Kachel um (Rückseite mit Vertragsdaten, gleiche Höhe), Zahnrad oben links öffnet die Einstellungen; Ruhemodus für Pausierte (entsättigt, atmender Rand); Wischgeste mit Farbfüllung im Spalt, Gummiband und Durchwischen-zum-Löschen
-- [ ] 9f Freies Sortieren (Liste & Kacheln)
+- [x] **9f Freies Sortieren:** Sortierung «Eigene Reihenfolge» (gemerkt), Knopf «Anordnen» → Karten wackeln und lassen sich per Maus, Finger (kurz halten) oder Tastatur verschieben (dnd-kit); gleiche Reihenfolge in Liste und Kacheln, gespeichert am Abo (auch im Backup), gefilterte Ansichten tauschen nur untereinander
 - [ ] 9g Plus-Knopf-Morph am Handy, Liquid-Fill
 - [ ] 9h Geräte-Sync per WebRTC & QR
 
