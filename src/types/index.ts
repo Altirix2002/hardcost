@@ -541,6 +541,47 @@ export interface StoredDocument {
   createdAt: string; // ISO-Zeitstempel
 }
 
+// ─── Geräte-Sync (WebRTC) ───────────────────────────────────────────────────
+
+/** Aus Sicht des Geräts, das die Verbindung startet: sendet es seine Daten oder holt es sie? */
+export type SyncDirection = 'send' | 'receive';
+
+export interface SyncSignalCandidate {
+  ip: string; // IP oder mDNS-Name (xyz.local)
+  port: number;
+  type: string; // host, srflx, …
+  priority: number;
+}
+
+/** Inhalt eines Sync-QR-Codes: das Nötigste aus dem SDP-Angebot bzw. der Antwort. */
+export interface SyncSignal {
+  kind: 'offer' | 'answer';
+  direction: SyncDirection;
+  ufrag: string;
+  pwd: string;
+  fingerprint: string; // SHA-256, Hex mit Doppelpunkten
+  candidates: SyncSignalCandidate[];
+}
+
+/** Ablauf des Sync-Assistenten in den Einstellungen. */
+export type SyncStage =
+  | { step: 'idle' }
+  | { step: 'preparing' }
+  /** Startgerät zeigt sein Angebot … */
+  | { step: 'show-offer'; code: string; direction: SyncDirection }
+  /** … und scannt danach die Antwort. */
+  | { step: 'scan-answer' }
+  /** Zweitgerät scannt das Angebot … */
+  | { step: 'scan-offer' }
+  /** … und zeigt seine Antwort, bis die Verbindung steht. */
+  | { step: 'show-answer'; code: string; receiving: boolean }
+  | { step: 'connecting' }
+  | { step: 'transfer'; receiving: boolean; progress: number }
+  /** Empfänger: Übernahme bestätigen (ersetzt alle Daten hier). */
+  | { step: 'confirm'; subscriptions: number; documents: number }
+  | { step: 'done'; message: string }
+  | { step: 'error'; message: string };
+
 // ─── App-Sperre ─────────────────────────────────────────────────────────────
 
 /** Lokal gespeicherte Sperr-Konfiguration (localStorage); der PIN nur als gesalzener Hash. */

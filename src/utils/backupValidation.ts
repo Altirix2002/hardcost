@@ -114,8 +114,8 @@ function isPaymentCard(value: unknown): value is PaymentCard {
     isRecord(value) &&
     isString(value.method) &&
     (value.kind === 'standard' || value.kind === 'virtual' || value.kind === 'single-use') &&
-    (value.expiresAt === undefined || (isString(value.expiresAt) && /^d{4}-(0[1-9]|1[0-2])$/.test(value.expiresAt))) &&
-    (value.lastFour === undefined || (isString(value.lastFour) && /^d{4}$/.test(value.lastFour)))
+    (value.expiresAt === undefined || (isString(value.expiresAt) && /^\d{4}-(0[1-9]|1[0-2])$/.test(value.expiresAt))) &&
+    (value.lastFour === undefined || (isString(value.lastFour) && /^\d{4}$/.test(value.lastFour)))
   );
 }
 

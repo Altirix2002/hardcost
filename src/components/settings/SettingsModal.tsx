@@ -8,6 +8,7 @@ import { Button } from '../ui/Button';
 import { FormSection } from '../ui/FormSection';
 import { Modal } from '../ui/Modal';
 import { SegmentedControl } from '../ui/SegmentedControl';
+import { SyncPanel } from '../sync/SyncPanel';
 import { Select } from '../ui/Select';
 import { AppLockSection } from './AppLockSection';
 import { BackupSection } from './BackupSection';
@@ -142,10 +143,18 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
           <BackupSection onRestored={hydrate} />
         </FormSection>
 
+        <FormSection
+          title="Geräte-Sync"
+          description="Alle Abos, Einstellungen und Dokumente direkt auf ein anderes Gerät übertragen – ohne Konto und ohne Cloud: zwei QR-Codes tauschen, fertig. Am zuverlässigsten im selben WLAN."
+        >
+          <SyncPanel onRestored={hydrate} />
+        </FormSection>
+
         <p className="flex items-start gap-2 px-1 text-xs text-zinc-500 dark:text-zinc-400">
           <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden />
           HardCost speichert alles ausschliesslich lokal in diesem Browser. Aus dem Internet geladen werden nur die
-          Wechselkurse – und Logos, wenn du die Logo-Suche nutzt.
+          Wechselkurse, Logos (Logo-Suche, offizielle Logos direkt von Brandfetch) und beim Geräte-Sync die eigene
+          Netzadresse über einen öffentlichen STUN-Server – die Daten selbst gehen nur von Gerät zu Gerät.
         </p>
       </div>
     </Modal>
