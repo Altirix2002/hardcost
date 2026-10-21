@@ -1,5 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { useSettingsStore } from '../../store/useSettingsStore';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Pencil, Plus, Trash2 } from 'lucide-react';
 import { db } from '../../db/database';
@@ -9,7 +10,9 @@ import { sortCategories } from '../../utils/categories';
 import { getCategoryColorClasses } from '../../utils/categoryStyles';
 import { cn } from '../../utils/cn';
 import { INSET_PANEL } from '../../utils/fieldStyles';
+import { formatCurrency } from '../../utils/format';
 import { sheetSpringWithFade } from '../../utils/motion';
+import { parseAmount } from '../../utils/subscriptionDraft';
 import { Button } from '../ui/Button';
 import { ColorSwatchPicker } from '../ui/ColorSwatchPicker';
 import { TextField } from '../ui/TextField';
@@ -26,6 +29,10 @@ interface CategoryEditorProps {
 function CategoryEditor({ category, usageCount, onDone }: CategoryEditorProps) {
   const [name, setName] = useState(category?.name ?? '');
   const [color, setColor] = useState<CategoryColor>(category?.color ?? 'sky');
+  const [budget, setBudget] = useState(category?.monthlyBudget !== undefined ? String(category.monthlyBudget) : '');
+  const currency = useSettingsStore((s) => s.settings.baseCurrency);
+  const parsedBudget = budget.trim() === '' ? undefined : parseAmount(budget);
+  const budgetError = parsedBudget === null || (parsedBudget !== undefined && parsedBudget <= 0);
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -44,8 +51,11 @@ function CategoryEditor({ category, usageCount, onDone }: CategoryEditorProps) {
   };
 
   const save = () => {
-    if (!name.trim() || busy) return;
-    void run(() => (category ? updateCategory(category.id, name, color) : createCategory(name, color)));
+    if (!name.trim() || busy || budgetError) return;
+    const limit = parsedBudget ?? undefined;
+    void run(() =>
+      category ? updateCategory(category.id, name, color, limit) : createCategory(name, color, limit),
+    );
   };
 
   const remove = () => {
@@ -74,6 +84,15 @@ function CategoryEditor({ category, usageCount, onDone }: CategoryEditorProps) {
         }}
       />
       <ColorSwatchPicker label="Farbe" value={color} onChange={setColor} />
+      <TextField
+        label={`Monatslimit (${currency})`}
+        placeholder="Kein Limit"
+        inputMode="decimal"
+        hint="Optional – warnt ab 80 % und schlägt Alarm, sobald die Abos dieser Kategorie mehr kosten."
+        value={budget}
+        onChange={(event) => setBudget(event.target.value)}
+        error={budgetError ? 'Betrag grösser als 0 – oder leer lassen.' : undefined}
+      />
 
       {error && <p className="px-1 text-xs text-rose-600 dark:text-rose-400">{error}</p>}
       {confirmDelete && (
@@ -94,7 +113,7 @@ function CategoryEditor({ category, usageCount, onDone }: CategoryEditorProps) {
           <Button size="sm" variant="ghost" onClick={onDone}>
             Abbrechen
           </Button>
-          <Button size="sm" icon={category ? Check : Plus} disabled={!name.trim() || busy} onClick={save}>
+          <Button size="sm" icon={category ? Check : Plus} disabled={!name.trim() || busy || budgetError} onClick={save}>
             {category ? 'Sichern' : 'Anlegen'}
           </Button>
         </div>
@@ -134,6 +153,7 @@ export function CategoryManager() {
     return counts;
   }, [subscriptions]);
 
+  const currency = useSettingsStore((s) => s.settings.baseCurrency);
   const toggle = (target: string) => setEditing((current) => (current === target ? null : target));
   const close = () => setEditing(null);
 
@@ -157,6 +177,8 @@ export function CategoryManager() {
                 />
                 <span className="min-w-0 flex-1 truncate text-sm font-medium">{category.name}</span>
                 <span className="shrink-0 text-xs text-zinc-500 dark:text-zinc-400">
+                  {category.monthlyBudget !== undefined &&
+                    `Limit ${formatCurrency(category.monthlyBudget, currency)} · `}
                   {count === 1 ? '1 Abo' : `${count} Abos`}
                 </span>
                 <Pencil className="h-4 w-4 shrink-0 text-zinc-400" aria-hidden />

@@ -1,4 +1,15 @@
-import type { BackupDocument, BackupFile, Category, CostSplit, PausePeriod, PriceInterval, Subscription, UserSettings } from '../types';
+import type {
+  BackupDocument,
+  BackupFile,
+  Category,
+  CostRatioThresholds,
+  CostSplit,
+  PausePeriod,
+  PaymentCard,
+  PriceInterval,
+  Subscription,
+  UserSettings,
+} from '../types';
 import { isCategoryColor } from './categoryStyles';
 import { isSupportedCurrency } from './options';
 import { isValidISODate } from './subscriptionDraft';
@@ -88,13 +99,35 @@ function isBackupDocument(value: unknown): value is BackupDocument {
   );
 }
 
+const isPositiveNumber = (value: unknown): value is number => isFiniteNumber(value) && value > 0;
+
+function isPaymentCard(value: unknown): value is PaymentCard {
+  return (
+    isRecord(value) &&
+    isString(value.method) &&
+    (value.kind === 'standard' || value.kind === 'virtual' || value.kind === 'single-use') &&
+    (value.expiresAt === undefined || (isString(value.expiresAt) && /^d{4}-(0[1-9]|1[0-2])$/.test(value.expiresAt))) &&
+    (value.lastFour === undefined || (isString(value.lastFour) && /^d{4}$/.test(value.lastFour)))
+  );
+}
+
+function isCostRatioThresholds(value: unknown): value is CostRatioThresholds {
+  return (
+    isRecord(value) &&
+    isPositiveNumber(value.green) &&
+    isPositiveNumber(value.yellow) &&
+    value.green < value.yellow
+  );
+}
+
 function isCategory(value: unknown): value is Category {
   return (
     isRecord(value) &&
     isString(value.id) &&
     isString(value.name) &&
     isCategoryColor(value.color) &&
-    typeof value.isCustom === 'boolean'
+    typeof value.isCustom === 'boolean' &&
+    (value.monthlyBudget === undefined || isPositiveNumber(value.monthlyBudget))
   );
 }
 
@@ -106,7 +139,10 @@ function isUserSettings(value: unknown): value is UserSettings {
     (value.theme === 'light' || value.theme === 'dark' || value.theme === 'system') &&
     (value.paymentMethods === undefined ||
       (Array.isArray(value.paymentMethods) && value.paymentMethods.every(isString))) &&
-    (value.monthlyBudget === undefined || (isFiniteNumber(value.monthlyBudget) && value.monthlyBudget > 0))
+    (value.monthlyBudget === undefined || isPositiveNumber(value.monthlyBudget)) &&
+    (value.paymentCards === undefined || (Array.isArray(value.paymentCards) && value.paymentCards.every(isPaymentCard))) &&
+    (value.netIncome === undefined || isPositiveNumber(value.netIncome)) &&
+    (value.costRatioThresholds === undefined || isCostRatioThresholds(value.costRatioThresholds))
   );
 }
 

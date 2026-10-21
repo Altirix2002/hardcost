@@ -13,6 +13,8 @@ import { AppLockSection } from './AppLockSection';
 import { BackupSection } from './BackupSection';
 import { BudgetSection } from './BudgetSection';
 import { CategoryManager } from './CategoryManager';
+import { IncomeSection } from './IncomeSection';
+import { PaymentCardManager } from './PaymentCardManager';
 import { PaymentMethodManager } from './PaymentMethodManager';
 
 interface SettingsModalProps {
@@ -98,6 +100,13 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
         </FormSection>
 
         <FormSection
+          title="Fixkosten-Quote"
+          description="Anteil aller laufenden Abos am Nettoeinkommen – mit eigener Ampel."
+        >
+          <IncomeSection key={settings.baseCurrency} />
+        </FormSection>
+
+        <FormSection
           title="Kategorien"
           description="Antippen zum Umbenennen oder Umfärben. Beim Löschen wandern die Abos zu «Sonstiges»."
         >
@@ -109,6 +118,13 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
           description="Bleiben als Vorschlag erhalten, auch wenn kein Abo sie mehr nutzt. Noch benutzte erscheinen weiterhin."
         >
           <PaymentMethodManager />
+        </FormSection>
+
+        <FormSection
+          title="Bezahlkarten"
+          description="Ablaufdatum und Kartentyp – das Karten-Radar warnt, bevor eine Abbuchung an einer abgelaufenen oder verbrauchten Karte scheitert."
+        >
+          <PaymentCardManager />
         </FormSection>
 
         <FormSection

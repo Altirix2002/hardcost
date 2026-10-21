@@ -1,13 +1,14 @@
 import type { ReactNode } from 'react';
 import { AlertTriangle, CalendarRange, RefreshCw, Wallet } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import type { CostSummary, ExchangeRates } from '../../types';
+import type { CostRatio, CostRatioThresholds, CostSummary, ExchangeRates } from '../../types';
 import { cn } from '../../utils/cn';
 import { parseISODate } from '../../utils/dates';
 import { formatDate } from '../../utils/format';
 import { AnimatedCurrency } from '../ui/AnimatedCurrency';
 import { GlassCard } from '../ui/GlassCard';
 import { BudgetMeter } from './BudgetMeter';
+import { CostRatioMeter } from './CostRatioMeter';
 
 interface CostHeroProps {
   summary: CostSummary;
@@ -20,6 +21,9 @@ interface CostHeroProps {
   alert?: boolean;
   /** Monatsbudget in Basiswährung; fehlt = keine Budget-Anzeige. */
   monthlyBudget?: number;
+  /** Anteil am Nettoeinkommen; null = kein Einkommen hinterlegt. */
+  costRatio: CostRatio | null;
+  costRatioThresholds: CostRatioThresholds;
 }
 
 interface HeroCardProps {
@@ -69,6 +73,8 @@ export function CostHero({
   monthName,
   alert = false,
   monthlyBudget,
+  costRatio,
+  costRatioThresholds,
 }: CostHeroProps) {
   const hasUnconverted = summary.unconvertedCurrencies.length > 0;
 
@@ -105,7 +111,9 @@ export function CostHero({
           }
           glowClassName="bg-violet-400/30 dark:bg-violet-500/20"
           alert={alert}
-        />
+        >
+          {costRatio && <CostRatioMeter ratio={costRatio} thresholds={costRatioThresholds} />}
+        </HeroCard>
       </div>
       <p
         className={cn(

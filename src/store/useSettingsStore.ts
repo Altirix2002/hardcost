@@ -23,8 +23,26 @@ interface SettingsState {
 }
 
 function toSettings(record: SettingsRecord): UserSettings {
-  const { baseCurrency, theme, paymentMethods, monthlyBudget, lastBackupAt } = record;
-  return { baseCurrency, theme, paymentMethods, monthlyBudget, lastBackupAt };
+  const {
+    baseCurrency,
+    theme,
+    paymentMethods,
+    monthlyBudget,
+    lastBackupAt,
+    paymentCards,
+    netIncome,
+    costRatioThresholds,
+  } = record;
+  return {
+    baseCurrency,
+    theme,
+    paymentMethods,
+    monthlyBudget,
+    lastBackupAt,
+    paymentCards,
+    netIncome,
+    costRatioThresholds,
+  };
 }
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
@@ -55,14 +73,23 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   setBaseCurrency: async (baseCurrency) => {
     const { settings, rates } = get();
-    // Budget mitnehmen: 80 CHF sollen nach dem Wechsel nicht plötzlich 80 EUR sein.
-    const monthlyBudget =
-      settings.monthlyBudget !== undefined && canConvert(settings.baseCurrency, baseCurrency, rates)
-        ? Math.round(convertCurrency(settings.monthlyBudget, settings.baseCurrency, baseCurrency, rates))
-        : settings.monthlyBudget;
+    // Beträge mitnehmen: 80 CHF sollen nach dem Wechsel nicht plötzlich 80 EUR sein.
+    const convert = (amount: number | undefined) =>
+      amount !== undefined && canConvert(settings.baseCurrency, baseCurrency, rates)
+        ? Math.round(convertCurrency(amount, settings.baseCurrency, baseCurrency, rates))
+        : amount;
+    await db.categories
+      .filter((category) => category.monthlyBudget !== undefined)
+      .modify((category) => {
+        category.monthlyBudget = convert(category.monthlyBudget);
+      });
     const cachedRates = (await db.exchangeRates.get(baseCurrency)) ?? null;
     set({ rates: cachedRates });
-    await get().updateSettings({ baseCurrency, monthlyBudget });
+    await get().updateSettings({
+      baseCurrency,
+      monthlyBudget: convert(settings.monthlyBudget),
+      netIncome: convert(settings.netIncome),
+    });
     await get().refreshRates();
   },
 

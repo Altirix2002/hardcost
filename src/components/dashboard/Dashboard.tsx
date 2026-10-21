@@ -3,9 +3,11 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Plus, RotateCcw, SearchX, Sparkles } from 'lucide-react';
 import { loadDemoSubscriptions } from '../../db/repository';
 import { useDashboardStore } from '../../store/useDashboardStore';
-import type { Category, ExchangeRates, Subscription } from '../../types';
+import type { Category, ExchangeRates, Subscription, UserSettings } from '../../types';
 import { getCancellationAlerts, getCostSummary, getSpendForMonth, getUpcomingPayments } from '../../utils/calculations';
 import { formatMonthName } from '../../utils/format';
+import { DEFAULT_COST_RATIO_THRESHOLDS, getCategoryBudgets, getCostRatio } from '../../utils/insights';
+import { getPaymentCardAlerts } from '../../utils/paymentCards';
 import { crossfadeVariants, swapVariants } from '../../utils/motion';
 import { filterSubscriptions, searchSubscriptions, sortSubscriptions } from '../../utils/subscriptionList';
 import { SubscriptionList } from '../subscriptions/SubscriptionList';
@@ -15,7 +17,9 @@ import { Button } from '../ui/Button';
 import { EmptyState } from '../ui/EmptyState';
 import { BackupReminder } from './BackupReminder';
 import { CancellationRadar } from './CancellationRadar';
+import { CategoryBudgetAlert } from './CategoryBudgetAlert';
 import { CostHero } from './CostHero';
+import { PaymentCardRadar } from './PaymentCardRadar';
 import { SubscriptionSearch } from './SubscriptionSearch';
 import { SubscriptionToolbar } from './SubscriptionToolbar';
 import { UpcomingStats } from './UpcomingStats';
@@ -25,9 +29,9 @@ interface DashboardProps {
   categories: Category[];
   baseCurrency: string;
   rates: ExchangeRates | null;
-  monthlyBudget?: number;
-  lastBackupAt?: string;
+  settings: UserSettings;
   onOpenBackup: () => void;
+  onOpenSettings: () => void;
   onCreate: () => void;
   onSelect: (subscription: Subscription) => void;
   onShowUpcoming: () => void;
@@ -38,9 +42,9 @@ export function Dashboard({
   categories,
   baseCurrency,
   rates,
-  monthlyBudget,
-  lastBackupAt,
+  settings,
   onOpenBackup,
+  onOpenSettings,
   onCreate,
   onSelect,
   onShowUpcoming,
@@ -58,18 +62,24 @@ export function Dashboard({
   const deferredQuery = useDeferredValue(searchQuery);
   const isSearching = deferredQuery.trim() !== '';
 
+  const { monthlyBudget, lastBackupAt, paymentCards, netIncome } = settings;
+  const thresholds = settings.costRatioThresholds ?? DEFAULT_COST_RATIO_THRESHOLDS;
   const categoriesById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
 
   const overview = useMemo(() => {
     const today = new Date();
+    const summary = getCostSummary(subscriptions, baseCurrency, rates, today);
     return {
-      summary: getCostSummary(subscriptions, baseCurrency, rates, today),
+      summary,
+      costRatio: getCostRatio(summary.monthly, netIncome, thresholds),
+      cardAlerts: getPaymentCardAlerts(subscriptions, paymentCards, today),
+      categoryBudgets: getCategoryBudgets(subscriptions, categories, baseCurrency, rates, today),
       alerts: getCancellationAlerts(subscriptions, today),
       nextPayment: getUpcomingPayments(subscriptions, baseCurrency, rates, today, 1)[0],
       monthSpend: getSpendForMonth(subscriptions, today.getFullYear(), today.getMonth(), baseCurrency, rates),
       monthName: formatMonthName(today),
     };
-  }, [subscriptions, baseCurrency, rates]);
+  }, [subscriptions, categories, baseCurrency, rates, netIncome, thresholds, paymentCards]);
 
   const visible = useMemo(
     () =>
@@ -92,6 +102,8 @@ export function Dashboard({
         monthName={overview.monthName}
         alert={overview.alerts.length > 0}
         monthlyBudget={monthlyBudget}
+        costRatio={overview.costRatio}
+        costRatioThresholds={thresholds}
       />
       <UpcomingStats
         summary={overview.summary}
@@ -100,6 +112,8 @@ export function Dashboard({
         onShowAll={onShowUpcoming}
       />
       <CancellationRadar alerts={overview.alerts} categoriesById={categoriesById} onSelect={onSelect} />
+      <PaymentCardRadar alerts={overview.cardAlerts} onOpenCards={onOpenSettings} onSelect={onSelect} />
+      <CategoryBudgetAlert budgets={overview.categoryBudgets} currency={baseCurrency} />
       <BackupReminder lastBackupAt={lastBackupAt} subscriptionCount={subscriptions.length} onBackup={onOpenBackup} />
 
       {/* Wechsel zwischen Liste und Leer-Zustand: das eine klappt zu, das andere gleichzeitig auf –

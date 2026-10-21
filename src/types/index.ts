@@ -111,6 +111,65 @@ export interface Category {
   name: string;
   color: CategoryColor;
   isCustom: boolean;
+  /** Monatliche Obergrenze (Abo-Deckel) in der Basiswährung; fehlt = kein Limit. */
+  monthlyBudget?: number;
+}
+
+// ─── Bezahlkarten ───────────────────────────────────────────────────────────
+
+/**
+ * - standard: normale Kredit-/Debitkarte – Warnung vor dem Ablauf
+ * - virtual: virtuelle (Prepaid-)Karte – Warnung vor Ablauf und vor jeder Abbuchung
+ * - single-use: Einwegkarte – nach einer Zahlung verbraucht, Warnung vor jeder Verlängerung
+ */
+export type PaymentCardKind = 'standard' | 'virtual' | 'single-use';
+
+/** Details zu einer Zahlungsart. Nie die Kartennummer – höchstens die letzten 4 Ziffern. */
+export interface PaymentCard {
+  /** Zahlungsart, wie sie im Abo steht (Verknüpfung, Gross-/Kleinschreibung egal). */
+  method: string;
+  kind: PaymentCardKind;
+  expiresAt?: string; // YYYY-MM, letzter gültiger Monat
+  lastFour?: string;
+}
+
+export type PaymentCardAlertReason = 'expired' | 'expiring' | 'renewal';
+
+/** Warnung des Karten-Radars: Karte läuft ab oder ein Abo auf einer Wegwerfkarte verlängert sich. */
+export interface PaymentCardAlert {
+  card: PaymentCard;
+  reason: PaymentCardAlertReason;
+  /** Tage bis Kartenablauf bzw. bis zur Abbuchung (negativ = schon abgelaufen). */
+  daysLeft: number;
+  date: Date; // Ablauf (letzter Tag des Monats) bzw. Abbuchungstermin
+  /** Betroffene aktive Abos (bei 'renewal' genau eines). */
+  subscriptions: Subscription[];
+}
+
+// ─── Budgets & Fixkosten-Quote ──────────────────────────────────────────────
+
+/** Ampel der Kategorie-Budgets: ab 80 % gelb, ab 95 % orange, über 100 % harter Alarm. */
+export type CategoryBudgetLevel = 'ok' | 'notice' | 'warning' | 'over';
+
+export interface CategoryBudgetStatus {
+  category: Category;
+  budget: number; // in Basiswährung
+  monthly: number; // Durchschnittskosten pro Monat in Basiswährung
+  share: number; // 0–∞
+  level: CategoryBudgetLevel;
+}
+
+export type CostRatioLevel = 'green' | 'yellow' | 'red';
+
+/** Grenzen der Ampel als Anteil am Nettoeinkommen (0.1 = 10 %). */
+export interface CostRatioThresholds {
+  green: number; // bis hier grün
+  yellow: number; // bis hier gelb, darüber rot
+}
+
+export interface CostRatio {
+  ratio: number; // Fixkosten / Nettoeinkommen
+  level: CostRatioLevel;
 }
 
 export interface UserSettings {
@@ -122,6 +181,12 @@ export interface UserSettings {
   monthlyBudget?: number;
   /** Zeitpunkt des letzten Backups (ISO); fehlt = noch nie gesichert. */
   lastBackupAt?: string;
+  /** Kartendetails (Ablauf, Einweg-/virtuelle Karte) zu Zahlungsarten. */
+  paymentCards?: PaymentCard[];
+  /** Monatliches Nettoeinkommen in der Basiswährung – für die Fixkosten-Quote. */
+  netIncome?: number;
+  /** Eigene Ampel-Grenzen der Fixkosten-Quote; fehlt = Standard (10 % / 20 %). */
+  costRatioThresholds?: CostRatioThresholds;
 }
 
 // ─── Persistenz (Dexie) ─────────────────────────────────────────────────────

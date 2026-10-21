@@ -63,7 +63,7 @@ export async function loadDemoSubscriptions(): Promise<void> {
 }
 
 /** Erstellt eine eigene Kategorie; existiert der Name bereits, wird die bestehende zurückgegeben. */
-export async function createCategory(name: string, color: CategoryColor): Promise<Category> {
+export async function createCategory(name: string, color: CategoryColor, monthlyBudget?: number): Promise<Category> {
   const trimmed = name.trim();
   const key = trimmed.toLocaleLowerCase('de-CH');
 
@@ -71,7 +71,7 @@ export async function createCategory(name: string, color: CategoryColor): Promis
     const existing = await db.categories.filter((c) => c.name.toLocaleLowerCase('de-CH') === key).first();
     if (existing) return existing;
 
-    const category: Category = { id: createId(), name: trimmed, color, isCustom: true };
+    const category: Category = { id: createId(), name: trimmed, color, isCustom: true, monthlyBudget };
     await db.categories.add(category);
     return category;
   });
@@ -81,7 +81,12 @@ export async function createCategory(name: string, color: CategoryColor): Promis
 export const FALLBACK_CATEGORY_ID = 'cat-other';
 
 /** Benennt eine Kategorie um bzw. färbt sie neu; der Name muss eindeutig bleiben. */
-export async function updateCategory(id: string, name: string, color: CategoryColor): Promise<void> {
+export async function updateCategory(
+  id: string,
+  name: string,
+  color: CategoryColor,
+  monthlyBudget?: number,
+): Promise<void> {
   const trimmed = name.trim();
   const key = trimmed.toLocaleLowerCase('de-CH');
 
@@ -90,7 +95,7 @@ export async function updateCategory(id: string, name: string, color: CategoryCo
       .filter((c) => c.id !== id && c.name.toLocaleLowerCase('de-CH') === key)
       .first();
     if (duplicate) throw new Error(`Die Kategorie «${duplicate.name}» gibt es schon.`);
-    await db.categories.update(id, { name: trimmed, color });
+    await db.categories.update(id, { name: trimmed, color, monthlyBudget });
   });
 }
 

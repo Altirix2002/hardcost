@@ -190,9 +190,9 @@ export default function App() {
                   categories={categories}
                   baseCurrency={settings.baseCurrency}
                   rates={rates}
-                  monthlyBudget={settings.monthlyBudget}
-                  lastBackupAt={settings.lastBackupAt}
+                  settings={settings}
                   onOpenBackup={openBackup}
+                  onOpenSettings={openSettings}
                   onCreate={openCreate}
                   onSelect={openEdit}
                   onShowUpcoming={openUpcoming}

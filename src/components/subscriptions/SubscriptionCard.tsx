@@ -1,4 +1,5 @@
-import { AlarmClock, CalendarClock, CalendarX, Gift, Lock, Moon, Users } from 'lucide-react';
+import { AlarmClock, CalendarClock, CalendarX, CreditCard, Gift, Lock, Moon, Users } from 'lucide-react';
+import { useSettingsStore } from '../../store/useSettingsStore';
 import type { Category, ExchangeRates, Subscription } from '../../types';
 import {
   getActiveCommitmentEnd,
@@ -14,6 +15,13 @@ import { addDays, daysBetween, parseISODate } from '../../utils/dates';
 import { BILLING_CYCLE_SUFFIX, formatCurrency, formatDate, formatRelativeDays } from '../../utils/format';
 import { cn } from '../../utils/cn';
 import { getResumeDate, isPausedAt } from '../../utils/pauses';
+import {
+  CARD_EXPIRY_ALERT_DAYS,
+  PAYMENT_CARD_KIND_LABELS,
+  findPaymentCard,
+  formatCardExpiry,
+  getCardExpiryDate,
+} from '../../utils/paymentCards';
 import { isZombie } from '../../utils/review';
 import { isActiveAt, isInTrialAt, isRunningOut } from '../../utils/status';
 import { Badge } from '../ui/Badge';
@@ -52,12 +60,18 @@ export function SubscriptionCard({ subscription, category, baseCurrency, rates, 
   const bindingEnd = isActive && !endsOn ? getBindingEnd(subscription, today) : null;
   const inCommitment = bindingEnd !== null && getActiveCommitmentEnd(subscription, today) !== null;
   const zombie = isZombie(subscription, today);
+  // Bezahlkarte: Wegwerfkarten immer markieren, Ablauf erst ab 30 Tagen vorher.
+  const card = findPaymentCard(useSettingsStore((st) => st.settings.paymentCards), subscription.paymentMethod);
+  const cardExpiry = card ? getCardExpiryDate(card) : null;
+  const cardDaysLeft = isRunning && cardExpiry ? daysBetween(today, cardExpiry) : null;
+  const cardExpiring = cardDaysLeft !== null && cardDaysLeft <= CARD_EXPIRY_ALERT_DAYS;
+  const disposableCard = isActive && card !== undefined && card.kind !== 'standard';
   const showOriginalPrice =
     interval !== undefined &&
     !inTrial &&
     !isFree &&
     (split !== undefined || interval.currency !== baseCurrency || billingCycle !== 'monthly');
-  const hasBadges = showAlert || bindingEnd !== null || inTrial || runningOut;
+  const hasBadges = showAlert || bindingEnd !== null || inTrial || runningOut || cardExpiring || disposableCard;
 
   return (
     <GlassCard
@@ -176,6 +190,18 @@ export function SubscriptionCard({ subscription, category, baseCurrency, rates, 
           {showAlert && alert && (
             <Badge color="amber" icon={AlarmClock}>
               Kündigen bis {formatDate(alert.deadline)}
+            </Badge>
+          )}
+          {card && cardExpiring && (
+            <Badge color={cardDaysLeft !== null && cardDaysLeft < 0 ? 'rose' : 'amber'} icon={CreditCard}>
+              {cardDaysLeft !== null && cardDaysLeft < 0
+                ? 'Karte abgelaufen'
+                : `Karte läuft ab ${formatCardExpiry(card.expiresAt ?? '')}`}
+            </Badge>
+          )}
+          {card && disposableCard && !cardExpiring && (
+            <Badge color="violet" icon={CreditCard}>
+              {PAYMENT_CARD_KIND_LABELS[card.kind]}
             </Badge>
           )}
           {bindingEnd && (

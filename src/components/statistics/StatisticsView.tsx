@@ -11,7 +11,7 @@ import {
   getSpendForecast,
 } from '../../utils/calculations';
 import { formatCurrency, formatInteger } from '../../utils/format';
-import { getWrappedSummary } from '../../utils/insights';
+import { getCategoryBudgets, getWrappedSummary } from '../../utils/insights';
 import { spring } from '../../utils/motion';
 import { isRunning } from '../../utils/pauses';
 import { StatCard } from '../dashboard/StatCard';
@@ -21,6 +21,7 @@ import { Button } from '../ui/Button';
 import { EmptyState } from '../ui/EmptyState';
 import { GlassCard } from '../ui/GlassCard';
 import { CategoryBreakdown } from './CategoryBreakdown';
+import { CategoryBudgetList } from './CategoryBudgetList';
 import { PaymentMethodsChart } from './PaymentMethodsChart';
 import { PriceHikeRadar } from './PriceHikeRadar';
 import { SavingsSimulator } from './SavingsSimulator';
@@ -65,6 +66,7 @@ export function StatisticsView({ subscriptions, categories, baseCurrency, rates,
       forecastTotal: forecast.reduce((sum, point) => sum + point.total, 0),
       average: history.reduce((sum, point) => sum + point.total, 0) / Math.max(1, history.length),
       breakdown: getCategoryBreakdown(subscriptions, categories, baseCurrency, rates, today),
+      budgets: getCategoryBudgets(subscriptions, categories, baseCurrency, rates, today),
       top: getMostExpensiveSubscription(subscriptions, baseCurrency, rates, today),
       activeCount: subscriptions.filter((s) => isRunning(s, today)).length,
       priceHikes: getPriceHikes(subscriptions, baseCurrency, rates, today),
@@ -99,7 +101,7 @@ export function StatisticsView({ subscriptions, categories, baseCurrency, rates,
         whileHover={{ y: -2 }}
         whileTap={{ scale: 0.98 }}
         transition={spring}
-        className="relative flex items-center gap-4 overflow-hidden rounded-3xl bg-linear-to-br from-sky-500 via-indigo-500 to-violet-600 p-5 text-left text-white shadow-lg shadow-indigo-500/25 focus-visible:ring-2 focus-visible:ring-sky-500/50 focus-visible:outline-none"
+        className="relative flex items-center gap-4 overflow-hidden rounded-3xl bg-brand-gradient p-5 text-left text-white shadow-lg shadow-violet-500/25 focus-visible:ring-2 focus-visible:ring-sky-500/50 focus-visible:outline-none"
       >
         <span aria-hidden className="pointer-events-none absolute -top-16 -right-10 h-40 w-40 rounded-full bg-white/20 blur-2xl" />
         <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/20">
@@ -165,6 +167,15 @@ export function StatisticsView({ subscriptions, categories, baseCurrency, rates,
           <p className="text-sm text-zinc-500 dark:text-zinc-400">Keine aktiven Abos mit laufenden Kosten.</p>
         )}
       </Panel>
+
+      {stats.budgets.length > 0 && (
+        <Panel
+          title="Kategorie-Budgets"
+          description="Monatliche Durchschnittskosten gegenüber deinem Limit – Limits setzt du in den Einstellungen unter Kategorien."
+        >
+          <CategoryBudgetList budgets={stats.budgets} currency={baseCurrency} />
+        </Panel>
+      )}
 
       <Panel title="Spar-Simulator" description="Wähle Abos ab, um zu sehen, was eine Kündigung bringen würde.">
         <SavingsSimulator

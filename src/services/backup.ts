@@ -27,6 +27,9 @@ export async function createBackup(): Promise<BackupFile> {
           theme: stored.theme,
           paymentMethods: stored.paymentMethods,
           monthlyBudget: stored.monthlyBudget,
+          paymentCards: stored.paymentCards,
+          netIncome: stored.netIncome,
+          costRatioThresholds: stored.costRatioThresholds,
         }
       : DEFAULT_SETTINGS,
     categories,

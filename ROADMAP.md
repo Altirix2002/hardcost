@@ -16,13 +16,12 @@ Stand: 21.10.2026. Erledigte Punkte abhaken (`[x]`) oder entfernen, neue unten e
 
 ### Ideen für später
 3. [ ] **Pausen-Historie anzeigen** – Liste vergangener Pausen im Abo (Daten sind schon vorhanden).
-4. [ ] **Budget pro Kategorie** zusätzlich zum Gesamtbudget.
 
 ## Meilenstein 9 (in Arbeit)
 
 - [x] **9a Rebranding HardCost:** Name, neues Icon, Markenverlauf (Plus-Knopf, aktiver Tab, Hauptknöpfe), Datenbank-Umzug `subpulse` → `hardcost`, alte Backups weiter importierbar, Repo heisst `hardcost` (neue URL – App am Handy neu installieren)
 - [x] **9b Anschlusslaufzeit:** feste Verlängerung um X Monate oder flexibel kündbar, Frist in Tagen oder Monaten, «nur auf Monatsende»; Radar zeigt «sonst +12 Mt.», Karte «Laufzeit bis …». Fristen rechnen jetzt ab dem letzten Vertragstag (einen Tag früher als bisher bei Tagesfristen). Neue Felder sind optional – keine DB-Migration nötig, alte Backups gültig
-- [ ] 9c Bezahlkarten-Radar, Kategorie-Budgets, Fixkosten-Quote, Einweg-/virtuelle Karten
+- [x] **9c Finanz-Wächter:** Bezahlkarten in den Einstellungen (Typ normal/virtuell/Einweg, gültig bis MM/JJ, letzte 4 Ziffern), Karten-Radar (30 Tage vor Ablauf; Einweg-/virtuelle Karten 7 Tage vor jeder Abbuchung), Karten-Badge auf dem Abo; Monatslimit je Kategorie mit Ampel 80/95/100 % und rotem Alarm, Übersicht in Statistiken; Fixkosten-Quote mit einstellbarer Ampel (Standard 10/20 %)
 - [ ] 9d Abo-Friedhof (eigener Tab, Spar-Tracker, Reaktivieren)
 - [ ] 9e Karten: Drehung, Einstellungs-Knopf, Ruhemodus, Markenfarbe, Wischgeste
 - [ ] 9f Freies Sortieren (Liste & Kacheln)

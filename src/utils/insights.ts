@@ -1,4 +1,15 @@
-import type { ExchangeRates, PriceHike, SavingsSimulation, Subscription, WrappedSummary } from '../types';
+import type {
+  Category,
+  CategoryBudgetLevel,
+  CategoryBudgetStatus,
+  CostRatio,
+  CostRatioThresholds,
+  ExchangeRates,
+  PriceHike,
+  SavingsSimulation,
+  Subscription,
+  WrappedSummary,
+} from '../types';
 import {
   convertCurrency,
   getChargesInRange,
@@ -143,4 +154,57 @@ export function getBudgetStatus(monthly: number, budget: number): BudgetStatus {
   const share = budget > 0 ? monthly / budget : 0;
   const level: BudgetLevel = share > 1 ? 'over' : share >= BUDGET_WARNING_SHARE ? 'warning' : 'ok';
   return { share, remaining: budget - monthly, level };
+}
+
+// ─── Kategorie-Budgets (Abo-Deckel) ─────────────────────────────────────────
+
+export const CATEGORY_BUDGET_NOTICE_SHARE = 0.8;
+export const CATEGORY_BUDGET_WARNING_SHARE = 0.95;
+
+export function getCategoryBudgetLevel(share: number): CategoryBudgetLevel {
+  if (share > 1) return 'over';
+  if (share >= CATEGORY_BUDGET_WARNING_SHARE) return 'warning';
+  if (share >= CATEGORY_BUDGET_NOTICE_SHARE) return 'notice';
+  return 'ok';
+}
+
+/**
+ * Auslastung aller Kategorien mit Limit. Verglichen wird mit den monatlichen Durchschnittskosten
+ * (Jahresabo ÷ 12) – sonst löste ein Jahresabo im Abbuchungsmonat einen falschen Alarm aus.
+ * Höchste Auslastung zuerst.
+ */
+export function getCategoryBudgets(
+  subs: Subscription[],
+  categories: Category[],
+  baseCurrency: string,
+  rates: ExchangeRates | null,
+  reference: Date = new Date(),
+): CategoryBudgetStatus[] {
+  return categories
+    .flatMap((category): CategoryBudgetStatus[] => {
+      const budget = category.monthlyBudget;
+      if (budget === undefined || budget <= 0) return [];
+      const monthly = subs
+        .filter((sub) => sub.categoryId === category.id)
+        .reduce((sum, sub) => sum + getMonthlyCost(sub, baseCurrency, rates, reference), 0);
+      const share = monthly / budget;
+      return [{ category, budget, monthly, share, level: getCategoryBudgetLevel(share) }];
+    })
+    .sort((a, b) => b.share - a.share);
+}
+
+// ─── Fixkosten-Quote ────────────────────────────────────────────────────────
+
+export const DEFAULT_COST_RATIO_THRESHOLDS: CostRatioThresholds = { green: 0.1, yellow: 0.2 };
+
+/** Anteil der monatlichen Abo-Kosten am Nettoeinkommen samt Ampel; null ohne Einkommen. */
+export function getCostRatio(
+  monthly: number,
+  netIncome: number | undefined,
+  thresholds: CostRatioThresholds = DEFAULT_COST_RATIO_THRESHOLDS,
+): CostRatio | null {
+  if (netIncome === undefined || netIncome <= 0) return null;
+  const ratio = monthly / netIncome;
+  const level = ratio <= thresholds.green ? 'green' : ratio <= thresholds.yellow ? 'yellow' : 'red';
+  return { ratio, level };
 }
