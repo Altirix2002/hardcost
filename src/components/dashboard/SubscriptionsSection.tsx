@@ -127,7 +127,7 @@ export function SubscriptionsSection({
                 {visible.length > 0 ? (
                   <motion.div key="results" variants={swapVariants} initial="hidden" animate="visible" exit="exit">
                     {/* Ansicht wechseln: an Ort und Stelle überblenden, die Höhe gleitet mit (kein Wegschieben). */}
-                    <AutoHeight className="-mx-2 -mt-2" innerClassName="relative px-2 pt-2">
+                    <AutoHeight className="-mt-4 -mb-10" innerClassName="relative pt-4 pb-10">
                       <AnimatePresence initial={false} mode="popLayout">
                         <motion.div
                           key={reordering ? `${viewMode}-reorder` : viewMode}

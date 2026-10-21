@@ -5,7 +5,7 @@ import { sheetSpring } from '../../utils/motion';
 
 interface AutoHeightProps {
   children: ReactNode;
-  /** Äussere Klassen, z.B. negative Ränder für Schatten/Hover, die overflow-hidden sonst abschneidet. */
+  /** Äussere Klassen, z.B. negative Ränder oben/unten für Schatten/Hover, die der Zuschnitt sonst abschneidet. */
   className?: string;
   /** Polster gehört ans innere, gemessene Element – am äusseren verfälschte es die animierte Höhe. */
   innerClassName?: string;
@@ -14,6 +14,8 @@ interface AutoHeightProps {
 /**
  * Animiert Höhenänderungen des Inhalts per Feder – z.B. beim Wechsel zwischen unterschiedlich
  * hohen Ansichten. So gleitet ein Bottom-Sheet auf die neue Grösse, statt zu springen.
+ * Abgeschnitten wird nur oben/unten (overflow-y: clip) – seitlich bleiben Schatten, Glow und
+ * überstehende Knöpfe sichtbar.
  */
 export function AutoHeight({ children, className = '-mx-1 px-1', innerClassName }: AutoHeightProps) {
   const innerRef = useRef<HTMLDivElement>(null);
@@ -30,7 +32,7 @@ export function AutoHeight({ children, className = '-mx-1 px-1', innerClassName 
   }, []);
 
   return (
-    <motion.div initial={false} animate={{ height }} transition={sheetSpring} className={cn('overflow-hidden', className)}>
+    <motion.div initial={false} animate={{ height }} transition={sheetSpring} className={cn('overflow-x-visible overflow-y-clip', className)}>
       <div ref={innerRef} className={innerClassName}>
         {children}
       </div>
