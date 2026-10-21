@@ -108,3 +108,54 @@
     display: none;
   }
 }
+
+/*
+ * Plus-Knopf-Morph (Modal mit layoutId): Die Hülle spannt sich auf, die Inhalte erscheinen erst bei
+ * ~90 % (Feder ~230 ms) – Kopfzeile, dann Abschnitt für Abschnitt, zuletzt die Fusszeile.
+ */
+@keyframes morph-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.morph-stagger :is(.morph-step, form > *) {
+  animation: morph-in 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) 230ms both;
+}
+
+.morph-stagger form > :nth-child(1) {
+  animation-delay: 265ms;
+}
+.morph-stagger form > :nth-child(2) {
+  animation-delay: 300ms;
+}
+.morph-stagger form > :nth-child(3) {
+  animation-delay: 335ms;
+}
+.morph-stagger form > :nth-child(n + 4) {
+  animation-delay: 370ms;
+}
+.morph-stagger .morph-footer {
+  animation-delay: 300ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .morph-stagger :is(.morph-step, form > *) {
+    animation: none;
+  }
+}
+
+/* Liquid-Fill (LiquidGauge): Wellenzug um eine halbe Breite verschieben = nahtlose Endlosschleife. */
+@keyframes wave {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}

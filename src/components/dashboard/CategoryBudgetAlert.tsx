@@ -1,12 +1,13 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Gauge } from 'lucide-react';
 import type { CategoryBudgetStatus } from '../../types';
-import { CATEGORY_BUDGET_BAR, CATEGORY_BUDGET_TEXT } from '../../utils/budgetStyles';
+import { CATEGORY_BUDGET_TEXT } from '../../utils/budgetStyles';
 import { getCategoryColorClasses } from '../../utils/categoryStyles';
 import { cn } from '../../utils/cn';
-import { formatCurrency, formatPercent } from '../../utils/format';
+import { formatCurrency } from '../../utils/format';
 import { collapseItemVariants, spring } from '../../utils/motion';
 import { AlertPanel } from '../ui/AlertPanel';
+import { LiquidGauge } from '../ui/LiquidGauge';
 
 interface CategoryBudgetAlertProps {
   budgets: CategoryBudgetStatus[];
@@ -43,29 +44,21 @@ export function CategoryBudgetAlert({ budgets, currency }: CategoryBudgetAlertPr
             transition={spring}
           >
             <div className="pb-2">
-              <div className="rounded-2xl bg-white/60 p-3 dark:bg-zinc-900/50">
-                <div className="flex items-center gap-2 text-sm">
-                  <span
-                    aria-hidden
-                    className={cn('h-2.5 w-2.5 shrink-0 rounded-full', getCategoryColorClasses(category.color).solid)}
-                  />
-                  <span className="min-w-0 flex-1 truncate font-medium">{category.name}</span>
-                  <span className={cn('shrink-0 font-semibold tabular-nums', CATEGORY_BUDGET_TEXT[level])}>
-                    {formatPercent(share)}
-                  </span>
+              <div className="flex items-center gap-3 rounded-2xl bg-white/60 p-2 pr-3 dark:bg-zinc-900/50">
+                <LiquidGauge share={share} tone={level} size="sm" label={`Budget ${category.name}`} />
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-2 text-sm font-medium">
+                    <span
+                      aria-hidden
+                      className={cn('h-2.5 w-2.5 shrink-0 rounded-full', getCategoryColorClasses(category.color).solid)}
+                    />
+                    <span className="truncate">{category.name}</span>
+                  </p>
+                  <p className={cn('text-xs tabular-nums', CATEGORY_BUDGET_TEXT[level])}>
+                    {formatCurrency(monthly, currency)} von {formatCurrency(budget, currency)} pro Monat
+                    {level === 'over' && ` · ${formatCurrency(monthly - budget, currency)} drüber`}
+                  </p>
                 </div>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-zinc-900/10 dark:bg-white/10">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${Math.min(share, 1) * 100}%` }}
-                    transition={spring}
-                    className={cn('h-full rounded-full transition-colors duration-500', CATEGORY_BUDGET_BAR[level])}
-                  />
-                </div>
-                <p className="mt-1.5 text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
-                  {formatCurrency(monthly, currency)} von {formatCurrency(budget, currency)} pro Monat
-                  {level === 'over' && ` · ${formatCurrency(monthly - budget, currency)} drüber`}
-                </p>
               </div>
             </div>
           </motion.li>

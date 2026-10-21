@@ -1,6 +1,7 @@
 import { useEffect, useId, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { cn } from '../../utils/cn';
 import { sheetSpringWithFade } from '../../utils/motion';
 import { IconButton } from './IconButton';
@@ -19,6 +20,13 @@ interface ModalProps {
   layoutId?: string;
 }
 
+/**
+ * Eckenradius als Motion-Wert statt Klasse: Nur so rechnet framer-motion ihn während des Morphs
+ * gegen die Skalierung heraus – Kreis (Plus-Knopf) → Sheet ohne verzerrte Ecken.
+ */
+const SHEET_RADIUS_MOBILE = '24px 24px 0px 0px';
+const SHEET_RADIUS_DESKTOP = '24px';
+
 /** Spätestens dann ist die Schliess-Animation sicher vorbei. */
 const EXIT_FALLBACK_MS = 900;
 
@@ -26,6 +34,7 @@ const EXIT_FALLBACK_MS = 900;
 export function Modal({ open, onClose, title, children, footer, layoutId }: ModalProps) {
   const titleId = useId();
   const morph = layoutId !== undefined;
+  const desktop = useMediaQuery('(min-width: 640px)');
   // Sicherheitsnetz: Bleibt die Exit-Animation hängen (z.B. wenn auf dem Handy gleichzeitig die
   // Tastatur einfährt), würde das Sheet sichtbar, aber tot stehen bleiben. Ein neuer Key für
   // AnimatePresence räumt es dann zuverlässig ab.
@@ -73,19 +82,17 @@ export function Modal({ open, onClose, title, children, footer, layoutId }: Moda
             animate={{ y: 0, opacity: 1 }}
             exit={morph ? { opacity: 0, transition: { duration: 0.15 } } : { y: 48, opacity: 0 }}
             transition={sheetSpringWithFade}
+            style={morph ? { borderRadius: desktop ? SHEET_RADIUS_DESKTOP : SHEET_RADIUS_MOBILE } : undefined}
             className="relative flex max-h-[92dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-3xl border border-white/20 bg-white/80 shadow-2xl backdrop-blur-xl sm:rounded-3xl dark:border-white/10 dark:bg-zinc-900/80"
           >
-            {/* Beim Morph ist der Inhalt kurz verzerrt – er blendet deshalb erst danach ein. */}
-            <motion.div
-              initial={morph ? { opacity: 0 } : false}
-              animate={{ opacity: 1, transition: { duration: 0.2, delay: morph ? 0.15 : 0 } }}
-              className="flex min-h-0 flex-1 flex-col"
-            >
+            {/* Beim Morph ist der Inhalt während des Aufspannens verzerrt – er erscheint deshalb erst,
+                wenn die Hülle fast offen ist, gestaffelt von oben nach unten (siehe .morph-stagger). */}
+            <div className={cn('flex min-h-0 flex-1 flex-col', morph && 'morph-stagger')}>
               <div
                 aria-hidden
                 className="mx-auto mt-2 h-1.5 w-10 shrink-0 rounded-full bg-zinc-900/15 sm:hidden dark:bg-white/20"
               />
-              <div className="flex shrink-0 items-center justify-between gap-4 px-6 pt-4 pb-4 sm:pt-6">
+              <div className="morph-step flex shrink-0 items-center justify-between gap-4 px-6 pt-4 pb-4 sm:pt-6">
                 <h2 id={titleId} className="text-xl font-semibold tracking-tight">
                   {title}
                 </h2>
@@ -100,11 +107,11 @@ export function Modal({ open, onClose, title, children, footer, layoutId }: Moda
                 {children}
               </div>
               {footer && (
-                <div className="shrink-0 border-t border-zinc-900/5 px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] dark:border-white/10">
+                <div className="morph-step morph-footer shrink-0 border-t border-zinc-900/5 px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] dark:border-white/10">
                   {footer}
                 </div>
               )}
-            </motion.div>
+            </div>
           </motion.div>
         </div>
       )}

@@ -25,7 +25,7 @@ Stand: 21.10.2026. Erledigte Punkte abhaken (`[x]`) oder entfernen, neue unten e
 - [x] **9d Abo-Friedhof:** eigener Tab (nur wirklich beendete Abos; auslaufende bleiben in der Übersicht), Spar-Tracker seit Kündigung, 1-Klick-Reaktivieren mit Rückgängig (Lücke wird als Pause eingetragen, damit «Bisher bezahlt» stimmt); Tab-Leiste am Handy und bis 1024 px kompakt (inaktive Tabs nur als Symbol)
 - [x] **9e Karten & Logos:** Brandfetch als erste Logo-Quelle (offizielle Logos per Hotlink, offline zwischengespeichert; danach Simple Icons, Favicons, Initialen); Markenfarben aus dem Logo (Glow + Akzentlinie, schwarze Logos bleiben schwarz); Antippen dreht Karte/Kachel um (Rückseite mit Vertragsdaten, gleiche Höhe), Zahnrad oben links öffnet die Einstellungen; Ruhemodus für Pausierte (entsättigt, atmender Rand); Wischgeste mit Farbfüllung im Spalt, Gummiband und Durchwischen-zum-Löschen
 - [x] **9f Freies Sortieren:** Sortierung «Eigene Reihenfolge» (gemerkt), Knopf «Anordnen» → Karten wackeln und lassen sich per Maus, Finger (kurz halten) oder Tastatur verschieben (dnd-kit); gleiche Reihenfolge in Liste und Kacheln, gespeichert am Abo (auch im Backup), gefilterte Ansichten tauschen nur untereinander
-- [ ] 9g Plus-Knopf-Morph am Handy, Liquid-Fill
+- [x] **9g Morph & Liquid-Fill:** Plus-Knopf morpht jetzt auch am Handy ins Formular und zurück (Ecken als Motion-Wert, Inhalt erscheint ab ~230 ms gestaffelt; im Production-Build gemessen: kein langsamer Frame); Budgets als Liquid-Fill-Kugeln (Monatsbudget, Kategorie-Budgets, Budget-Alarm) mit Wellen, Ampelfarben, pausiert ausserhalb des Bildschirms
 - [ ] 9h Geräte-Sync per WebRTC & QR
 
 ## Erledigt

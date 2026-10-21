@@ -39,7 +39,7 @@ const UpcomingPaymentsModal = lazy(() =>
 
 const PRELOAD_DELAY_MS = 1500;
 
-/** Plus-Knopf und Erfassen-Fenster teilen sich diese layoutId (Morph, nur Desktop). */
+/** Plus-Knopf und Erfassen-Fenster teilen sich diese layoutId (Morph – Desktop-Knopf bzw. Handy-Dock). */
 const ADD_TRIGGER_LAYOUT_ID = 'subscription-trigger';
 
 /**
@@ -78,9 +78,8 @@ export default function App() {
   const [upcomingOpen, setUpcomingOpen] = useState(false);
   const [upcomingMounted, setUpcomingMounted] = useState(false);
   const modalOpen = formOpen || settingsOpen || upcomingOpen;
-  // Auf dem Handy fährt das Sheet klassisch von unten herein (iOS-Verhalten); den FAB gibt es dort nicht.
+  // Beide Plus-Knöpfe sind im DOM (je einer per CSS versteckt) – die layoutId darf nur der sichtbare tragen.
   const isDesktop = useMediaQuery('(min-width: 640px)');
-  const addLayoutId = isDesktop ? ADD_TRIGGER_LAYOUT_ID : undefined;
   useTabSwipe();
 
   const paymentMethods = useMemo(
@@ -231,9 +230,17 @@ export default function App() {
             icon={Plus}
             label="Abo hinzufügen"
             onClick={openCreate}
-            layoutId={addLayoutId}
+            layoutId={isDesktop ? ADD_TRIGGER_LAYOUT_ID : undefined}
           />}
-        {!modalOpen && <MobileDock key="dock" activeTab={activeTab} onTabChange={setActiveTab} onAdd={openCreate} />}
+        {!modalOpen && (
+          <MobileDock
+            key="dock"
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            onAdd={openCreate}
+            addLayoutId={isDesktop ? undefined : ADD_TRIGGER_LAYOUT_ID}
+          />
+        )}
       </AnimatePresence>
 
       <DynamicIsland />
@@ -248,7 +255,7 @@ export default function App() {
             rates={rates}
             paymentMethods={paymentMethods}
             onClose={closeForm}
-            layoutId={addLayoutId}
+            layoutId={ADD_TRIGGER_LAYOUT_ID}
           />
         )}
         {settingsMounted && <SettingsModal open={settingsOpen} onClose={closeSettings} />}
