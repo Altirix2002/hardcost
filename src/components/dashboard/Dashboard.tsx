@@ -5,6 +5,7 @@ import { loadDemoSubscriptions } from '../../db/repository';
 import { useDashboardStore } from '../../store/useDashboardStore';
 import type { Category, ExchangeRates, Subscription, UserSettings } from '../../types';
 import { getCancellationAlerts, getCostSummary, getSpendForMonth, getUpcomingPayments } from '../../utils/calculations';
+import { isArchived } from '../../utils/archive';
 import { formatMonthName } from '../../utils/format';
 import { DEFAULT_COST_RATIO_THRESHOLDS, getCategoryBudgets, getCostRatio } from '../../utils/insights';
 import { getPaymentCardAlerts } from '../../utils/paymentCards';
@@ -81,15 +82,18 @@ export function Dashboard({
     };
   }, [subscriptions, categories, baseCurrency, rates, netIncome, thresholds, paymentCards]);
 
+  // Beendete Abos liegen im Friedhof-Tab; hier bleiben laufende, pausierte und auslaufende.
+  const current = useMemo(() => subscriptions.filter((sub) => !isArchived(sub)), [subscriptions]);
+
   const visible = useMemo(
     () =>
       sortSubscriptions(
-        searchSubscriptions(filterSubscriptions(subscriptions, statusFilter), deferredQuery, categoriesById),
+        searchSubscriptions(filterSubscriptions(current, statusFilter), deferredQuery, categoriesById),
         sortKey,
         baseCurrency,
         rates,
       ),
-    [subscriptions, statusFilter, deferredQuery, categoriesById, sortKey, baseCurrency, rates],
+    [current, statusFilter, deferredQuery, categoriesById, sortKey, baseCurrency, rates],
   );
 
   return (

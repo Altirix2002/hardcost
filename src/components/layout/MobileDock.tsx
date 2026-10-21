@@ -24,11 +24,12 @@ export function MobileDock({ activeTab, onTabChange, onAdd }: MobileDockProps) {
       transition={spring}
       className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex items-center justify-center gap-3 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:hidden"
     >
-      <TabBar activeTab={activeTab} onChange={onTabChange} layoutId="tab-mobile" className="pointer-events-auto" />
+      <TabBar activeTab={activeTab} onChange={onTabChange} layoutId="tab-mobile" compact className="pointer-events-auto" />
       <motion.button
         type="button"
         aria-label="Abo hinzufügen"
         onClick={onAdd}
+        layout="position"
         whileTap={{ scale: 0.9 }}
         transition={spring}
         className="pointer-events-auto flex h-13 w-13 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-white shadow-lg shadow-violet-500/40 ring-1 ring-white/30 focus-visible:ring-4 focus-visible:ring-violet-500/50 focus-visible:outline-none dark:shadow-violet-500/30"

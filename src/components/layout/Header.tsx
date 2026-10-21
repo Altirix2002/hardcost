@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Monitor, Moon, Settings, Sun, WifiOff } from 'lucide-react';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import type { AppTab, ThemePreference } from '../../types';
 import { IconButton } from '../ui/IconButton';
@@ -25,6 +26,8 @@ const THEME_OPTIONS = [
 
 export function Header({ theme, onThemeChange, activeTab, onTabChange, onOpenSettings }: HeaderProps) {
   const online = useOnlineStatus();
+  // Drei Tabs mit Namen passen erst ab 1024 px neben Logo und Theme-Schalter.
+  const wide = useMediaQuery('(min-width: 1024px)');
 
   return (
     <header className="grid grid-cols-[1fr_auto] items-center gap-4 sm:grid-cols-[1fr_auto_1fr]">
@@ -60,7 +63,7 @@ export function Header({ theme, onThemeChange, activeTab, onTabChange, onOpenSet
 
       {/* Wrapper statt className: TabBar setzt selbst inline-flex, das würde mit "hidden" kollidieren. */}
       <div className="hidden sm:block">
-        <TabBar activeTab={activeTab} onChange={onTabChange} layoutId="tab-desktop" />
+        <TabBar activeTab={activeTab} onChange={onTabChange} layoutId="tab-desktop" compact={!wide} />
       </div>
 
       <div className="flex items-center justify-self-end gap-1">

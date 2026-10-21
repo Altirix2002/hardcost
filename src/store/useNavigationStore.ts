@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { AppTab } from '../types';
 
-export const TAB_ORDER: AppTab[] = ['overview', 'statistics'];
+export const TAB_ORDER: AppTab[] = ['overview', 'statistics', 'archive'];
 
 export function isAppTab(value: string | null): value is AppTab {
   return TAB_ORDER.some((tab) => tab === value);

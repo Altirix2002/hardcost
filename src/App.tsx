@@ -8,6 +8,7 @@ import { Header } from './components/layout/Header';
 import { MobileDock } from './components/layout/MobileDock';
 import { DynamicIsland } from './components/ui/DynamicIsland';
 import { FloatingActionButton } from './components/ui/FloatingActionButton';
+import { ArchiveView } from './components/archive/ArchiveView';
 import { db } from './db/database';
 import { useApplyTheme } from './hooks/useApplyTheme';
 import { useMediaQuery } from './hooks/useMediaQuery';
@@ -196,6 +197,14 @@ export default function App() {
                   onCreate={openCreate}
                   onSelect={openEdit}
                   onShowUpcoming={openUpcoming}
+                />
+              ) : activeTab === 'archive' ? (
+                <ArchiveView
+                  subscriptions={subscriptions}
+                  categories={categories}
+                  baseCurrency={settings.baseCurrency}
+                  rates={rates}
+                  onSelect={openEdit}
                 />
               ) : (
                 <Suspense fallback={null}>

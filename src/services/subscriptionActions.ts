@@ -1,6 +1,7 @@
 import { deleteSubscription, restoreSubscription, saveSubscription } from '../db/repository';
 import { showToast } from '../store/useToastStore';
 import type { Subscription } from '../types';
+import { reactivateSubscription } from '../utils/archive';
 import { isPausedAt, pauseSubscription, resumeSubscription } from '../utils/pauses';
 import { markReviewed } from '../utils/review';
 
@@ -40,4 +41,10 @@ export async function deleteWithUndo(sub: Subscription): Promise<void> {
       void restoreSubscription(snapshot).then(() => showToast('success', `${sub.name} wiederhergestellt`));
     },
   });
+}
+
+/** Holt ein beendetes Abo aus dem Friedhof zurück ins Dashboard. */
+export async function reactivateWithUndo(sub: Subscription): Promise<void> {
+  await saveSubscription(reactivateSubscription(sub));
+  showToast('resumed', `${sub.name} ist zurück`, undoTo(sub));
 }

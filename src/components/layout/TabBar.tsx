@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ChartPie, LayoutGrid } from 'lucide-react';
+import { ChartPie, Ghost, LayoutGrid } from 'lucide-react';
 import { tabPanelId } from '../../store/useNavigationStore';
 import type { AppTab } from '../../types';
 import { cn } from '../../utils/cn';
@@ -10,18 +10,23 @@ interface TabBarProps {
   onChange: (tab: AppTab) => void;
   /** Eindeutig pro Instanz (Mobile-Dock und Header rendern je eine). */
   layoutId: string;
+  /** Handy: Nur der aktive Tab zeigt seinen Namen, die anderen nur das Symbol (passt so neben den Plus-Knopf). */
+  compact?: boolean;
   className?: string;
 }
 
 const TABS = [
   { id: 'overview' as const, label: 'Übersicht', icon: LayoutGrid },
   { id: 'statistics' as const, label: 'Statistiken', icon: ChartPie },
+  { id: 'archive' as const, label: 'Friedhof', icon: Ghost },
 ];
 
 /** Schwebende Glas-Pille mit gleitender Markierung des aktiven Tabs. */
-export function TabBar({ activeTab, onChange, layoutId, className }: TabBarProps) {
+export function TabBar({ activeTab, onChange, layoutId, compact = false, className }: TabBarProps) {
   return (
-    <nav
+    <motion.nav
+      layout={compact}
+      transition={spring}
       role="tablist"
       aria-label="Hauptnavigation"
       className={cn(
@@ -32,16 +37,22 @@ export function TabBar({ activeTab, onChange, layoutId, className }: TabBarProps
     >
       {TABS.map(({ id, label, icon: Icon }) => {
         const active = id === activeTab;
+        const showLabel = !compact || active;
         return (
-          <button
+          <motion.button
             key={id}
             type="button"
             role="tab"
             aria-selected={active}
             aria-controls={tabPanelId(id)}
+            aria-label={showLabel ? undefined : label}
             onClick={() => onChange(id)}
+            // Kompakt ändert sich die Breite beim Wechsel – Layout-Animation statt Sprung.
+            layout={compact}
+            transition={spring}
             className={cn(
-              'relative flex h-11 items-center gap-2 rounded-full px-4 text-sm font-medium transition-colors',
+              'relative flex h-11 items-center gap-2 rounded-full text-sm font-medium transition-colors',
+              showLabel ? 'px-4' : 'w-11 justify-center',
               'focus-visible:ring-2 focus-visible:ring-sky-500/50 focus-visible:outline-none',
               active ? 'text-white' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200',
             )}
@@ -53,11 +64,23 @@ export function TabBar({ activeTab, onChange, layoutId, className }: TabBarProps
                 className="bg-brand-gradient absolute inset-0 rounded-full shadow-md shadow-violet-500/30"
               />
             )}
-            <Icon className="relative h-4 w-4" aria-hidden />
-            <span className="relative">{label}</span>
-          </button>
+            <motion.span layout={compact ? 'position' : false} className="relative">
+              <Icon className="h-4 w-4" aria-hidden />
+            </motion.span>
+            {showLabel && (
+              <motion.span
+                layout={compact ? 'position' : false}
+                initial={compact ? { opacity: 0 } : false}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2, delay: 0.08 }}
+                className="relative whitespace-nowrap"
+              >
+                {label}
+              </motion.span>
+            )}
+          </motion.button>
         );
       })}
-    </nav>
+    </motion.nav>
   );
 }

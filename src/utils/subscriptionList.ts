@@ -18,7 +18,7 @@ export function filterSubscriptions(
     case 'paused':
       return subs.filter((sub) => isActiveAt(sub, reference) && isPausedAt(sub, reference));
     case 'cancelled':
-      // Gekündigt umfasst auslaufende und bereits beendete Abos.
+      // Gekündigt umfasst auslaufende und bereits beendete Abos (die beendeten zeigt die Übersicht im Friedhof).
       return subs.filter((sub) => !sub.isActive || sub.endsOn !== undefined);
   }
 }

@@ -63,7 +63,7 @@ export function CostRatioMeter({ ratio, thresholds }: CostRatioMeterProps) {
       </div>
       <p className={cn('mt-1.5 flex justify-between gap-2 text-xs font-medium tabular-nums', TEXT[ratio.level])}>
         <span>{formatPercent(ratio.ratio, 1)} vom Nettoeinkommen</span>
-        <span className="text-zinc-500 dark:text-zinc-400">
+        <span className="text-zinc-500 max-sm:hidden dark:text-zinc-400">
           Grün bis {formatPercent(thresholds.green)} · Gelb bis {formatPercent(thresholds.yellow)}
         </span>
       </p>

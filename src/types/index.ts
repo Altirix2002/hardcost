@@ -415,7 +415,24 @@ export type SubscriptionViewMode = 'list' | 'tiles';
 
 export type SubscriptionStatusFilter = 'all' | 'active' | 'paused' | 'cancelled';
 
-export type AppTab = 'overview' | 'statistics';
+export type AppTab = 'overview' | 'statistics' | 'archive';
+
+// ─── Abo-Friedhof ───────────────────────────────────────────────────────────
+
+export interface ArchiveEntry {
+  subscription: Subscription;
+  endedOn: Date | null; // letzter Vertragstag; null = unbekannt (ältere Daten)
+  /** Letzter eigener Preis als Monatsäquivalent in Basiswährung. */
+  monthly: number;
+  /** Seit dem Ende real gespart (Abbuchungen, die zum letzten Preis angefallen wären). */
+  saved: number;
+}
+
+export interface ArchiveSummary {
+  entries: ArchiveEntry[];
+  totalSaved: number;
+  monthlySaved: number;
+}
 
 // ─── Logos ──────────────────────────────────────────────────────────────────
 

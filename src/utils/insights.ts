@@ -57,7 +57,7 @@ export function simulateSavings(
  * Hätte ein gekündigtes Abo nach seinem letzten Preis weitergelaufen, wären diese Beträge angefallen.
  * Messbar über das Kündigungs-Enddatum oder – bei älteren Daten – das Enddatum des letzten Preises.
  */
-function getAvoidedByCancellation(
+export function getAvoidedByCancellation(
   sub: Subscription,
   start: Date,
   end: Date,
