@@ -31,7 +31,7 @@ export function MobileDock({ activeTab, onTabChange, onAdd }: MobileDockProps) {
         onClick={onAdd}
         whileTap={{ scale: 0.9 }}
         transition={spring}
-        className="pointer-events-auto flex h-13 w-13 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-white shadow-lg shadow-zinc-900/30 ring-1 ring-white/20 focus-visible:ring-4 focus-visible:ring-sky-500/50 focus-visible:outline-none dark:bg-white dark:text-zinc-900 dark:shadow-black/50"
+        className="pointer-events-auto flex h-13 w-13 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-white shadow-lg shadow-violet-500/40 ring-1 ring-white/30 focus-visible:ring-4 focus-visible:ring-violet-500/50 focus-visible:outline-none dark:shadow-violet-500/30"
       >
         <Plus className="h-6 w-6" strokeWidth={2.5} aria-hidden />
       </motion.button>

@@ -5,8 +5,9 @@ import type { BackupDocument, BackupFile, ParsedBackup, StoredDocument } from '.
 import { parseBackup } from '../utils/backupValidation';
 import { toISODate } from '../utils/dates';
 
-/** Name der JSON-Datei innerhalb eines ZIP-Backups. */
-const ZIP_JSON_NAME = 'subpulse-backup.json';
+/** Name der JSON-Datei innerhalb eines ZIP-Backups; ältere Sicherungen stammen noch aus SubPulse. */
+const ZIP_JSON_NAME = 'hardcost-backup.json';
+const LEGACY_ZIP_JSON_NAME = 'subpulse-backup.json';
 
 /** Liest alle lokalen Daten (ohne Kurs-Cache und Dokumente) in ein Backup-Objekt. */
 export async function createBackup(): Promise<BackupFile> {
@@ -17,7 +18,7 @@ export async function createBackup(): Promise<BackupFile> {
   ]);
 
   return {
-    app: 'subpulse',
+    app: 'hardcost',
     version: 1,
     exportedAt: new Date().toISOString(),
     settings: stored
@@ -34,7 +35,7 @@ export async function createBackup(): Promise<BackupFile> {
 }
 
 export function backupFileName(date: Date = new Date(), extension: 'json' | 'zip' = 'json'): string {
-  return `subpulse-backup-${toISODate(date)}.${extension}`;
+  return `hardcost-backup-${toISODate(date)}.${extension}`;
 }
 
 /** Dateiname im Archiv: eindeutig per ID, ohne Zeichen, die Dateisysteme stören. */
@@ -91,8 +92,8 @@ export async function readBackupFile(file: File): Promise<ParsedBackup> {
   } catch {
     throw new Error('Das ZIP-Archiv ist beschädigt.');
   }
-  const json = entries[ZIP_JSON_NAME];
-  if (!json) throw new Error('Im ZIP fehlt die Datei subpulse-backup.json.');
+  const json = entries[ZIP_JSON_NAME] ?? entries[LEGACY_ZIP_JSON_NAME];
+  if (!json) throw new Error(`Im ZIP fehlt die Datei ${ZIP_JSON_NAME}.`);
 
   const backup = parseBackup(strFromU8(json));
   const documents = (backup.documents ?? []).map((meta): StoredDocument => {

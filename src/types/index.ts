@@ -364,7 +364,7 @@ export interface LogoCrop {
 
 /** Format der JSON-Backups (Export/Import). */
 export interface BackupFile {
-  app: 'subpulse';
+  app: 'hardcost';
   version: 1;
   exportedAt: string; // ISO-Zeitstempel
   settings: UserSettings;
@@ -421,7 +421,7 @@ export interface SavingsSimulation {
   reduction: number; // 0–1
 }
 
-/** Kennzahlen für "SubPulse Wrapped" über die letzten 12 Monate. */
+/** Kennzahlen für "HardCost Wrapped" über die letzten 12 Monate. */
 export interface WrappedSummary {
   periodStart: Date;
   periodEnd: Date;

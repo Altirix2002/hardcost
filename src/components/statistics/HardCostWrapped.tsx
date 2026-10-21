@@ -10,7 +10,7 @@ import { sheetSpring, spring } from '../../utils/motion';
 import { SubscriptionLogo } from '../subscriptions/SubscriptionLogo';
 import { AnimatedCurrency } from '../ui/AnimatedCurrency';
 
-interface SubPulseWrappedProps {
+interface HardCostWrappedProps {
   open: boolean;
   summary: WrappedSummary;
   categoriesById: Map<string, Category>;
@@ -46,7 +46,7 @@ function buildCards(summary: WrappedSummary, categoriesById: Map<string, Categor
     {
       key: 'intro',
       icon: Sparkles,
-      eyebrow: 'SubPulse Wrapped',
+      eyebrow: 'HardCost Wrapped',
       gradient: 'from-sky-500 via-indigo-500 to-violet-600',
       content: (
         <>
@@ -154,7 +154,7 @@ function buildCards(summary: WrappedSummary, categoriesById: Map<string, Categor
 }
 
 /** Persönlicher Jahresrückblick im Story-Format: tippen, wischen oder Pfeiltasten. */
-export function SubPulseWrapped({ open, summary, categoriesById, currency, onClose }: SubPulseWrappedProps) {
+export function HardCostWrapped({ open, summary, categoriesById, currency, onClose }: HardCostWrappedProps) {
   const cards = buildCards(summary, categoriesById, currency);
   const [[index, direction], setPage] = useState<[number, number]>([0, 1]);
   const card = cards[index] ?? cards[0];
@@ -214,7 +214,7 @@ export function SubPulseWrapped({ open, summary, categoriesById, currency, onClo
         <motion.div
           role="dialog"
           aria-modal="true"
-          aria-label="SubPulse Wrapped – dein Abo-Jahr"
+          aria-label="HardCost Wrapped – dein Abo-Jahr"
           initial={{ opacity: 0, scale: 0.94 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.94 }}

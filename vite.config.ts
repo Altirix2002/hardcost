@@ -41,8 +41,8 @@ export default defineConfig({
       includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png'],
       manifest: {
         id: base,
-        name: 'SubPulse – Abo- & Kosten-Kontrolle',
-        short_name: 'SubPulse',
+        name: 'HardCost – Abo- & Fixkosten-Kontrolle',
+        short_name: 'HardCost',
         description: 'Alle Abonnements und Fixkosten im Blick – lokal, privat und offline nutzbar.',
         lang: 'de-CH',
         dir: 'ltr',

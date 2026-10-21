@@ -40,7 +40,7 @@ export function simulateSavings(
   };
 }
 
-// ─── SubPulse Wrapped ───────────────────────────────────────────────────────
+// ─── HardCost Wrapped ───────────────────────────────────────────────────────
 
 /**
  * Hätte ein gekündigtes Abo nach seinem letzten Preis weitergelaufen, wären diese Beträge angefallen.

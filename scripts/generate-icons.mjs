@@ -7,55 +7,34 @@ import sharp from 'sharp';
 const source = fileURLToPath(new URL('../app-icon.png', import.meta.url));
 const publicDir = fileURLToPath(new URL('../public/', import.meta.url));
 
-// Das Logo bringt eine eigene abgerundete Kachel mit hellem Rand (~6 px) und
-// dunklen Ecken ausserhalb mit. Die Masse gelten für die 1024er-Vorlage.
+// Die Vorlage ist randlos schwarz, das HC-Logo liegt etwa bei x 201–822, y 276–747
+// und damit bereits in der sicheren Zone maskierbarer Icons (Kreis mit 40 % Radius).
 const SIZE = 1024;
-const RIM_INSET = 8;
-const CORNER_RADIUS = 222;
-// Innenquadrat, das vollständig auf der Kachel liegt (ohne Rand und Ecken).
-const BLEED_INSET = 80;
-// Das Logo reicht bis knapp an die sichere Zone maskierbarer Icons – etwas verkleinern.
-const BLEED_LOGO_SCALE = 0.88;
+const BACKGROUND = '#000000';
+// Für die abgerundete Kachel (Desktop, Favicon) etwas näher heran, damit das Logo
+// auch in 16–64 px noch erkennbar bleibt.
+const TILE_INSET = 130;
+const CORNER_RATIO = 0.225;
 
-/** Abgerundete Kachel mit transparenten Ecken, heller Rand abgeschnitten. */
-async function roundedTile() {
-  const inner = SIZE - 2 * RIM_INSET;
-  const mask = Buffer.from(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${inner}" height="${inner}">` +
-      `<rect width="${inner}" height="${inner}" rx="${CORNER_RADIUS}" fill="#fff"/></svg>`,
-  );
-  return sharp(source)
-    .extract({ left: RIM_INSET, top: RIM_INSET, width: inner, height: inner })
-    .ensureAlpha()
-    .composite([{ input: mask, blend: 'dest-in' }])
-    .png()
-    .toBuffer();
+/** Randlose Vorlage ohne Transparenz (Android maskiert, iOS rundet selbst ab). */
+function fullBleedTile() {
+  return sharp(source).flatten({ background: BACKGROUND }).png().toBuffer();
 }
 
-/**
- * Randlose Kachel für Android (maskable) und iOS, die selbst abrunden: Ecken und Rand
- * werden durch fortgesetzten Hintergrund ersetzt. Der Hintergrund ist ein vertikaler
- * Verlauf, deshalb reicht es, die Randpixel nach aussen zu kopieren. Das verkleinerte
- * Logo liegt so in der sicheren Zone (Kreis mit 40 % Radius).
- */
-async function fullBleedTile() {
-  const inner = SIZE - 2 * BLEED_INSET;
-  const scaled = Math.round(inner * BLEED_LOGO_SCALE);
-  const padding = (SIZE - scaled) / 2;
-  const cropped = await sharp(source)
-    .extract({ left: BLEED_INSET, top: BLEED_INSET, width: inner, height: inner })
-    .resize(scaled, scaled, { kernel: 'lanczos3' })
+/** Abgerundete Kachel mit transparenten Ecken, Logo leicht vergrössert. */
+async function roundedTile() {
+  const inner = SIZE - 2 * TILE_INSET;
+  const radius = Math.round(SIZE * CORNER_RATIO);
+  const mask = Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${SIZE}" height="${SIZE}">` +
+      `<rect width="${SIZE}" height="${SIZE}" rx="${radius}" fill="#fff"/></svg>`,
+  );
+  const zoomed = await sharp(source)
+    .flatten({ background: BACKGROUND })
+    .extract({ left: TILE_INSET, top: TILE_INSET, width: inner, height: inner })
+    .resize(SIZE, SIZE, { kernel: 'lanczos3' })
     .toBuffer();
-  return sharp(cropped)
-    .extend({
-      top: Math.floor(padding),
-      bottom: Math.ceil(padding),
-      left: Math.floor(padding),
-      right: Math.ceil(padding),
-      extendWith: 'copy',
-    })
-    .png()
-    .toBuffer();
+  return sharp(zoomed).ensureAlpha().composite([{ input: mask, blend: 'dest-in' }]).png().toBuffer();
 }
 
 /** ICO-Datei mit eingebetteten PNGs (von allen aktuellen Browsern unterstützt). */
@@ -84,7 +63,7 @@ const rounded = await roundedTile();
 const fullBleed = await fullBleedTile();
 
 const ICONS = [
-  // Abgerundetes Icon mit transparenten Ecken (Desktop-Installation, Favicon)
+  // Abgerundetes Icon mit transparenten Ecken (Desktop-Installation, Favicon, Header)
   { tile: rounded, output: 'pwa-64x64.png', size: 64 },
   { tile: rounded, output: 'pwa-192x192.png', size: 192 },
   { tile: rounded, output: 'pwa-512x512.png', size: 512 },

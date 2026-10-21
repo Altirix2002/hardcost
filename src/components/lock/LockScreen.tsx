@@ -75,7 +75,7 @@ export function LockScreen() {
     <motion.div
       role="dialog"
       aria-modal="true"
-      aria-label="SubPulse ist gesperrt"
+      aria-label="HardCost ist gesperrt"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ y: '-100%' }}
@@ -89,7 +89,7 @@ export function LockScreen() {
         <img src={APP_ICON_URL} alt="" className="h-16 w-16 rounded-2xl shadow-2xl shadow-violet-500/30" />
         <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
           <Lock className="h-4 w-4 text-white/60" aria-hidden />
-          SubPulse ist gesperrt
+          HardCost ist gesperrt
         </h1>
         <p className="min-h-5 text-sm text-white/60" aria-live="polite">
           {secondsLeft > 0

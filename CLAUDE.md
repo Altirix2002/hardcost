@@ -1,4 +1,4 @@
-\# Project: SubPulse (Abo-Manager PWA)
+\# Project: HardCost (ehemals SubPulse) (Abo-Manager PWA)
 
 
 

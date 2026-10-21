@@ -2,15 +2,15 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "subpulse-dev",
+      "name": "hardcost-dev",
       "runtimeExecutable": "C:\\Program Files\\nodejs\\node.exe",
       "runtimeArgs": ["node_modules/vite/bin/vite.js", "--port", "5173", "--strictPort"],
       "port": 5173
     },
     {
-      "name": "subpulse-pages-preview",
+      "name": "hardcost-pages-preview",
       "runtimeExecutable": "C:\\Program Files\\nodejs\\node.exe",
-      "runtimeArgs": ["node_modules/vite/bin/vite.js", "preview", "--base", "/subpulse/", "--port", "4173", "--strictPort"],
+      "runtimeArgs": ["node_modules/vite/bin/vite.js", "preview", "--base", "/hardcost/", "--port", "4173", "--strictPort"],
       "port": 4173
     }
   ]

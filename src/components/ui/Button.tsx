@@ -16,7 +16,7 @@ interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'children'> {
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
-    'bg-zinc-900 text-white shadow-lg shadow-zinc-900/20 hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:shadow-black/40 dark:hover:bg-zinc-100',
+    'bg-brand-gradient text-white shadow-lg shadow-violet-500/30 hover:brightness-110 dark:shadow-violet-500/20',
   secondary:
     'border border-white/20 bg-white/60 text-zinc-900 sm:backdrop-blur-md hover:bg-white/80 dark:border-white/10 dark:bg-zinc-800/60 dark:text-zinc-100 dark:hover:bg-zinc-800/80',
   ghost: 'text-zinc-600 hover:bg-zinc-900/5 dark:text-zinc-300 dark:hover:bg-white/10',

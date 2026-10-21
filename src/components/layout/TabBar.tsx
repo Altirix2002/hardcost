@@ -43,14 +43,14 @@ export function TabBar({ activeTab, onChange, layoutId, className }: TabBarProps
             className={cn(
               'relative flex h-11 items-center gap-2 rounded-full px-4 text-sm font-medium transition-colors',
               'focus-visible:ring-2 focus-visible:ring-sky-500/50 focus-visible:outline-none',
-              active ? 'text-zinc-900 dark:text-white' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200',
+              active ? 'text-white' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200',
             )}
           >
             {active && (
               <motion.span
                 layoutId={layoutId}
                 transition={spring}
-                className="absolute inset-0 rounded-full bg-white shadow-sm dark:bg-zinc-700/80"
+                className="bg-brand-gradient absolute inset-0 rounded-full shadow-md shadow-violet-500/30"
               />
             )}
             <Icon className="relative h-4 w-4" aria-hidden />

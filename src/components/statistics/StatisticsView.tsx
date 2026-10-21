@@ -24,7 +24,7 @@ import { CategoryBreakdown } from './CategoryBreakdown';
 import { PaymentMethodsChart } from './PaymentMethodsChart';
 import { PriceHikeRadar } from './PriceHikeRadar';
 import { SavingsSimulator } from './SavingsSimulator';
-import { SubPulseWrapped } from './SubPulseWrapped';
+import { HardCostWrapped } from './HardCostWrapped';
 import { SpendChart } from './SpendChart';
 
 interface StatisticsViewProps {
@@ -106,7 +106,7 @@ export function StatisticsView({ subscriptions, categories, baseCurrency, rates,
           <Sparkles className="h-6 w-6" aria-hidden />
         </span>
         <span className="relative min-w-0 flex-1">
-          <span className="block font-semibold tracking-tight">SubPulse Wrapped</span>
+          <span className="block font-semibold tracking-tight">HardCost Wrapped</span>
           <span className="block text-sm text-white/80">Dein Abo-Jahr im Rückblick</span>
         </span>
         <ChevronRight className="relative h-5 w-5 shrink-0" aria-hidden />
@@ -187,7 +187,7 @@ export function StatisticsView({ subscriptions, categories, baseCurrency, rates,
         )}
       </Panel>
 
-      <SubPulseWrapped
+      <HardCostWrapped
         open={wrappedOpen}
         summary={stats.wrapped}
         categoriesById={categoriesById}

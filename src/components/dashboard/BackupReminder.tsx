@@ -17,7 +17,7 @@ const REMIND_AFTER_DAYS = 30;
 const SNOOZE_DAYS = 7;
 /** Ohne jedes Backup erst ab einer Handvoll Abos erinnern – nicht gleich nach dem ersten. */
 const MIN_SUBSCRIPTIONS_WITHOUT_BACKUP = 3;
-const SNOOZE_KEY = 'subpulse-backup-snooze';
+const SNOOZE_KEY = 'hardcost-backup-snooze';
 
 function readSnooze(): number {
   try {

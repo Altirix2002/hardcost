@@ -1,6 +1,6 @@
 import type { AppLockConfig } from '../types';
 
-const STORAGE_KEY = 'subpulse-app-lock';
+const STORAGE_KEY = 'hardcost-app-lock';
 
 export const PIN_LENGTH = 4;
 

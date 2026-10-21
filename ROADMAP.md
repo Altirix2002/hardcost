@@ -1,4 +1,4 @@
-# SubPulse – Offene Punkte & Ideen
+# HardCost – Offene Punkte & Ideen
 
 Stand: 21.10.2026. Erledigte Punkte abhaken (`[x]`) oder entfernen, neue unten ergänzen.
 
@@ -17,6 +17,17 @@ Stand: 21.10.2026. Erledigte Punkte abhaken (`[x]`) oder entfernen, neue unten e
 ### Ideen für später
 3. [ ] **Pausen-Historie anzeigen** – Liste vergangener Pausen im Abo (Daten sind schon vorhanden).
 4. [ ] **Budget pro Kategorie** zusätzlich zum Gesamtbudget.
+
+## Meilenstein 9 (in Arbeit)
+
+- [x] **9a Rebranding HardCost:** Name, neues Icon, Markenverlauf (Plus-Knopf, aktiver Tab, Hauptknöpfe), Datenbank-Umzug `subpulse` → `hardcost`, alte Backups weiter importierbar, Repo heisst `hardcost` (neue URL – App am Handy neu installieren)
+- [ ] 9b Datenmodell & Migration (Zahlungsarten mit Ablaufdatum/Kartentyp, Anschlusslaufzeit, eigene Reihenfolge, Markenfarbe)
+- [ ] 9c Bezahlkarten-Radar, Kategorie-Budgets, Fixkosten-Quote, Einweg-/virtuelle Karten
+- [ ] 9d Abo-Friedhof (eigener Tab, Spar-Tracker, Reaktivieren)
+- [ ] 9e Karten: Drehung, Einstellungs-Knopf, Ruhemodus, Markenfarbe, Wischgeste
+- [ ] 9f Freies Sortieren (Liste & Kacheln)
+- [ ] 9g Plus-Knopf-Morph am Handy, Liquid-Fill
+- [ ] 9h Geräte-Sync per WebRTC & QR
 
 ## Erledigt
 

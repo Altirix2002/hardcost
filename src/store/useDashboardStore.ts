@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { SubscriptionSortKey, SubscriptionStatusFilter, SubscriptionViewMode } from '../types';
 
-const VIEW_MODE_KEY = 'subpulse-view-mode';
+const VIEW_MODE_KEY = 'hardcost-view-mode';
 
 /** Gewählte Ansicht pro Gerät merken (reine Komfort-Einstellung, darf fehlen). */
 function readViewMode(): SubscriptionViewMode {

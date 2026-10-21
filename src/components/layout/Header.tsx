@@ -37,7 +37,7 @@ export function Header({ theme, onThemeChange, activeTab, onTabChange, onOpenSet
           className="h-10 w-10 shrink-0 rounded-[22%] shadow-lg shadow-violet-500/30"
         />
         <div className="min-w-0">
-          <h1 className="text-xl leading-tight font-semibold tracking-tight">SubPulse</h1>
+          <h1 className="text-brand-gradient w-fit text-xl leading-tight font-semibold tracking-tight">HardCost</h1>
           <AnimatePresence mode="wait" initial={false}>
             {online ? (
               <motion.p key="online" exit={{ opacity: 0 }} className="truncate text-xs text-zinc-500 dark:text-zinc-400">

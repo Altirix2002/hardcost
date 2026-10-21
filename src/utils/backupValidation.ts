@@ -111,7 +111,10 @@ export function parseBackup(text: string): BackupFile {
     throw new Error('Die Datei ist kein gültiges JSON.');
   }
 
-  if (!isRecord(data) || data.app !== 'subpulse') throw new Error('Das ist keine SubPulse-Sicherung.');
+  // Sicherungen von vor dem Rebranding tragen noch "subpulse".
+  if (!isRecord(data) || (data.app !== 'hardcost' && data.app !== 'subpulse')) {
+    throw new Error('Das ist keine HardCost-Sicherung.');
+  }
   if (data.version !== 1) throw new Error(`Backup-Version ${String(data.version)} wird nicht unterstützt.`);
   if (!isString(data.exportedAt)) throw new Error('Dem Backup fehlt das Exportdatum.');
   if (!isUserSettings(data.settings)) throw new Error('Die Einstellungen im Backup sind ungültig.');
@@ -129,7 +132,7 @@ export function parseBackup(text: string): BackupFile {
   }
 
   return {
-    app: 'subpulse',
+    app: 'hardcost',
     version: 1,
     exportedAt: data.exportedAt,
     settings: data.settings,

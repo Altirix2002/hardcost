@@ -45,8 +45,8 @@ export async function registerBiometric(): Promise<string | null> {
     const credential = await navigator.credentials.create({
       publicKey: {
         challenge: randomBytes(32),
-        rp: { name: 'SubPulse' },
-        user: { id: randomBytes(16), name: 'SubPulse', displayName: 'SubPulse App-Sperre' },
+        rp: { name: 'HardCost' },
+        user: { id: randomBytes(16), name: 'HardCost', displayName: 'HardCost App-Sperre' },
         pubKeyCredParams: [
           { type: 'public-key', alg: -7 }, // ES256
           { type: 'public-key', alg: -257 }, // RS256 (Windows Hello)

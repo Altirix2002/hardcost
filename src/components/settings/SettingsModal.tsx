@@ -128,7 +128,7 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
 
         <p className="flex items-start gap-2 px-1 text-xs text-zinc-500 dark:text-zinc-400">
           <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden />
-          SubPulse speichert alles ausschliesslich lokal in diesem Browser. Aus dem Internet geladen werden nur die
+          HardCost speichert alles ausschliesslich lokal in diesem Browser. Aus dem Internet geladen werden nur die
           Wechselkurse – und Logos, wenn du die Logo-Suche nutzt.
         </p>
       </div>

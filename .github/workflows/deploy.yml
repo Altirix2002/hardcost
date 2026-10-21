@@ -1,4 +1,4 @@
-# Baut SubPulse bei jedem Push auf den Hauptbranch und veröffentlicht es auf GitHub Pages.
+# Baut HardCost bei jedem Push auf den Hauptbranch und veröffentlicht es auf GitHub Pages.
 # Einmalig nötig: Repository → Settings → Pages → Source: "GitHub Actions".
 name: Deploy to GitHub Pages
 
